@@ -19,6 +19,7 @@ export const CABINET_TYPE_ID = "cabinet";
 export const cabinetType: FurnitureTypeDefinition<CabinetConfiguration> = {
   id: CABINET_TYPE_ID,
   geometrySource: "parametric",
+  category: "cabinet",
   nameKey: "furniture.cabinet",
   createDefault: () => DEFAULT_CABINET,
   // The footprint is the carcass; overlay fronts stand out in front of it (see collisionBoxes).

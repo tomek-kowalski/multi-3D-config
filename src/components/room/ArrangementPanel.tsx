@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { SectionHeading } from "@/components/configurator/SectionHeading";
 import { detectCollisions, issuesForModule, type CollisionIssue } from "@/domain/arrangement/collisions";
+import { DOCKING_DISTANCE_MM } from "@/domain/arrangement/docking";
 import { moduleFootprint } from "@/domain/arrangement/spatial";
 import { getFurnitureType, listFurnitureTypes } from "@/domain/modules/registry";
 import type { ModuleInstance } from "@/domain/modules/types";
@@ -184,7 +185,12 @@ function SelectedModuleControls({ module, collisions }: { module: ModuleInstance
   const states = type.states(module.configuration);
   const run = (r: ActionResult) => setIssues(issuesOf(r));
   const own = issuesForModule(collisions, module.id);
-  const place = (key: "x" | "y" | "z" | "rotationDeg") => (v: number) => issuesOf(store().setPlacement(module.id, { [key]: v }));
+  const place = (key: "x" | "y" | "z" | "rotationDeg") => (v: number) => {
+    const result = store().setPlacement(module.id, { [key]: v });
+    // A typed position near another cabinet gets the same docking offer as a drag.
+    if (result.ok && key !== "y") store().proposeDockingFor(module.id);
+    return issuesOf(result);
+  };
 
   return (
     <section aria-labelledby="selected-module" className="space-y-4">
@@ -276,6 +282,21 @@ function SelectedModuleControls({ module, collisions }: { module: ModuleInstance
   );
 }
 
+function DockingSetting() {
+  const t = useT();
+  const enabled = useArrangementStore((s) => s.dockingEnabled);
+  const setEnabled = useArrangementStore((s) => s.setDockingEnabled);
+  return (
+    <div className="space-y-1">
+      <label className="flex cursor-pointer items-center gap-2 text-sm text-stone-700">
+        <input type="checkbox" className="size-4 accent-stone-900" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
+        {t("docking.enabled")}
+      </label>
+      <p className="text-xs text-stone-500">{t("docking.hint", { distance: DOCKING_DISTANCE_MM })}</p>
+    </div>
+  );
+}
+
 function ArrangementFile() {
   const t = useT();
   const input = useRef<HTMLInputElement>(null);
@@ -332,6 +353,7 @@ export function ArrangementPanel() {
     <div className="space-y-8">
       {selected && <SelectedModuleControls module={selected} collisions={collisions} />}
       <ModuleList collisions={collisions} />
+      <DockingSetting />
       <Catalog />
       <ArrangementFile />
     </div>

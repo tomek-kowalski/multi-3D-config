@@ -10,7 +10,7 @@ import { planBounds } from "@/domain/spatial/geometry";
 import { useArrangementStore } from "@/store/useArrangementStore";
 import { useConfiguratorStore } from "@/store/useConfiguratorStore";
 import { frameBox } from "./cameraFraming";
-import { ModuleObject } from "./modules/ModuleObject";
+import { DockingPreview, ModuleObject } from "./modules/ModuleObject";
 import { RoomModel } from "./room/RoomModel";
 import { WallLabelProjector } from "./room/WallLabels";
 import { mmToM } from "./units";
@@ -38,6 +38,7 @@ function ModulesLayer() {
       {arrangement.modules.map((m) => (
         <ModuleObject key={m.id} module={m} selected={m.id === selectedId} colliding={colliding.has(m.id)} />
       ))}
+      <DockingPreview />
     </>
   );
 }

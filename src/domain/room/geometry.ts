@@ -60,3 +60,8 @@ export function openingKeepFreeBox(room: RoomConfiguration, opening: RoomOpening
     opening.elevation + opening.height,
   );
 }
+
+/** The openings assigned to one wall, in their stored order (the configuration menu lists only these). */
+export function openingsOnWall(room: Pick<RoomConfiguration, "openings">, wall: WallId): RoomOpening[] {
+  return room.openings.filter((o) => o.wall === wall);
+}

@@ -139,3 +139,11 @@ export function wallLabels(room: RoomConfiguration, activeWall: WallId | null): 
     return { wall, letter: WALL_LETTERS[wall], position: [mmToM(p.x), mmToM(room.height) + 0.12, mmToM(p.z)], active: wall === activeWall };
   });
 }
+
+/**
+ * The openings drawn in the 3D scene: always every opening on every wall. Only the configuration
+ * menu is filtered by the active wall (see openingsOnWall).
+ */
+export function sceneOpenings(room: Pick<RoomConfiguration, "openings">): readonly RoomOpening[] {
+  return room.openings;
+}

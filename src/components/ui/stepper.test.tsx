@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NumericFieldControl } from "@/components/configurator/DimensionField";
-import { SpacePanel } from "@/components/room/SpacePanel";
+import { RoomDimensions, SpacePanel } from "@/components/room/SpacePanel";
 import { useLocaleStore } from "@/i18n";
 import { useArrangementStore } from "@/store/useArrangementStore";
 import { useConfiguratorStore } from "@/store/useConfiguratorStore";
@@ -96,7 +96,7 @@ describe("MmField", () => {
 
 describe("numeric controls drive the configuration the 3D scene renders", () => {
   it("room width +/− updates the arrangement store", () => {
-    render(<SpacePanel />);
+    render(<RoomDimensions />);
     const [plus] = screen.getAllByRole("button", { name: "Zwiększ: Szerokość" });
     fireEvent.click(plus);
     expect(useArrangementStore.getState().arrangement.room.width).toBe(4001);
@@ -120,7 +120,7 @@ describe("numeric controls drive the configuration the 3D scene renders", () => 
     render(<SpacePanel />);
     const card = (wall: string) => document.querySelector(`[data-wall-card="${wall}"]`)!;
     expect(useArrangementStore.getState().activeWall).toBe("back");
-    fireEvent.pointerDown(card("left"));
+    fireEvent.click(card("left"));
     expect(useArrangementStore.getState().activeWall).toBe("left");
     expect(document.querySelectorAll("[data-wall-card][data-active]")).toHaveLength(1);
     expect(card("left").hasAttribute("data-active")).toBe(true);

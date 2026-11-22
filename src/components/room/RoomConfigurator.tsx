@@ -11,6 +11,7 @@ import { WallLabelOverlay } from "@/components/three/room/WallLabels";
 import { ArrangementPanel, typeName } from "./ArrangementPanel";
 import { ModulePanel } from "./ModulePanel";
 import { OrderDialog } from "./OrderDialog";
+import { DockingPrompt, ViewOverlay } from "./ViewOverlay";
 import { SpacePanel } from "./SpacePanel";
 
 function LoadingScene() {
@@ -41,24 +42,6 @@ function LanguageSwitch() {
           {l}
         </button>
       ))}
-    </div>
-  );
-}
-
-function ViewControls() {
-  const t = useT();
-  const requestView = useArrangementStore((s) => s.requestView);
-  const hasSelection = useArrangementStore((s) => s.selectedModuleId !== null);
-  const cls =
-    "rounded-lg bg-white/90 px-3 py-1.5 text-xs font-medium text-stone-800 shadow-sm backdrop-blur transition-colors hover:bg-white disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-800";
-  return (
-    <div className="absolute right-3 top-3 flex gap-2">
-      <button type="button" className={cls} onClick={() => requestView("room")}>
-        {t("view.room")}
-      </button>
-      <button type="button" className={cls} disabled={!hasSelection} onClick={() => requestView("selection")}>
-        {t("view.selection")}
-      </button>
     </div>
   );
 }
@@ -100,7 +83,8 @@ export function RoomConfigurator() {
       >
         <RoomCanvas />
         <WallLabelOverlay />
-        <ViewControls />
+        <ViewOverlay />
+        <DockingPrompt />
         <p className="pointer-events-none absolute bottom-3 left-1/2 max-w-[calc(100%-2rem)] -translate-x-1/2 truncate rounded-full bg-white/80 px-3 py-1 text-xs text-stone-600 shadow-sm backdrop-blur">
           {t("app.sceneHint")}
         </p>

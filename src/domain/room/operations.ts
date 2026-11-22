@@ -1,6 +1,7 @@
 import { fail, ok, type Result } from "../shared/issues";
 import { OPENING_DEFAULTS } from "./defaults";
 import { wallLength } from "./geometry";
+import { WALL_LETTERS } from "./types";
 import type {
   HexColor,
   OpeningKind,
@@ -39,8 +40,36 @@ function nextOpeningId(room: RoomConfiguration, kind: OpeningKind): string {
 }
 
 /**
- * Adds an opening centred on the wall with the default size, shrunk to fit the wall and the room
- * height when needed. Fails if it would overlap another opening; the customer then moves it.
+ * First offset (whole millimetres, searching from the wall's left end) at which an opening of the
+ * given width and height range fits on the wall without overlapping an existing opening. Only
+ * openings whose height range overlaps the new one block it (the same rule as validation).
+ * Candidates are the wall's left end and the right edge of every blocking opening, so the result is
+ * deterministic and as far left as possible. null when there is no room.
+ */
+export function findFreeOpeningOffset(
+  room: RoomConfiguration,
+  wall: WallId,
+  width: number,
+  elevation: number,
+  height: number,
+): number | null {
+  const length = wallLength(room, wall);
+  const blocking = room.openings
+    .filter((o) => o.wall === wall)
+    .filter((o) => Math.min(o.elevation + o.height, elevation + height) - Math.max(o.elevation, elevation) > 0)
+    .map((o) => ({ start: o.offset, end: o.offset + o.width }));
+  const candidates = [0, ...blocking.map((b) => b.end)].sort((a, b) => a - b);
+  for (const x of candidates) {
+    if (x + width > length) continue;
+    if (blocking.every((b) => x >= b.end || x + width <= b.start)) return x;
+  }
+  return null;
+}
+
+/**
+ * Adds an opening with the default size (shrunk to fit the wall and the room height when needed) at
+ * the first free position from the wall's left end. Existing openings are never moved or resized;
+ * when no free position exists the issue `no_space_for_opening` explains it.
  */
 export function addOpening(
   room: RoomConfiguration,
@@ -51,12 +80,16 @@ export function addOpening(
   const length = wallLength(room, wall);
   const width = Math.min(defaults.width, length);
   const height = Math.min(defaults.height, room.height - defaults.elevation);
+  const offset = findFreeOpeningOffset(room, wall, width, defaults.elevation, height);
+  if (offset === null) {
+    return fail({ code: "no_space_for_opening", params: { kind, wall: WALL_LETTERS[wall], width } });
+  }
   const id = nextOpeningId(room, kind);
   const opening: RoomOpening = {
     id,
     kind,
     wall,
-    offset: Math.round((length - width) / 2),
+    offset,
     elevation: defaults.elevation,
     width,
     height,

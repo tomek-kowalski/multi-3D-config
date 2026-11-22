@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_ROOM } from "./defaults";
 import { openingKeepFreeBox, wallFrame, wallPoint } from "./geometry";
-import { addOpening, removeOpening, setFloorColor, setRoomDimension, setWallColor, updateOpening } from "./operations";
+import { addOpening, findFreeOpeningOffset, removeOpening, setFloorColor, setRoomDimension, setWallColor, updateOpening } from "./operations";
 import type { RoomConfiguration } from "./types";
 import { validateRoom } from "./validateRoom";
 
@@ -59,10 +59,44 @@ describe("wall and door colours", () => {
 });
 
 describe("openings", () => {
-  it("adds a centred opening with numeric position and size", () => {
+  it("adds an opening at the first free position from the wall's left end", () => {
     const { room, id } = unwrap(addOpening(DEFAULT_ROOM, "window", "back"));
     const window = room.openings.find((o) => o.id === id)!;
-    expect(window).toMatchObject({ wall: "back", width: 1200, height: 1400, elevation: 900, offset: 1400 });
+    expect(window).toMatchObject({ wall: "back", width: 1200, height: 1400, elevation: 900, offset: 0 });
+  });
+
+  it("finds free space beside existing openings without moving them", () => {
+    const first = unwrap(addOpening(DEFAULT_ROOM, "window", "back"));
+    const moved = unwrap(updateOpening(first.room, first.id, { offset: 500 })); // window-1: 500…1700
+    const second = unwrap(addOpening(moved, "window", "back"));
+    const byId = new Map(second.room.openings.map((o) => [o.id, o]));
+    expect(byId.get("window-1")!.offset).toBe(500); // unchanged
+    expect(byId.get("window-2")!.offset).toBe(1700); // first gap from the left that fits 1200 (0…500 is too small)
+    // Remaining gaps 0…500 and 2900…4000 are both narrower than 1200 mm.
+    expect(addOpening(second.room, "window", "back")).toMatchObject({ ok: false, issues: [{ code: "no_space_for_opening" }] });
+  });
+
+  it("never overlaps and stays inside the wall; reports a clear error when the wall is full", () => {
+    let room: RoomConfiguration = DEFAULT_ROOM; // back wall 4000 mm → three 1200 mm windows fit
+    for (let i = 0; i < 3; i++) room = unwrap(addOpening(room, "window", "back")).room;
+    const offsets = room.openings.map((o) => [o.offset, o.offset + o.width]);
+    expect(offsets).toEqual([
+      [0, 1200],
+      [1200, 2400],
+      [2400, 3600],
+    ]);
+    expect(validateRoom(room)).toEqual([]);
+    const full = addOpening(room, "window", "back");
+    expect(full).toMatchObject({ ok: false, issues: [{ code: "no_space_for_opening", params: { kind: "window", wall: "A", width: 1200 } }] });
+    expect(room.openings).toHaveLength(3);
+  });
+
+  it("only treats openings with an overlapping height range as blocking", () => {
+    // A door (0…2050) blocks a window (900…2300) at the same place; a 1200 mm high door would not block a window from 1300 up.
+    const door = unwrap(addOpening(DEFAULT_ROOM, "door", "back"));
+    const window = unwrap(addOpening(door.room, "window", "back"));
+    expect(window.room.openings.find((o) => o.id === window.id)!.offset).toBe(900);
+    expect(findFreeOpeningOffset({ ...DEFAULT_ROOM, openings: [{ ...door.room.openings[0], height: 1200 }] }, "back", 1200, 1300, 1000)).toBe(0);
   });
 
   it("edits position and dimensions exactly", () => {
@@ -78,9 +112,11 @@ describe("openings", () => {
     expect(updateOpening(room, id, { offset: 2800 }).ok).toBe(true);
   });
 
-  it("rejects overlapping openings on the same wall but allows them on different walls", () => {
+  it("keeps rejecting overlaps when openings are edited by hand", () => {
     const first = unwrap(addOpening(DEFAULT_ROOM, "window", "back"));
-    expect(addOpening(first.room, "window", "back").ok).toBe(false);
+    const second = unwrap(addOpening(first.room, "window", "back"));
+    const result = updateOpening(second.room, second.id, { offset: 600 });
+    expect(result).toMatchObject({ ok: false, issues: [{ code: "openings_overlap" }] });
     expect(addOpening(first.room, "window", "front").ok).toBe(true);
   });
 

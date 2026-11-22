@@ -33,6 +33,30 @@ function VolumeBox({ box, color, opacity, edges = true }: { box: BoxMm; color: s
   );
 }
 
+const DOCKING_COLOR = "#059669";
+
+/** Ghost of the proposed docking position: the moved module's volume at the proposed placement. */
+export function DockingPreview() {
+  const proposal = useArrangementStore((s) => s.dockingProposal);
+  const docked = useArrangementStore((s) => s.arrangement.modules.find((m) => m.id === s.dockingProposal?.moduleId));
+  if (!proposal || !docked) return null;
+  const type = getFurnitureType(docked.typeId);
+  const footprint = type.footprint(docked.configuration);
+  const { placement } = proposal;
+  return (
+    <group
+      position={[mmToM(placement.x), mmToM(placement.y), mmToM(placement.z)]}
+      rotation={[0, (placement.rotationDeg * Math.PI) / 180, 0]}
+    >
+      <group position={[-mmToM(footprint.width) / 2, 0, -mmToM(footprint.depth) / 2]}>
+        {type.collisionBoxes(docked.configuration, docked.state).map((b, i) => (
+          <VolumeBox key={i} box={b} color={DOCKING_COLOR} opacity={0.22} />
+        ))}
+      </group>
+    </group>
+  );
+}
+
 /** Placeholder while a model loads. */
 function LoadingBox({ box }: { box: BoxMm }) {
   return <VolumeBox box={box} color="#a8a29e" opacity={0.25} />;
@@ -81,7 +105,10 @@ function useDrag(instance: ModuleInstance) {
     };
     const onUp = () => {
       if (drag.moduleId !== id) return;
+      const moved = drag.moved;
       drag.moduleId = null;
+      // A moved cabinet may now be next to another one: offer docking (applied only on confirmation).
+      if (moved) useArrangementStore.getState().proposeDockingFor(id);
       const controls = get().controls as unknown as ControlsLike;
       if (controls) controls.enabled = true;
       element.style.cursor = "";

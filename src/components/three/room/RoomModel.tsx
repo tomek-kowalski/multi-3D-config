@@ -17,6 +17,7 @@ import {
   FRAME_EDGE_COLOR,
   openingOutline,
   openingParts,
+  sceneOpenings,
   wallAngle,
   wallFloorBand,
   wallHighlightOutline,
@@ -163,7 +164,7 @@ export function RoomModel() {
         <Wall key={wall} room={room} wall={wall} active={highlighted[wall]} />
       ))}
       <ActiveWallBand room={room} wall={activeWall} />
-      {room.openings.map((o) => (
+      {sceneOpenings(room).map((o) => (
         <Opening key={o.id} room={room} opening={o} selected={o.id === selectedOpeningId} />
       ))}
     </group>

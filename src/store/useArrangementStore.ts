@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { proposeDocking, type DockingProposal } from "@/domain/arrangement/docking";
 import * as ops from "@/domain/arrangement/operations";
 import type { Arrangement, Side } from "@/domain/arrangement/types";
 import type { FurnitureTypeId, ModuleId, OperationalStateId } from "@/domain/modules/types";
@@ -26,6 +27,12 @@ export interface ArrangementState {
   readonly selectedOpeningId: string | null;
   /** The wall the customer is working on; highlighted in the 3D view. */
   readonly activeWall: WallId;
+  /** Whether the wall identifiers are shown in the 3D view (display only). */
+  readonly showWallLabels: boolean;
+  /** Whether cabinets moved next to another cabinet get a docking proposal. */
+  readonly dockingEnabled: boolean;
+  /** A docking position waiting for the customer's confirmation (preview in 3D). */
+  readonly dockingProposal: DockingProposal | null;
   readonly activeMenu: MenuId;
   readonly viewRequest: ViewRequest | null;
   /** True once the saved arrangement (if any) was loaded on the client. */
@@ -39,6 +46,14 @@ export interface ArrangementState {
   removeOpening: (id: string) => ActionResult;
   selectOpening: (id: string | null) => void;
   setActiveWall: (wall: WallId) => void;
+  setShowWallLabels: (show: boolean) => void;
+  setDockingEnabled: (enabled: boolean) => void;
+  /** Looks for a docking position for the module (after it was moved); shows it for confirmation. */
+  proposeDockingFor: (id: ModuleId) => void;
+  /** Applies the proposed position (re-checked first). */
+  confirmDocking: () => ActionResult;
+  /** Discards the proposal; the module keeps the position the customer gave it. */
+  rejectDocking: () => void;
 
   addModule: (typeId: FurnitureTypeId) => ActionResult;
   addModuleNextTo: (typeId: FurnitureTypeId, side: Side) => ActionResult;
@@ -85,6 +100,9 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
     selectedModuleId: null,
     selectedOpeningId: null,
     activeWall: "back",
+    showWallLabels: true,
+    dockingEnabled: true,
+    dockingProposal: null,
     activeMenu: "space",
     viewRequest: null,
     hydrated: false,
@@ -115,6 +133,25 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
     setActiveWall: (wall) => {
       if (get().activeWall !== wall) set({ activeWall: wall });
     },
+    setShowWallLabels: (show) => set({ showWallLabels: show }),
+    setDockingEnabled: (enabled) => set({ dockingEnabled: enabled, ...(enabled ? {} : { dockingProposal: null }) }),
+    proposeDockingFor: (id) => {
+      const proposal = get().dockingEnabled ? proposeDocking(get().arrangement, id) : null;
+      set({ dockingProposal: proposal });
+    },
+    confirmDocking: () => {
+      const proposal = get().dockingProposal;
+      if (!proposal) return { ok: false, issues: [{ code: "no_docking_proposal" }] };
+      // The arrangement may have changed since the proposal: only apply it if it is still the valid one.
+      const current = proposeDocking(get().arrangement, proposal.moduleId);
+      if (!current || current.placement.x !== proposal.placement.x || current.placement.z !== proposal.placement.z || current.placement.y !== proposal.placement.y) {
+        set({ dockingProposal: null });
+        return { ok: false, issues: [{ code: "docking_no_longer_valid" }] };
+      }
+      const { x, y, z, rotationDeg } = proposal.placement;
+      return apply(ops.setPlacement(get().arrangement, proposal.moduleId, { x, y, z, rotationDeg }), () => ({ dockingProposal: null }));
+    },
+    rejectDocking: () => set({ dockingProposal: null }),
 
     addModule: (typeId) => apply(ops.addModule(get().arrangement, typeId), selectAdded),
     addModuleNextTo: (typeId, side) => {
@@ -128,8 +165,12 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
       return apply(ops.duplicateModule(get().arrangement, selectedModuleId, side), selectAdded);
     },
     removeModule: (id) =>
-      apply(ops.removeModule(get().arrangement, id), () => (get().selectedModuleId === id ? { selectedModuleId: null } : {})),
-    setPlacement: (id, patch) => apply(ops.setPlacement(get().arrangement, id, patch)),
+      apply(ops.removeModule(get().arrangement, id), () => ({
+        dockingProposal: null,
+        ...(get().selectedModuleId === id ? { selectedModuleId: null } : {}),
+      })),
+    // Any new position supersedes a pending docking proposal.
+    setPlacement: (id, patch) => apply(ops.setPlacement(get().arrangement, id, patch), () => ({ dockingProposal: null })),
     rotateModule: (id, delta) => apply(ops.rotateModule(get().arrangement, id, delta)),
     snapToWall: (id, wall) => apply(ops.snapToWall(get().arrangement, id, wall), () => ({ activeWall: wall })),
     setModuleState: (id, state) => apply(ops.setModuleState(get().arrangement, id, state)),
@@ -141,7 +182,7 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
 
     setActiveMenu: (menu) => set({ activeMenu: menu }),
     requestView: (kind) => set({ viewRequest: { kind, seq: (get().viewRequest?.seq ?? 0) + 1 } }),
-    replaceArrangement: (arrangement) => set({ arrangement, selectedModuleId: null, selectedOpeningId: null }),
+    replaceArrangement: (arrangement) => set({ arrangement, selectedModuleId: null, selectedOpeningId: null, dockingProposal: null }),
     importJson: (json) => {
       const result = importArrangementJson(json);
       if (!result.ok) return { ok: false, issues: result.issues };
@@ -149,7 +190,8 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
       return OK;
     },
     exportJson: () => exportArrangementJson(get().arrangement),
-    reset: () => set({ arrangement: INITIAL_ARRANGEMENT, selectedModuleId: null, selectedOpeningId: null, activeWall: "back" }),
+    reset: () =>
+      set({ arrangement: INITIAL_ARRANGEMENT, selectedModuleId: null, selectedOpeningId: null, activeWall: "back", dockingProposal: null }),
 
     hydrate: () => {
       if (get().hydrated) return;

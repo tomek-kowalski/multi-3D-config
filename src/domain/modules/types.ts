@@ -40,6 +40,8 @@ export interface FurnitureTypeDefinition<C = unknown> {
   readonly geometrySource: "parametric" | "imported";
   /** i18n key of the type name. */
   readonly nameKey: string;
+  /** Furniture category; cabinets ("cabinet") can be docked to each other (src/domain/arrangement/docking.ts). */
+  readonly category: "cabinet" | "bed";
   createDefault(): C;
   footprint(configuration: C): ModuleFootprint;
   /** Operational states; the first is the rest state. Static furniture has a single state. */
