@@ -1,5 +1,5 @@
 {
-  "name": "furniture-configurator",
+  "name": "multi-3d-config",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,7 +9,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "assets:clickbed": "node scripts/assets/convert-clickbed.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

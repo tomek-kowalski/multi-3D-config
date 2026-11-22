@@ -26,37 +26,39 @@ import { validateCabinet, type CabinetValidationError } from "@/domain/constrain
 import { formatMm } from "@/domain/furniture/format";
 import type { CabinetConfiguration, DimensionRange } from "@/domain/furniture/types";
 import { buildFurniture, type FurnitureModel } from "@/domain/geometry/buildFurniture";
-import { HANDLE_RULES, HANDLE_TYPE_NAMES, HANDLE_TYPES, HARDWARE_FINISHES, type HandleType } from "@/domain/hardware/catalog";
+import { HANDLE_RULES, HANDLE_TYPES, HARDWARE_FINISHES, type HandleType } from "@/domain/hardware/catalog";
+import { useT, type Translate } from "@/i18n";
+import { useCabinetText, type CabinetMessage } from "@/i18n/cabinet";
 import { useConfiguratorStore, type CommitResult } from "@/store/useConfiguratorStore";
 import { usePreviewStore } from "@/store/usePreviewStore";
 import { DimensionField } from "./DimensionField";
 import { CheckIcon, ErrorList, SectionHeading } from "./SectionHeading";
 import { compartmentLabel } from "./StructurePanel";
 
-const MOUNTING_OPTIONS: readonly { value: FrontMounting; label: string }[] = [
-  { value: "overlay", label: "Nakładane" },
-  { value: "inset", label: "Wpuszczane" },
+const mountingOptions = (t: Translate): readonly { value: FrontMounting; label: string }[] => [
+  { value: "overlay", label: t("cab.overlay") },
+  { value: "inset", label: t("cab.inset") },
 ];
 
-const ALIGN_OPTIONS: readonly { value: HandleAlign; label: string }[] = [
-  { value: "top", label: "Góra" },
-  { value: "center", label: "Środek" },
-  { value: "bottom", label: "Dół" },
+const alignOptions = (t: Translate): readonly { value: HandleAlign; label: string }[] => [
+  { value: "top", label: t("cab.top") },
+  { value: "center", label: t("cab.center") },
+  { value: "bottom", label: t("cab.bottom") },
 ];
 
-const HANDLE_OPTIONS = HANDLE_TYPES.map((type) => ({ value: type, label: HANDLE_TYPE_NAMES[type] }));
+const handleOptions = (t: Translate) => HANDLE_TYPES.map((type) => ({ value: type, label: t(`handle.${type}`) }));
 
 const NO_ERRORS: readonly CabinetValidationError[] = [];
 
 /** First validation message an action would produce, or null when it is allowed. */
 function actionBlocker(
   configuration: CabinetConfiguration,
-  run: (configuration: CabinetConfiguration) => { ok: true; configuration: CabinetConfiguration } | { ok: false; error: { message: string } },
-): string | null {
+  run: (configuration: CabinetConfiguration) => { ok: true; configuration: CabinetConfiguration } | { ok: false; error: CabinetMessage },
+): CabinetMessage | null {
   const result = run(configuration);
-  if (!result.ok) return result.error.message;
+  if (!result.ok) return result.error;
   const validation = validateCabinet(result.configuration);
-  return validation.isValid ? null : validation.errors[0].message;
+  return validation.isValid ? null : validation.errors[0];
 }
 
 interface SegmentedControlProps<T extends string> {
@@ -131,14 +133,15 @@ function limitsOf(model: FurnitureModel, attachmentId: string): MotionLimit[] {
 
 /** Explains collision limits of an attachment's moving parts, if any. */
 function RestrictionNote({ limits }: { limits: readonly MotionLimit[] }) {
+  const t = useT();
   const restricted = limits.filter((l) => l.allowed < l.requested - 1e-6);
   if (restricted.length === 0) return null;
   const blockers = [...new Set(restricted.flatMap((l) => l.blockedBy))].map((id) => `„${id}”`).join(", ");
   const smallest = Math.min(...restricted.map((l) => l.allowed));
   const text =
     restricted[0].kind === "hinge"
-      ? `Kąt otwarcia ograniczony do ${formatMm(smallest)}° (z ${formatMm(restricted[0].requested)}°), aby nie uderzyć w ${blockers}.`
-      : `Wysuw ograniczony do ${formatMm(smallest)} mm (z ${formatMm(restricted[0].requested)} mm) przez ${blockers}.`;
+      ? t("cab.angleLimited", { allowed: formatMm(smallest), requested: formatMm(restricted[0].requested), blockers })
+      : t("cab.slideLimited", { allowed: formatMm(smallest), requested: formatMm(restricted[0].requested), blockers });
   return (
     <p role="status" className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs text-amber-800">
       {text}
@@ -147,6 +150,7 @@ function RestrictionNote({ limits }: { limits: readonly MotionLimit[] }) {
 }
 
 function PreviewToggle({ attachment, model }: { attachment: FurnitureAttachment; model: FurnitureModel }) {
+  const t = useT();
   const open = usePreviewStore((state) => state.openAttachmentIds.has(attachment.id));
   const setOpen = usePreviewStore((state) => state.setOpen);
   const limits = limitsOf(model, attachment.id);
@@ -155,7 +159,8 @@ function PreviewToggle({ attachment, model }: { attachment: FurnitureAttachment;
   // Interior drawers behind this door close together with it (the door waits until they are in).
   const dependents = [...model.motion.values()].filter((l) => l.requiresOpen === attachment.id).map((l) => l.attachmentId);
   const blocked = !open && !doorOpen;
-  const verb = attachment.type === "door" ? (open ? "Zamknij drzwi" : "Otwórz drzwi") : open ? "Zamknij szuflady" : "Otwórz szuflady";
+  const verb =
+    attachment.type === "door" ? (open ? t("cab.closeDoor") : t("cab.openDoor")) : open ? t("cab.closeDrawers") : t("cab.openDrawers");
 
   return (
     <div className="space-y-1.5">
@@ -171,15 +176,15 @@ function PreviewToggle({ attachment, model }: { attachment: FurnitureAttachment;
         className="flex w-full items-center justify-center gap-1.5 rounded-lg border-2 border-stone-900 bg-stone-900 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-stone-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900 disabled:cursor-not-allowed disabled:border-stone-300 disabled:bg-stone-300 aria-pressed:border-blue-600 aria-pressed:bg-blue-50 aria-pressed:text-blue-900 aria-pressed:hover:bg-blue-100"
       >
         {open && <CheckIcon className="size-3.5 text-blue-600" />}
-        {verb} (podgląd)
+        {verb} {t("cab.previewSuffix")}
       </button>
       {blocked && requiresOpen && (
         <p id={`blocked-${attachment.id}`} className="text-xs text-stone-500">
-          Najpierw otwórz drzwi „{requiresOpen}” — szuflady wewnętrzne nie mogą przejść przez zamknięte drzwi.
+          {t("cab.openDoorFirst", { id: requiresOpen })}
         </p>
       )}
       {attachment.type === "door" && dependents.length > 0 && open && (
-        <p className="text-xs text-stone-500">Zamknięcie drzwi najpierw wsunie szuflady wewnętrzne.</p>
+        <p className="text-xs text-stone-500">{t("cab.closingRetractsDrawers")}</p>
       )}
       <RestrictionNote limits={limits} />
     </div>
@@ -187,6 +192,7 @@ function PreviewToggle({ attachment, model }: { attachment: FurnitureAttachment;
 }
 
 function RemoveButton({ attachment }: { attachment: FurnitureAttachment }) {
+  const t = useT();
   const remove = useConfiguratorStore((state) => state.removeAttachment);
   const setOpen = usePreviewStore((state) => state.setOpen);
   return (
@@ -198,7 +204,7 @@ function RemoveButton({ attachment }: { attachment: FurnitureAttachment }) {
       }}
       className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-800 transition-colors hover:bg-stone-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-800"
     >
-      {attachment.type === "door" ? "Usuń drzwi" : "Usuń szuflady"}
+      {attachment.type === "door" ? t("cab.removeDoor") : t("cab.removeDrawers")}
     </button>
   );
 }
@@ -214,6 +220,7 @@ function HandleEditor({
   isDoor: boolean;
   onChange: (patch: Partial<HandleConfiguration>) => CommitResult;
 }) {
+  const t = useT();
   const [errors, setErrors] = useState<readonly CabinetValidationError[]>(NO_ERRORS);
   const finishName = useId();
   const apply = (patch: Partial<HandleConfiguration>) => {
@@ -224,16 +231,16 @@ function HandleEditor({
 
   return (
     <div className="space-y-3 rounded-md border border-stone-200 p-2.5">
-      <SegmentedControl<HandleType> label="Uchwyt" value={handle.type} options={HANDLE_OPTIONS} onChange={(type) => apply({ type })} />
+      <SegmentedControl<HandleType> label={t("cab.handle")} value={handle.type} options={handleOptions(t)} onChange={(type) => apply({ type })} />
       {handle.type !== "none" && (
         <>
           <fieldset className="space-y-1.5">
-            <legend className="text-sm font-medium text-stone-800">Wykończenie uchwytu</legend>
+            <legend className="text-sm font-medium text-stone-800">{t("cab.handleFinish")}</legend>
             <div className="grid grid-cols-5 gap-1.5">
               {HARDWARE_FINISHES.map((finish) => (
                 <label
                   key={finish.id}
-                  title={finish.name}
+                  title={t(`hardware.${finish.id}`)}
                   className="relative flex cursor-pointer flex-col items-center gap-1 rounded-lg border-2 border-transparent p-1 text-center hover:bg-stone-100 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-stone-900"
                 >
                   <input
@@ -256,17 +263,17 @@ function HandleEditor({
                     )}
                   </span>
                   <span className="text-[10px] leading-tight text-stone-700 peer-checked:font-semibold peer-checked:text-blue-900">
-                    {finish.name}
+                    {t(`hardware.${finish.id}`)}
                   </span>
                 </label>
               ))}
             </div>
           </fieldset>
-          <SegmentedControl<HandleAlign> label="Położenie w pionie" value={handle.align} options={ALIGN_OPTIONS} onChange={(align) => apply({ align })} />
+          <SegmentedControl<HandleAlign> label={t("cab.verticalPosition")} value={handle.align} options={alignOptions(t)} onChange={(align) => apply({ align })} />
           {isDoor && (
             <ConfigNumberField
               field={`${idPrefix}-handle-edge`}
-              label="Odległość od krawędzi"
+              label={t("cab.edgeOffset")}
               value={handle.edgeOffset}
               range={HANDLE_RULES.edgeOffset}
               step={5}
@@ -276,7 +283,7 @@ function HandleEditor({
           {handle.align !== "center" && (
             <ConfigNumberField
               field={`${idPrefix}-handle-align`}
-              label={handle.align === "top" ? "Odległość od góry" : "Odległość od dołu"}
+              label={handle.align === "top" ? t("cab.fromTop") : t("cab.fromBottom")}
               value={handle.alignOffset}
               range={HANDLE_RULES.alignOffset}
               step={5}
@@ -301,6 +308,7 @@ function DoorEditor({
   configuration: CabinetConfiguration;
   model: FurnitureModel;
 }) {
+  const t = useT();
   const update = useConfiguratorStore((state) => state.updateDoor);
   const [errors, setErrors] = useState<readonly CabinetValidationError[]>(NO_ERRORS);
   const apply = (patch: Partial<DoorAttachment["configuration"]>) => {
@@ -314,32 +322,32 @@ function DoorEditor({
   return (
     <div className="space-y-4">
       <SegmentedControl
-        label="Rodzaj"
+        label={t("cab.doorType")}
         value={c.layout}
         options={[
-          { value: "single", label: "Pojedyncze" },
-          { value: "double", label: "Podwójne" },
+          { value: "single", label: t("cab.single") },
+          { value: "double", label: t("cab.double") },
         ]}
         onChange={(value) => apply({ layout: value })}
       />
-      <SegmentedControl label="Montaż" value={c.mounting} options={MOUNTING_OPTIONS} onChange={(value) => apply({ mounting: value })} />
+      <SegmentedControl label={t("cab.mounting")} value={c.mounting} options={mountingOptions(t)} onChange={(value) => apply({ mounting: value })} />
       {c.layout === "single" ? (
         <SegmentedControl
-          label="Zawiasy"
+          label={t("cab.hinges")}
           value={c.hinge}
           options={[
-            { value: "left", label: "Lewe" },
-            { value: "right", label: "Prawe" },
+            { value: "left", label: t("cab.hingeLeft") },
+            { value: "right", label: t("cab.hingeRight") },
           ]}
           onChange={(value) => apply({ hinge: value })}
         />
       ) : (
-        <p className="text-xs text-stone-500">Skrzydła podwójnych drzwi mają zawiasy po lewej i po prawej stronie.</p>
+        <p className="text-xs text-stone-500">{t("cab.doubleHinges")}</p>
       )}
       <ErrorList errors={errors} />
       <ConfigNumberField
         field={`door-${door.id}-gap`}
-        label="Szczelina obwodowa"
+        label={t("cab.gap")}
         value={c.gap}
         range={DOOR_RULES.gap}
         step={1}
@@ -348,7 +356,7 @@ function DoorEditor({
       {c.layout === "double" && (
         <ConfigNumberField
           field={`door-${door.id}-center-gap`}
-          label="Szczelina między skrzydłami"
+          label={t("cab.centerGap")}
           value={c.centerGap}
           range={DOOR_RULES.centerGap}
           step={1}
@@ -357,7 +365,7 @@ function DoorEditor({
       )}
       <ConfigNumberField
         field={`door-${door.id}-angle`}
-        label="Maksymalny kąt otwarcia"
+        label={t("cab.maxAngle")}
         value={c.maxOpenAngle}
         range={DOOR_RULES.openAngle}
         step={5}
@@ -365,7 +373,7 @@ function DoorEditor({
         onCommit={(maxOpenAngle) => apply({ maxOpenAngle })}
       />
       <p className="text-xs tabular-nums text-stone-600">
-        {c.layout === "double" ? "Skrzydło" : "Drzwi"}: {formatMm(leaves[0].box.dimensions.width)} ×{" "}
+        {c.layout === "double" ? t("cab.leaf") : t("cab.door")}: {formatMm(leaves[0].box.dimensions.width)} ×{" "}
         {formatMm(leaves[0].box.dimensions.height)} mm
         {c.layout === "double" && " (×2)"}
       </p>
@@ -382,6 +390,7 @@ function DoorEditor({
 }
 
 function DrawerHeights({ drawer, frontHeights }: { drawer: DrawerAttachment; frontHeights: readonly number[] }) {
+  const t = useT();
   const update = useConfiguratorStore((state) => state.updateDrawers);
   const setHeight = useConfiguratorStore((state) => state.setDrawerFrontHeight);
   const custom = drawer.configuration.heightRatios !== null;
@@ -391,11 +400,11 @@ function DrawerHeights({ drawer, frontHeights }: { drawer: DrawerAttachment; fro
   return (
     <div className="space-y-3">
       <SegmentedControl
-        label="Wysokości frontów"
+        label={t("cab.frontHeights")}
         value={custom ? "custom" : "equal"}
         options={[
-          { value: "equal", label: "Równe" },
-          { value: "custom", label: "Własne" },
+          { value: "equal", label: t("cab.equal") },
+          { value: "custom", label: t("cab.custom") },
         ]}
         onChange={(mode) =>
           update(drawer.id, {
@@ -407,13 +416,19 @@ function DrawerHeights({ drawer, frontHeights }: { drawer: DrawerAttachment; fro
       {custom && (
         <div className="space-y-3">
           <p className="text-xs text-stone-500">
-            Różnicę przejmuje górna szuflada (przy zmianie górnej — szuflada pod nią), więc wpisuj wysokości od dołu. Łącznie: {formatMm(total)} mm.
+            {t("cab.heightsHint", { total: formatMm(total) })}
           </p>
           {[...frontHeights.keys()].reverse().map((index) => (
             <ConfigNumberField
               key={index}
               field={`drawer-${drawer.id}-height-${index}`}
-              label={`Szuflada ${index + 1}${index === 0 ? " (dół)" : index === frontHeights.length - 1 ? " (góra)" : ""}`}
+              label={
+                index === 0
+                  ? t("cab.drawerBottom", { n: index + 1 })
+                  : index === frontHeights.length - 1
+                    ? t("cab.drawerTop", { n: index + 1 })
+                    : t("cab.drawerN", { n: index + 1 })
+              }
               value={Math.round(frontHeights[index] * 10) / 10}
               range={{ min: DRAWER_RULES.minFrontHeight, max: maxHeight }}
               step={1}
@@ -425,7 +440,7 @@ function DrawerHeights({ drawer, frontHeights }: { drawer: DrawerAttachment; fro
             onClick={() => update(drawer.id, { heightRatios: null })}
             className="w-full rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-stone-800 hover:bg-stone-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-800"
           >
-            Wyrównaj wysokości
+            {t("cab.equalize")}
           </button>
         </div>
       )}
@@ -444,6 +459,7 @@ function DrawerEditor({
   configuration: CabinetConfiguration;
   model: FurnitureModel;
 }) {
+  const t = useT();
   const update = useConfiguratorStore((state) => state.updateDrawers);
   const [errors, setErrors] = useState<readonly CabinetValidationError[]>(NO_ERRORS);
   const c = drawer.configuration;
@@ -456,13 +472,13 @@ function DrawerEditor({
     <div className="space-y-4">
       {interior ? (
         <p className="text-xs text-stone-500">
-          Szuflady wewnętrzne stoją za drzwiami „{context.coveringDoor?.id}”, z frontami wpuszczanymi i luzem na zawiasy.
+          {t("cab.interiorDrawersNote", { id: context.coveringDoor?.id ?? "" })}
         </p>
       ) : (
         <SegmentedControl
-          label="Montaż frontów"
+          label={t("cab.frontMounting")}
           value={c.mounting}
-          options={MOUNTING_OPTIONS}
+          options={mountingOptions(t)}
           onChange={(mounting) => {
             const result = update(drawer.id, { mounting });
             setErrors(result.ok ? NO_ERRORS : result.errors);
@@ -472,17 +488,17 @@ function DrawerEditor({
       <ErrorList errors={errors} />
       <ConfigNumberField
         field={`drawer-${drawer.id}-count`}
-        label="Liczba szuflad"
+        label={t("cab.drawerCount")}
         value={c.count}
         range={{ min: DRAWER_RULES.minCount, max: DRAWER_RULES.maxCount }}
         step={1}
-        unit="szt."
+        unit={t("cab.pcs")}
         onCommit={(count) => update(drawer.id, { count })}
       />
       <DrawerHeights drawer={drawer} frontHeights={drawers.map((d) => d.front.dimensions.height)} />
       <ConfigNumberField
         field={`drawer-${drawer.id}-gap`}
-        label="Szczelina frontów"
+        label={t("cab.frontGap")}
         value={c.frontGap}
         range={DRAWER_RULES.frontGap}
         step={1}
@@ -490,7 +506,7 @@ function DrawerEditor({
       />
       <ConfigNumberField
         field={`drawer-${drawer.id}-depth`}
-        label="Głębokość szuflady"
+        label={t("cab.drawerDepth")}
         value={c.depth}
         range={{ min: DRAWER_RULES.minDepth, max: Math.max(DRAWER_RULES.minDepth, available) }}
         step={10}
@@ -499,8 +515,11 @@ function DrawerEditor({
       <ul className="space-y-0.5 text-xs tabular-nums text-stone-600">
         {[...drawers].reverse().map((d) => (
           <li key={d.index}>
-            Front {d.index}: {formatMm(d.front.dimensions.width)} × {formatMm(d.front.dimensions.height)} mm · skrzynka{" "}
-            {formatMm(d.box.dimensions.width)} × {formatMm(d.box.dimensions.height)} × {formatMm(d.box.dimensions.depth)} mm
+            {t("cab.drawerLine", {
+              n: d.index,
+              front: `${formatMm(d.front.dimensions.width)} × ${formatMm(d.front.dimensions.height)}`,
+              box: `${formatMm(d.box.dimensions.width)} × ${formatMm(d.box.dimensions.height)} × ${formatMm(d.box.dimensions.depth)}`,
+            })}
           </li>
         ))}
       </ul>
@@ -516,7 +535,8 @@ function DrawerEditor({
   );
 }
 
-function ActionButton({ label, blocker, onClick }: { label: string; blocker: string | null; onClick: () => void }) {
+function ActionButton({ label, blocker, onClick }: { label: string; blocker: CabinetMessage | null; onClick: () => void }) {
+  const text = useCabinetText();
   return (
     <div>
       <button
@@ -527,12 +547,13 @@ function ActionButton({ label, blocker, onClick }: { label: string; blocker: str
       >
         {label}
       </button>
-      {blocker && <p className="mt-1 text-xs text-stone-500">{blocker}</p>}
+      {blocker && <p className="mt-1 text-xs text-stone-500">{text(blocker)}</p>}
     </div>
   );
 }
 
 function AddExteriorButtons({ configuration, compartmentId }: { configuration: CabinetConfiguration; compartmentId: string }) {
+  const t = useT();
   const addDoorAction = useConfiguratorStore((state) => state.addDoor);
   const addDrawersAction = useConfiguratorStore((state) => state.addDrawers);
   const blockers = useMemo(
@@ -545,9 +566,9 @@ function AddExteriorButtons({ configuration, compartmentId }: { configuration: C
   );
   return (
     <div className="space-y-2">
-      <ActionButton label="Dodaj drzwi pojedyncze" blocker={blockers.single} onClick={() => addDoorAction(compartmentId, "single")} />
-      <ActionButton label="Dodaj drzwi podwójne" blocker={blockers.double} onClick={() => addDoorAction(compartmentId, "double")} />
-      <ActionButton label="Dodaj szuflady" blocker={blockers.drawers} onClick={() => addDrawersAction(compartmentId, "exterior")} />
+      <ActionButton label={t("cab.addSingleDoor")} blocker={blockers.single} onClick={() => addDoorAction(compartmentId, "single")} />
+      <ActionButton label={t("cab.addDoubleDoor")} blocker={blockers.double} onClick={() => addDoorAction(compartmentId, "double")} />
+      <ActionButton label={t("cab.addDrawers")} blocker={blockers.drawers} onClick={() => addDrawersAction(compartmentId, "exterior")} />
     </div>
   );
 }
@@ -561,6 +582,7 @@ function InteriorDrawersSection({
   layout: CompartmentLayout;
   model: FurnitureModel;
 }) {
+  const t = useT();
   const addDrawersAction = useConfiguratorStore((state) => state.addDrawers);
   const interior = getInteriorDrawers(configuration, layout.id);
   const blocker = useMemo(
@@ -569,17 +591,18 @@ function InteriorDrawersSection({
   );
   return (
     <div className="space-y-3 border-t border-stone-200 pt-3">
-      <p className="text-sm font-medium text-stone-900">Szuflady wewnętrzne</p>
+      <p className="text-sm font-medium text-stone-900">{t("cab.interiorDrawers")}</p>
       {interior ? (
         <DrawerEditor key={interior.id} drawer={interior} layout={layout} configuration={configuration} model={model} />
       ) : (
-        <ActionButton label="Dodaj szuflady wewnętrzne" blocker={blocker} onClick={() => addDrawersAction(layout.id, "interior")} />
+        <ActionButton label={t("cab.addInteriorDrawers")} blocker={blocker} onClick={() => addDrawersAction(layout.id, "interior")} />
       )}
     </div>
   );
 }
 
 export function AttachmentsPanel() {
+  const t = useT();
   const configuration = useConfiguratorStore((state) => state.configuration);
   const selectedId = useConfiguratorStore((state) => state.selectedCompartmentId);
   const rejection = useConfiguratorStore((state) => (state.rejection?.source === "attachments" ? state.rejection : null));
@@ -605,43 +628,45 @@ export function AttachmentsPanel() {
   return (
     <section aria-labelledby="attachments-heading" className="space-y-4">
       <div className="flex items-baseline justify-between gap-2">
-        <SectionHeading id="attachments-heading">Drzwi i szuflady</SectionHeading>
+        <SectionHeading id="attachments-heading">{t("cab.doorsAndDrawers")}</SectionHeading>
         {allIds.length > 0 && (
           <button
             type="button"
             onClick={() => (openCount > 0 ? closeAll() : setOpen(allIds, true))}
             className="text-xs font-medium text-stone-600 underline underline-offset-2 hover:text-stone-900"
           >
-            {openCount > 0 ? "Zamknij wszystkie" : "Otwórz wszystkie"}
+            {openCount > 0 ? t("cab.closeAll") : t("cab.openAll")}
           </button>
         )}
       </div>
 
       {!layout ? (
-        <p className="text-xs text-stone-500">Zaznacz przedział, aby dodać drzwi lub szuflady.</p>
+        <p className="text-xs text-stone-500">{t("cab.selectToAddFronts")}</p>
       ) : (
         <div className="space-y-4 rounded-lg border border-stone-200 p-3">
           <div>
-            <p className="text-sm font-medium text-stone-900">{compartmentLabel(layout.id, rootId)}</p>
+            <p className="text-sm font-medium text-stone-900">{compartmentLabel(t, layout.id, rootId)}</p>
             <p className="text-xs tabular-nums text-stone-600">
-              Otwór: {formatMm(layout.bounds.dimensions.width)} × {formatMm(layout.bounds.dimensions.height)} ×{" "}
-              {formatMm(layout.bounds.dimensions.depth)} mm
-              {!layout.isLeaf && " · z półkami lub przegrodami"}
+              {t("cab.opening", {
+                size: `${formatMm(layout.bounds.dimensions.width)} × ${formatMm(layout.bounds.dimensions.height)} × ${formatMm(layout.bounds.dimensions.depth)}`,
+              })}
+              {!layout.isLeaf && ` · ${t("cab.withShelvesOrDividers")}`}
             </p>
           </div>
           {covering && (
             <div className="space-y-2 rounded-md bg-stone-50 p-2 text-xs text-stone-600">
               <p>
-                Ten przedział jest za {covering.type === "door" ? "drzwiami" : "frontem"} „{covering.id}”, które zakrywają{" "}
-                {compartmentLabel(covering.compartmentId, rootId).toLowerCase()}. Półki, przegrody i szuflady wewnętrzne można tu
-                dodawać normalnie.
+                {t(covering.type === "door" ? "cab.coveredByDoor" : "cab.coveredByFront", {
+                  id: covering.id,
+                  compartment: compartmentLabel(t, covering.compartmentId, rootId).toLowerCase(),
+                })}
               </p>
               <button
                 type="button"
                 onClick={() => select(covering.compartmentId)}
                 className="font-medium text-stone-800 underline underline-offset-2 hover:text-stone-950"
               >
-                Edytuj drzwi „{covering.id}”
+                {t("cab.editDoor", { id: covering.id })}
               </button>
             </div>
           )}

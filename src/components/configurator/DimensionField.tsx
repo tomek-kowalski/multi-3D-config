@@ -5,6 +5,8 @@ import type { CabinetValidationError } from "@/domain/constraints/validateCabine
 import { getNumericField, getNumericFieldRange } from "@/domain/furniture/fields";
 import type { DimensionRange, NumericField } from "@/domain/furniture/types";
 import { useConfiguratorStore } from "@/store/useConfiguratorStore";
+import { useT } from "@/i18n";
+import { useCabinetText } from "@/i18n/cabinet";
 
 interface DimensionFieldProps<F extends string> {
   /** Identifies the value; also used to derive the input id. */
@@ -42,6 +44,8 @@ export function DimensionField<F extends string>({
   inputStep = 1,
   unit = "mm",
 }: DimensionFieldProps<F>) {
+  const t = useT();
+  const errorText = useCabinetText();
   const inputId = `dimension-${field.replaceAll(".", "-")}`;
   const hintId = `${inputId}-hint`;
   const errorId = `${inputId}-error`;
@@ -105,14 +109,14 @@ export function DimensionField<F extends string>({
         step={sliderStep}
         value={sliderValue}
         onChange={(event) => onChange(field, Number(event.target.value))}
-        aria-label={`${label} – suwak`}
+        aria-label={t("cab.sliderLabel", { label })}
         className="h-1.5 w-full cursor-pointer accent-stone-800"
       />
 
       {invalid && (
         <ul id={errorId} className="space-y-0.5 text-xs text-red-600" aria-live="polite">
           {errors.map((error, index) => (
-            <li key={`${error.code}-${index}`}>{error.message}</li>
+            <li key={`${error.code}-${index}`}>{errorText(error)}</li>
           ))}
         </ul>
       )}

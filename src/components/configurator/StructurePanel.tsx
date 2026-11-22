@@ -22,9 +22,11 @@ import {
 } from "@/domain/compartments/types";
 import { validateCabinet } from "@/domain/constraints/validateCabinet";
 import { CONSTRUCTION_LIMITS } from "@/domain/furniture/defaults";
-import { formatMm, pluralPl } from "@/domain/furniture/format";
+import { formatMm } from "@/domain/furniture/format";
 import type { CabinetConfiguration } from "@/domain/furniture/types";
 import { useConfiguratorStore } from "@/store/useConfiguratorStore";
+import { useT, type Translate } from "@/i18n";
+import { useCabinetText, type CabinetMessage } from "@/i18n/cabinet";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { CheckIcon, ErrorList, SectionHeading } from "./SectionHeading";
 
@@ -36,38 +38,33 @@ interface SplitLabels {
   parts: [string, string];
 }
 
-const SPLIT_LABELS: Readonly<Record<SplitDirection, SplitLabels>> = {
-  horizontal: { add: "Dodaj półkę", remove: "Usuń półkę", panel: "Półka", position: "Położenie półki", parts: ["Dół", "Góra"] },
-  vertical: {
-    add: "Dodaj przegrodę",
-    remove: "Usuń przegrodę",
-    panel: "Przegroda",
-    position: "Położenie przegrody",
-    parts: ["Lewa", "Prawa"],
-  },
-};
+function splitLabels(t: Translate, direction: SplitDirection): SplitLabels {
+  return direction === "horizontal"
+    ? { add: t("cab.addShelf"), remove: t("cab.removeShelf"), panel: t("cab.shelf"), position: t("cab.shelfPosition"), parts: [t("cab.bottom"), t("cab.top")] }
+    : { add: t("cab.addDivider"), remove: t("cab.removeDivider"), panel: t("cab.divider"), position: t("cab.dividerPosition"), parts: [t("cab.left"), t("cab.right")] };
+}
 
-export function compartmentLabel(id: CompartmentId, rootId: CompartmentId): string {
-  return id === rootId ? "Całe wnętrze" : `Przedział ${id}`;
+export function compartmentLabel(t: Translate, id: CompartmentId, rootId: CompartmentId): string {
+  return id === rootId ? t("cab.wholeInterior") : t("cab.compartment", { id });
 }
 
 /** Locative form, as in "podziały w przedziale c2". */
-function compartmentLocation(id: CompartmentId, rootId: CompartmentId): string {
-  return id === rootId ? "w całym wnętrzu" : `w przedziale ${id}`;
+function compartmentLocation(t: Translate, id: CompartmentId, rootId: CompartmentId): string {
+  return id === rootId ? t("cab.inWholeInterior") : t("cab.inCompartment", { id });
 }
 
 /** Short tree marker for a compartment's door or drawer assembly. */
-export function attachmentLabel(attachment: FurnitureAttachment): string {
-  if (attachment.type === "drawer") return `szuflady ×${attachment.configuration.count}`;
-  return attachment.configuration.layout === "double" ? "drzwi podwójne" : "drzwi";
+export function attachmentLabel(t: Translate, attachment: FurnitureAttachment): string {
+  if (attachment.type === "drawer") return t("cab.drawersMarker", { count: attachment.configuration.count });
+  return attachment.configuration.layout === "double" ? t("cab.doubleDoorMarker") : t("cab.doorMarker");
 }
 
 /** Why a split would be rejected, or null when it is allowed. Runs the real operation + validation. */
-function splitBlocker(configuration: CabinetConfiguration, id: CompartmentId, direction: SplitDirection): string | null {
+function splitBlocker(configuration: CabinetConfiguration, id: CompartmentId, direction: SplitDirection): CabinetMessage | null {
   const result = splitCompartment(configuration.compartments, id, direction);
-  if (!result.ok) return result.error.message;
+  if (!result.ok) return result.error;
   const validation = validateCabinet({ ...configuration, compartments: result.tree });
-  return validation.isValid ? null : validation.errors[0].message;
+  return validation.isValid ? null : validation.errors[0];
 }
 
 interface TreeItemProps {
@@ -80,6 +77,7 @@ interface TreeItemProps {
 }
 
 function TreeItem({ node, markers, rootId, layouts, selectedId, onSelect }: TreeItemProps) {
+  const t = useT();
   const layout = layouts.get(node.id);
   const selected = node.id === selectedId;
   const size = layout ? `${formatMm(layout.bounds.dimensions.width)} × ${formatMm(layout.bounds.dimensions.height)}` : "";
@@ -96,9 +94,9 @@ function TreeItem({ node, markers, rootId, layouts, selectedId, onSelect }: Tree
       >
         <span className="flex min-w-0 items-center gap-1 truncate">
           {selected && <CheckIcon className="size-3.5 shrink-0 text-blue-600" />}
-          {compartmentLabel(node.id, rootId)}
+          {compartmentLabel(t, node.id, rootId)}
           {isBranch(node) && (
-            <span className="ml-1.5 text-stone-400">· {SPLIT_LABELS[node.split.direction].panel.toLowerCase()}</span>
+            <span className="ml-1.5 text-stone-400">· {splitLabels(t, node.split.direction).panel.toLowerCase()}</span>
           )}
           {markers.has(node.id) && <span className="ml-1.5 text-amber-700">· {markers.get(node.id)}</span>}
         </span>
@@ -124,6 +122,8 @@ function TreeItem({ node, markers, rootId, layouts, selectedId, onSelect }: Tree
 }
 
 export function StructurePanel() {
+  const t = useT();
+  const text = useCabinetText();
   const configuration = useConfiguratorStore((state) => state.configuration);
   const selectedId = useConfiguratorStore((state) => state.selectedCompartmentId);
   const rejection = useConfiguratorStore((state) => (state.rejection?.source === "structure" ? state.rejection : null));
@@ -149,8 +149,8 @@ export function StructurePanel() {
   );
   const leafCount = useMemo(() => getLeafCompartments(tree).length, [tree]);
   const markers = useMemo(
-    () => new Map(configuration.attachments.map((a) => [a.compartmentId, attachmentLabel(a)])),
-    [configuration.attachments],
+    () => new Map(configuration.attachments.map((a) => [a.compartmentId, attachmentLabel(t, a)])),
+    [configuration.attachments, t],
   );
 
   const path = selectedId ? getCompartmentPath(tree, selectedId) : null;
@@ -179,25 +179,25 @@ export function StructurePanel() {
   return (
     <section aria-labelledby="structure-heading" className="space-y-4">
       <div className="flex items-baseline justify-between">
-        <SectionHeading id="structure-heading">Struktura</SectionHeading>
+        <SectionHeading id="structure-heading">{t("cab.structure")}</SectionHeading>
         <span className="text-xs tabular-nums text-stone-500">
-          Przedziały: {leafCount} / {CONSTRUCTION_LIMITS.maxLeafCompartments}
+          {t("cab.compartmentsCount", { count: leafCount, max: CONSTRUCTION_LIMITS.maxLeafCompartments })}
         </span>
       </div>
 
-      <ul aria-label="Przedziały" className="max-h-56 overflow-y-auto rounded-lg border border-stone-200 p-1">
+      <ul aria-label={t("cab.compartments")} className="max-h-56 overflow-y-auto rounded-lg border border-stone-200 p-1">
         <TreeItem node={tree} markers={markers} rootId={tree.id} layouts={layouts} selectedId={selectedId} onSelect={select} />
       </ul>
 
       {!selected || !selectedLayout ? (
-        <p className="text-xs text-stone-500">Zaznacz przedział w widoku 3D lub na liście powyżej, aby go edytować.</p>
+        <p className="text-xs text-stone-500">{t("cab.selectCompartmentHint")}</p>
       ) : (
         <div className="space-y-4 rounded-lg border border-blue-200 bg-blue-50/40 p-3">
           <div>
-            <p className="text-sm font-medium text-stone-900">{compartmentLabel(selected.id, tree.id)}</p>
+            <p className="text-sm font-medium text-stone-900">{compartmentLabel(t, selected.id, tree.id)}</p>
             <p className="text-xs tabular-nums text-stone-600">
               {formatMm(selectedLayout.bounds.dimensions.width)} × {formatMm(selectedLayout.bounds.dimensions.height)} ×{" "}
-              {formatMm(selectedLayout.bounds.dimensions.depth)} mm (szer. × wys. × gł.)
+              {formatMm(selectedLayout.bounds.dimensions.depth)} mm {t("cab.whdShort")}
             </p>
           </div>
 
@@ -208,15 +208,15 @@ export function StructurePanel() {
                   key={direction}
                   type="button"
                   disabled={blockers[direction] !== null}
-                  title={blockers[direction] ?? undefined}
+                  title={blockers[direction] ? text(blockers[direction]) : undefined}
                   onClick={() => split(selected.id, direction)}
                   className="rounded-lg bg-stone-900 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-stone-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900 disabled:cursor-not-allowed disabled:bg-stone-300"
                 >
-                  {SPLIT_LABELS[direction].add}
+                  {splitLabels(t, direction).add}
                 </button>
               ))}
               {blockers.horizontal && blockers.vertical && (
-                <p className="col-span-2 text-xs text-stone-500">Ten przedział jest za mały, aby go dalej dzielić.</p>
+                <p className="col-span-2 text-xs text-stone-500">{t("cab.tooSmallToSplit")}</p>
               )}
             </div>
           )}
@@ -224,7 +224,7 @@ export function StructurePanel() {
           {ownerSplit && ownerLayout && (
             <SplitControls
               owner={ownerSplit}
-              ownerLocation={compartmentLocation(ownerSplit.id, tree.id)}
+              ownerLocation={compartmentLocation(t, ownerSplit.id, tree.id)}
               isOwnSplit={ownerSplit.id === selected.id}
               layout={ownerLayout}
               panelThickness={configuration.panelThickness}
@@ -240,8 +240,9 @@ export function StructurePanel() {
 
       <ConfirmDialog
         open={pendingRemoval !== null}
-        title="Usunąć podział razem z frontami?"
-        confirmLabel="Usuń podział i fronty"
+        title={t("cab.removeSplitTitle")}
+        confirmLabel={t("cab.removeSplitConfirm")}
+        cancelLabel={t("common.cancel")}
         onCancel={() => setPendingRemoval(null)}
         onConfirm={() => {
           if (pendingRemoval) remove(pendingRemoval.id, { removeAttachments: true });
@@ -250,15 +251,11 @@ export function StructurePanel() {
       >
         {pendingRemoval && (
           <>
-            <p>
-              W usuwanych przedziałach są zamontowane {pendingRemoval.attachments.length}{" "}
-              {pluralPl(pendingRemoval.attachments.length, { one: "zestaw", few: "zestawy", many: "zestawów" })} drzwi
-              lub szuflad. Zostaną usunięte razem z podziałem:
-            </p>
+            <p>{t("cab.removeSplitBody", { count: pendingRemoval.attachments.length })}</p>
             <ul className="mt-2 list-disc space-y-0.5 pl-5">
               {pendingRemoval.attachments.map((a) => (
                 <li key={a.id}>
-                  {attachmentLabel(a)} „{a.id}” w przedziale {a.compartmentId}
+                  {t("cab.removeSplitItem", { item: attachmentLabel(t, a), id: a.id, compartment: a.compartmentId })}
                 </li>
               ))}
             </ul>
@@ -298,7 +295,8 @@ function ExactSizeInput({
   const shown = formatMm(value).replace(",", ".");
   const [text, setText] = useState(shown);
   const [synced, setSynced] = useState(shown);
-  const [errors, setErrors] = useState<readonly { message: string }[]>([]);
+  const t = useT();
+  const [errors, setErrors] = useState<readonly CabinetMessage[]>([]);
   if (shown !== synced) {
     setSynced(shown);
     setText(shown);
@@ -306,7 +304,7 @@ function ExactSizeInput({
   const commit = () => {
     const size = Number(text);
     if (text.trim() === "" || !Number.isFinite(size)) {
-      setErrors([{ message: "Podaj wymiar w milimetrach." }]);
+      setErrors([{ code: "not_finite", message: t("cab.enterMm") }]);
       return;
     }
     const result = onCommit(size);
@@ -342,8 +340,9 @@ function ExactSizeInput({
 }
 
 function SplitControls({ owner, ownerLocation, isOwnSplit, layout, panelThickness, sizeRange, onRatio, onRemove }: SplitControlsProps) {
+  const t = useT();
   const { direction, ratio } = owner.split;
-  const labels = SPLIT_LABELS[direction];
+  const labels = splitLabels(t, direction);
   const size = direction === "horizontal" ? layout.bounds.dimensions.height : layout.bounds.dimensions.width;
   const usable = size - panelThickness;
   const first = usable * ratio;
@@ -381,19 +380,19 @@ function SplitControls({ owner, ownerLocation, isOwnSplit, layout, panelThicknes
       </p>
       {sizeRange && (
         <p className="text-xs tabular-nums text-stone-500">
-          Dozwolone: {labels.parts[0].toLowerCase()} {formatMm(sizeRange.min)}–{formatMm(sizeRange.max)} mm
+          {t("cab.allowedRange", { part: labels.parts[0].toLowerCase(), min: formatMm(sizeRange.min), max: formatMm(sizeRange.max) })}
         </p>
       )}
       <div className="grid grid-cols-2 gap-2">
         <ExactSizeInput
           id={`${sliderId}-first`}
-          label={`${labels.parts[0]} (dokładnie)`}
+          label={t("cab.exact", { part: labels.parts[0] })}
           value={first}
           onCommit={(size) => onRatio(ratioForFirstSize({ usable }, size))}
         />
         <ExactSizeInput
           id={`${sliderId}-second`}
-          label={`${labels.parts[1]} (dokładnie)`}
+          label={t("cab.exact", { part: labels.parts[1] })}
           value={usable - first}
           onCommit={(size) => onRatio(ratioForFirstSize({ usable }, usable - size))}
         />
@@ -406,7 +405,7 @@ function SplitControls({ owner, ownerLocation, isOwnSplit, layout, panelThicknes
         {labels.remove}
       </button>
       {removesNested && (
-        <p className="text-xs text-stone-500">Usunięcie usunie także wszystkie podziały {ownerLocation}.</p>
+        <p className="text-xs text-stone-500">{t("cab.removeNested", { location: ownerLocation })}</p>
       )}
     </div>
   );

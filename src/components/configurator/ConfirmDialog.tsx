@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useT } from "@/i18n";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -22,10 +23,11 @@ export function ConfirmDialog({
   title,
   children,
   confirmLabel,
-  cancelLabel = "Anuluj",
+  cancelLabel,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const t = useT();
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const descriptionId = useId();
@@ -64,7 +66,7 @@ export function ConfirmDialog({
           onClick={onCancel}
           className="rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-800 hover:bg-stone-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-800"
         >
-          {cancelLabel}
+          {cancelLabel ?? t("common.cancel")}
         </button>
         <button
           type="button"

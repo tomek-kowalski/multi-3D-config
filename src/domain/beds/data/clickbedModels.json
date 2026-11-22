@@ -1,0 +1,1832 @@
+{
+ "source": "lib/Modele 3D łóżka Transforms (supplied OBJ, Blender 2.93 export)",
+ "unit": "mm",
+ "models": {
+  "clickbed-o": {
+   "folder": "12_Click Bed O",
+   "sizes": {
+    "90x200": {
+     "file": "clickbed-o/90x200.glb",
+     "objects": {
+      "folded": [
+       {
+        "name": "Box024.001",
+        "slot": "hardware"
+       },
+       {
+        "name": "Box2032.001_Untitled.006",
+        "slot": "body"
+       },
+       {
+        "name": "Box2035.001_Untitled.005",
+        "slot": "body"
+       },
+       {
+        "name": "Box2047.002_Untitled.003",
+        "slot": "front"
+       },
+       {
+        "name": "Plane",
+        "slot": "front"
+       },
+       {
+        "name": "Plane.001",
+        "slot": "hardware"
+       },
+       {
+        "name": "Plane.007_Plane.025",
+        "slot": "hardware"
+       },
+       {
+        "name": "Plane.019_Plane.026",
+        "slot": "hardware"
+       }
+      ],
+      "unfolded": [
+       {
+        "name": "Box024.002",
+        "slot": "hardware"
+       },
+       {
+        "name": "Box2032.002_Untitled.010",
+        "slot": "body"
+       },
+       {
+        "name": "Box2035.002_Untitled.011",
+        "slot": "body"
+       },
+       {
+        "name": "Box2047.003_Untitled.012",
+        "slot": "front"
+       },
+       {
+        "name": "Box877.007_Untitled.014",
+        "slot": "hardware"
+       },
+       {
+        "name": "Meridiani_Bed_STONE_UP__corona.003",
+        "slot": "mattress"
+       },
+       {
+        "name": "Plane.004_Plane.003",
+        "slot": "hardware"
+       },
+       {
+        "name": "Plane.006_Plane.005",
+        "slot": "hardware"
+       }
+      ]
+     },
+     "states": {
+      "folded": {
+       "carcass": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1086,
+         "depth": 360
+        }
+       },
+       "body": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1086,
+         "depth": 360
+        }
+       },
+       "overall": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1086,
+         "depth": 361
+        }
+       },
+       "extension": null,
+       "triangles": 6846
+      },
+      "unfolded": {
+       "carcass": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1086,
+         "depth": 360
+        }
+       },
+       "body": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1086,
+         "depth": 360
+        }
+       },
+       "overall": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1086,
+         "depth": 1149
+        }
+       },
+       "extension": {
+        "min": {
+         "x": 36,
+         "y": 0,
+         "z": 386
+        },
+        "size": {
+         "width": 2091,
+         "height": 458,
+         "depth": 763
+        }
+       },
+       "triangles": 15358
+      }
+     }
+    },
+    "120x200": {
+     "file": "clickbed-o/120x200.glb",
+     "objects": {
+      "folded": [
+       {
+        "name": "Box2032.006_Untitled.025",
+        "slot": "body"
+       },
+       {
+        "name": "Box2035.006_Untitled.026",
+        "slot": "body"
+       },
+       {
+        "name": "Box2047.006_Untitled.027",
+        "slot": "front"
+       },
+       {
+        "name": "Plane.013_Plane.016",
+        "slot": "front"
+       },
+       {
+        "name": "Plane.015_Plane.018",
+        "slot": "hardware"
+       },
+       {
+        "name": "Plane.016_Plane.019",
+        "slot": "hardware"
+       },
+       {
+        "name": "Plane.014_Plane.021",
+        "slot": "hardware"
+       },
+       {
+        "name": "Box024.008_Box024.009",
+        "slot": "hardware"
+       }
+      ],
+      "unfolded": [
+       {
+        "name": "Box024.005",
+        "slot": "hardware"
+       },
+       {
+        "name": "Box2032.005_Untitled.017",
+        "slot": "body"
+       },
+       {
+        "name": "Box2035.005_Untitled.018",
+        "slot": "body"
+       },
+       {
+        "name": "Box2047.005_Untitled.019",
+        "slot": "front"
+       },
+       {
+        "name": "Box877.002_Untitled.020",
+        "slot": "hardware"
+       },
+       {
+        "name": "Meridiani_Bed_STONE_UP__corona.002",
+        "slot": "mattress"
+       },
+       {
+        "name": "Plane.011",
+        "slot": "hardware"
+       },
+       {
+        "name": "Plane.012",
+        "slot": "hardware"
+       }
+      ]
+     },
+     "states": {
+      "folded": {
+       "carcass": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1386,
+         "depth": 360
+        }
+       },
+       "body": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1386,
+         "depth": 360
+        }
+       },
+       "overall": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1386,
+         "depth": 361
+        }
+       },
+       "extension": null,
+       "triangles": 13014
+      },
+      "unfolded": {
+       "carcass": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1386,
+         "depth": 360
+        }
+       },
+       "body": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1386,
+         "depth": 360
+        }
+       },
+       "overall": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1386,
+         "depth": 1399
+        }
+       },
+       "extension": {
+        "min": {
+         "x": 36,
+         "y": 0,
+         "z": 389
+        },
+        "size": {
+         "width": 2091,
+         "height": 458,
+         "depth": 1010
+        }
+       },
+       "triangles": 21526
+      }
+     }
+    },
+    "140x200": {
+     "file": "clickbed-o/140x200.glb",
+     "objects": {
+      "folded": [
+       {
+        "name": "Box2032.007_Untitled.028",
+        "slot": "body"
+       },
+       {
+        "name": "Box2035.007_Untitled.029",
+        "slot": "body"
+       },
+       {
+        "name": "Box2047.007_Untitled.030",
+        "slot": "front"
+       },
+       {
+        "name": "Plane.017_Plane.022",
+        "slot": "front"
+       },
+       {
+        "name": "Plane.018_Plane.023",
+        "slot": "hardware"
+       },
+       {
+        "name": "Plane.020_Plane.024",
+        "slot": "hardware"
+       },
+       {
+        "name": "Plane.021_Plane.027",
+        "slot": "hardware"
+       },
+       {
+        "name": "Box024.006_Box024.010",
+        "slot": "hardware"
+       }
+      ],
+      "unfolded": [
+       {
+        "name": "Box024.007_Box024.011",
+        "slot": "hardware"
+       },
+       {
+        "name": "Box2032.008_Untitled.031",
+        "slot": "body"
+       },
+       {
+        "name": "Box2035.008_Untitled.032",
+        "slot": "body"
+       },
+       {
+        "name": "Box2047.008_Untitled.033",
+        "slot": "front"
+       },
+       {
+        "name": "Box877.003_Untitled.034",
+        "slot": "hardware"
+       },
+       {
+        "name": "Meridiani_Bed_STONE_UP__corona.004_Meridiani_Bed_STONE_UP__corona.005",
+        "slot": "mattress"
+       },
+       {
+        "name": "Plane.022_Plane.028",
+        "slot": "hardware"
+       },
+       {
+        "name": "Plane.023_Plane.029",
+        "slot": "hardware"
+       }
+      ]
+     },
+     "states": {
+      "folded": {
+       "carcass": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1586,
+         "depth": 360
+        }
+       },
+       "body": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1586,
+         "depth": 360
+        }
+       },
+       "overall": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1586,
+         "depth": 361
+        }
+       },
+       "extension": null,
+       "triangles": 13014
+      },
+      "unfolded": {
+       "carcass": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1586,
+         "depth": 360
+        }
+       },
+       "body": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1586,
+         "depth": 360
+        }
+       },
+       "overall": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1586,
+         "depth": 1599
+        }
+       },
+       "extension": {
+        "min": {
+         "x": 36,
+         "y": 0,
+         "z": 385
+        },
+        "size": {
+         "width": 2091,
+         "height": 485,
+         "depth": 1214
+        }
+       },
+       "triangles": 21526
+      }
+     }
+    },
+    "160x200": {
+     "file": "clickbed-o/160x200.glb",
+     "objects": {
+      "folded": [
+       {
+        "name": "Box2032.010_Untitled.039",
+        "slot": "body"
+       },
+       {
+        "name": "Box2035.010_Untitled.040",
+        "slot": "body"
+       },
+       {
+        "name": "Box2047.010_Untitled.041",
+        "slot": "front"
+       },
+       {
+        "name": "Plane.026_Plane.032",
+        "slot": "front"
+       },
+       {
+        "name": "Plane.027_Plane.033",
+        "slot": "hardware"
+       },
+       {
+        "name": "Plane.028_Plane.034",
+        "slot": "hardware"
+       },
+       {
+        "name": "Plane.029_Plane.035",
+        "slot": "hardware"
+       },
+       {
+        "name": "Box024.010_Box024.013",
+        "slot": "hardware"
+       }
+      ],
+      "unfolded": [
+       {
+        "name": "Box024.009_Box024.012",
+        "slot": "hardware"
+       },
+       {
+        "name": "Box2032.009_Untitled.035",
+        "slot": "body"
+       },
+       {
+        "name": "Box2035.009_Untitled.036",
+        "slot": "body"
+       },
+       {
+        "name": "Box2047.009_Untitled.037",
+        "slot": "front"
+       },
+       {
+        "name": "Box877.004_Untitled.038",
+        "slot": "hardware"
+       },
+       {
+        "name": "Meridiani_Bed_STONE_UP__corona.005_Meridiani_Bed_STONE_UP__corona.006",
+        "slot": "mattress"
+       },
+       {
+        "name": "Plane.024_Plane.030",
+        "slot": "hardware"
+       },
+       {
+        "name": "Plane.025_Plane.031",
+        "slot": "hardware"
+       }
+      ]
+     },
+     "states": {
+      "folded": {
+       "carcass": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1786,
+         "depth": 360
+        }
+       },
+       "body": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1786,
+         "depth": 360
+        }
+       },
+       "overall": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1786,
+         "depth": 361
+        }
+       },
+       "extension": null,
+       "triangles": 13014
+      },
+      "unfolded": {
+       "carcass": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1786,
+         "depth": 360
+        }
+       },
+       "body": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1786,
+         "depth": 360
+        }
+       },
+       "overall": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1786,
+         "depth": 1799
+        }
+       },
+       "extension": {
+        "min": {
+         "x": 36,
+         "y": 0,
+         "z": 396
+        },
+        "size": {
+         "width": 2091,
+         "height": 485,
+         "depth": 1403
+        }
+       },
+       "triangles": 21526
+      }
+     }
+    },
+    "180x200": {
+     "file": "clickbed-o/180x200.glb",
+     "objects": {
+      "folded": [
+       {
+        "name": "Box2032.012_Untitled.046",
+        "slot": "body"
+       },
+       {
+        "name": "Box2035.012_Untitled.047",
+        "slot": "body"
+       },
+       {
+        "name": "Box2047.012_Untitled.048",
+        "slot": "front"
+       },
+       {
+        "name": "Plane.032_Plane.038",
+        "slot": "front"
+       },
+       {
+        "name": "Plane.033_Plane.039",
+        "slot": "hardware"
+       },
+       {
+        "name": "Plane.034_Plane.040",
+        "slot": "hardware"
+       },
+       {
+        "name": "Plane.035_Plane.041",
+        "slot": "hardware"
+       },
+       {
+        "name": "Box024.012_Box024.015",
+        "slot": "hardware"
+       }
+      ],
+      "unfolded": [
+       {
+        "name": "Box024.011_Box024.014",
+        "slot": "hardware"
+       },
+       {
+        "name": "Box2032.011_Untitled.042",
+        "slot": "body"
+       },
+       {
+        "name": "Box2035.011_Untitled.043",
+        "slot": "body"
+       },
+       {
+        "name": "Box2047.011_Untitled.044",
+        "slot": "front"
+       },
+       {
+        "name": "Box877.005_Untitled.045",
+        "slot": "hardware"
+       },
+       {
+        "name": "Meridiani_Bed_STONE_UP__corona.006_Meridiani_Bed_STONE_UP__corona.007",
+        "slot": "mattress"
+       },
+       {
+        "name": "Plane.030_Plane.036",
+        "slot": "hardware"
+       },
+       {
+        "name": "Plane.031_Plane.037",
+        "slot": "hardware"
+       }
+      ]
+     },
+     "states": {
+      "folded": {
+       "carcass": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1986,
+         "depth": 360
+        }
+       },
+       "body": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1986,
+         "depth": 360
+        }
+       },
+       "overall": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1986,
+         "depth": 361
+        }
+       },
+       "extension": null,
+       "triangles": 13014
+      },
+      "unfolded": {
+       "carcass": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1986,
+         "depth": 360
+        }
+       },
+       "body": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1986,
+         "depth": 360
+        }
+       },
+       "overall": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2162,
+         "height": 1986,
+         "depth": 1999
+        }
+       },
+       "extension": {
+        "min": {
+         "x": 36,
+         "y": 0,
+         "z": 386
+        },
+        "size": {
+         "width": 2091,
+         "height": 485,
+         "depth": 1613
+        }
+       },
+       "triangles": 21526
+      }
+     }
+    }
+   }
+  },
+  "clickbed-o-classico": {
+   "folder": "17_Click Bed O Classico",
+   "sizes": {
+    "140x200": {
+     "file": "clickbed-o-classico/140x200.glb",
+     "objects": {
+      "folded": [
+       {
+        "name": "Box021.003_Untitled.016",
+        "slot": "body"
+       },
+       {
+        "name": "Box021.004_Untitled.018",
+        "slot": "body"
+       },
+       {
+        "name": "Box873.002_Untitled.001",
+        "slot": "front"
+       }
+      ],
+      "unfolded": [
+       {
+        "name": "BezierCurve.002_BezierCurve.001",
+        "slot": "hardware"
+       },
+       {
+        "name": "BezierCurve.004_CUBezierCurve.001",
+        "slot": "hardware"
+       },
+       {
+        "name": "Box021.001_Untitled.008",
+        "slot": "body"
+       },
+       {
+        "name": "Box021.002_Untitled.009",
+        "slot": "body"
+       },
+       {
+        "name": "Box1036.001_Untitled.010",
+        "slot": "hardware"
+       },
+       {
+        "name": "Box873.001_Untitled.011",
+        "slot": "front"
+       },
+       {
+        "name": "Box885.001_Untitled.014",
+        "slot": "hardware"
+       },
+       {
+        "name": "Component#4.001",
+        "slot": "hardware"
+       },
+       {
+        "name": "Plane.022_Plane.012",
+        "slot": "hardware"
+       },
+       {
+        "name": "Plane.023_Plane.004",
+        "slot": "hardware"
+       },
+       {
+        "name": "mattress001.001_Untitled.012",
+        "slot": "mattress"
+       }
+      ]
+     },
+     "states": {
+      "folded": {
+       "carcass": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2180,
+         "height": 1528,
+         "depth": 398
+        }
+       },
+       "body": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2180,
+         "height": 1528,
+         "depth": 398
+        }
+       },
+       "overall": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2180,
+         "height": 1528,
+         "depth": 398
+        }
+       },
+       "extension": null,
+       "triangles": 608
+      },
+      "unfolded": {
+       "carcass": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2180,
+         "height": 1728,
+         "depth": 398
+        }
+       },
+       "body": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2180,
+         "height": 1728,
+         "depth": 398
+        }
+       },
+       "overall": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2180,
+         "height": 1728,
+         "depth": 1661
+        }
+       },
+       "extension": {
+        "min": {
+         "x": 42,
+         "y": 0,
+         "z": 418
+        },
+        "size": {
+         "width": 2075,
+         "height": 448,
+         "depth": 1243
+        }
+       },
+       "triangles": 41390
+      }
+     }
+    },
+    "160x200": {
+     "file": "clickbed-o-classico/160x200.glb",
+     "objects": {
+      "folded": [
+       {
+        "name": "Box021.007_Untitled.013",
+        "slot": "body"
+       },
+       {
+        "name": "Box021.008_Untitled.017",
+        "slot": "body"
+       },
+       {
+        "name": "Box873.004_Untitled.019",
+        "slot": "front"
+       }
+      ],
+      "unfolded": [
+       {
+        "name": "BezierCurve.001_BezierCurve.002",
+        "slot": "hardware"
+       },
+       {
+        "name": "BezierCurve.003_CUBezierCurve.002",
+        "slot": "hardware"
+       },
+       {
+        "name": "Box021.005_Untitled.002",
+        "slot": "body"
+       },
+       {
+        "name": "Box021.006_Untitled.003",
+        "slot": "body"
+       },
+       {
+        "name": "Box1036.002_Untitled.004",
+        "slot": "hardware"
+       },
+       {
+        "name": "Box873.003_Untitled.005",
+        "slot": "front"
+       },
+       {
+        "name": "Box885.002_Untitled.006",
+        "slot": "hardware"
+       },
+       {
+        "name": "Component#4.002",
+        "slot": "hardware"
+       },
+       {
+        "name": "mattress001.002_Untitled.007",
+        "slot": "mattress"
+       },
+       {
+        "name": "Plane.001",
+        "slot": "hardware"
+       },
+       {
+        "name": "Plane.002",
+        "slot": "hardware"
+       }
+      ]
+     },
+     "states": {
+      "folded": {
+       "carcass": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2180,
+         "height": 1728,
+         "depth": 398
+        }
+       },
+       "body": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2180,
+         "height": 1728,
+         "depth": 398
+        }
+       },
+       "overall": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2180,
+         "height": 1728,
+         "depth": 398
+        }
+       },
+       "extension": null,
+       "triangles": 608
+      },
+      "unfolded": {
+       "carcass": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2180,
+         "height": 1728,
+         "depth": 398
+        }
+       },
+       "body": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2180,
+         "height": 1728,
+         "depth": 398
+        }
+       },
+       "overall": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2180,
+         "height": 1728,
+         "depth": 1861
+        }
+       },
+       "extension": {
+        "min": {
+         "x": 42,
+         "y": 0,
+         "z": 418
+        },
+        "size": {
+         "width": 2061,
+         "height": 440,
+         "depth": 1443
+        }
+       },
+       "triangles": 41390
+      }
+     }
+    },
+    "180x200": {
+     "file": "clickbed-o-classico/180x200.glb",
+     "objects": {
+      "folded": [
+       {
+        "name": "Box021.011_Untitled.032",
+        "slot": "body"
+       },
+       {
+        "name": "Box021.012_Untitled.033",
+        "slot": "body"
+       },
+       {
+        "name": "Box873.006_Untitled.034",
+        "slot": "front"
+       }
+      ],
+      "unfolded": [
+       {
+        "name": "BezierCurve.005_BezierCurve.003",
+        "slot": "hardware"
+       },
+       {
+        "name": "BezierCurve.006_CUBezierCurve.003",
+        "slot": "hardware"
+       },
+       {
+        "name": "Box021.009_Untitled.020",
+        "slot": "body"
+       },
+       {
+        "name": "Box021.010_Untitled.021",
+        "slot": "body"
+       },
+       {
+        "name": "Box1036.003_Untitled.022",
+        "slot": "hardware"
+       },
+       {
+        "name": "Box873.005_Untitled.023",
+        "slot": "front"
+       },
+       {
+        "name": "Box885.003_Untitled.024",
+        "slot": "hardware"
+       },
+       {
+        "name": "Component#4.003",
+        "slot": "hardware"
+       },
+       {
+        "name": "mattress001.003_Untitled.025",
+        "slot": "mattress"
+       },
+       {
+        "name": "Plane.003",
+        "slot": "hardware"
+       },
+       {
+        "name": "Plane.004_Plane.005",
+        "slot": "hardware"
+       }
+      ]
+     },
+     "states": {
+      "folded": {
+       "carcass": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2180,
+         "height": 1928,
+         "depth": 398
+        }
+       },
+       "body": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2180,
+         "height": 1928,
+         "depth": 398
+        }
+       },
+       "overall": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2180,
+         "height": 1928,
+         "depth": 398
+        }
+       },
+       "extension": null,
+       "triangles": 608
+      },
+      "unfolded": {
+       "carcass": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2180,
+         "height": 1928,
+         "depth": 398
+        }
+       },
+       "body": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2180,
+         "height": 1928,
+         "depth": 398
+        }
+       },
+       "overall": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2180,
+         "height": 1928,
+         "depth": 2061
+        }
+       },
+       "extension": {
+        "min": {
+         "x": 42,
+         "y": 0,
+         "z": 418
+        },
+        "size": {
+         "width": 2061,
+         "height": 440,
+         "depth": 1643
+        }
+       },
+       "triangles": 41390
+      }
+     }
+    }
+   }
+  },
+  "clickbed-o-desk": {
+   "folder": "16_Click Bed O Desk",
+   "sizes": {
+    "140x200": {
+     "file": "clickbed-o-desk/140x200.glb",
+     "objects": {
+      "folded": [
+       {
+        "name": "Box021.004_Untitled.013",
+        "slot": "body"
+       },
+       {
+        "name": "Box1002.002_Untitled.005",
+        "slot": "hardware"
+       },
+       {
+        "name": "Box1003.003_Untitled.003",
+        "slot": "body"
+       },
+       {
+        "name": "Box873.003_Untitled.002",
+        "slot": "front"
+       },
+       {
+        "name": "k1.002_k1.001",
+        "slot": "hardware"
+       },
+       {
+        "name": "Plane.003_Plane.004",
+        "slot": "hardware"
+       }
+      ],
+      "unfolded": [
+       {
+        "name": "BezierCurve.002_CUBezierCurve.002",
+        "slot": "hardware"
+       },
+       {
+        "name": "Box021.006_Untitled.027",
+        "slot": "body"
+       },
+       {
+        "name": "Box021.008_Untitled.025",
+        "slot": "body"
+       },
+       {
+        "name": "Box1002.003_Untitled.024",
+        "slot": "hardware"
+       },
+       {
+        "name": "Box1003.002_Untitled.023",
+        "slot": "body"
+       },
+       {
+        "name": "Box873.001_Untitled.022",
+        "slot": "front"
+       },
+       {
+        "name": "Box885.002_Untitled.018",
+        "slot": "hardware"
+       },
+       {
+        "name": "Plane.009_Plane.005",
+        "slot": "hardware"
+       }
+      ]
+     },
+     "states": {
+      "folded": {
+       "carcass": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2159,
+         "height": 1500,
+         "depth": 598
+        }
+       },
+       "body": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2159,
+         "height": 1500,
+         "depth": 1099
+        }
+       },
+       "overall": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2159,
+         "height": 1500,
+         "depth": 1099
+        }
+       },
+       "extension": {
+        "min": {
+         "x": 35,
+         "y": 694,
+         "z": 619
+        },
+        "size": {
+         "width": 2089,
+         "height": 455,
+         "depth": 480
+        }
+       },
+       "triangles": 6559
+      },
+      "unfolded": {
+       "carcass": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2174,
+         "height": 1500,
+         "depth": 598
+        }
+       },
+       "body": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2174,
+         "height": 1500,
+         "depth": 1539
+        }
+       },
+       "overall": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2174,
+         "height": 1500,
+         "depth": 1870
+        }
+       },
+       "extension": {
+        "min": {
+         "x": 31,
+         "y": 0,
+         "z": 621
+        },
+        "size": {
+         "width": 2110,
+         "height": 321,
+         "depth": 1249
+        }
+       },
+       "triangles": 12322
+      }
+     }
+    },
+    "160x200": {
+     "file": "clickbed-o-desk/160x200.glb",
+     "objects": {
+      "folded": [
+       {
+        "name": "Box021.003_Untitled.012",
+        "slot": "body"
+       },
+       {
+        "name": "Box1002.004_Untitled.015",
+        "slot": "hardware"
+       },
+       {
+        "name": "Box1003.004_Untitled.017",
+        "slot": "body"
+       },
+       {
+        "name": "Box873.004_Untitled.019",
+        "slot": "front"
+       },
+       {
+        "name": "k1.001_k1.002",
+        "slot": "hardware"
+       },
+       {
+        "name": "Plane.002",
+        "slot": "hardware"
+       }
+      ],
+      "unfolded": [
+       {
+        "name": "BezierCurve.001_CUBezierCurve.001",
+        "slot": "hardware"
+       },
+       {
+        "name": "Box021.001_Untitled.004",
+        "slot": "body"
+       },
+       {
+        "name": "Box021.002_Untitled.006",
+        "slot": "body"
+       },
+       {
+        "name": "Box1002.001_Untitled.007",
+        "slot": "hardware"
+       },
+       {
+        "name": "Box1003.001_Untitled.008",
+        "slot": "body"
+       },
+       {
+        "name": "Box873.002_Untitled.009",
+        "slot": "front"
+       },
+       {
+        "name": "Box885.001_Untitled.010",
+        "slot": "hardware"
+       },
+       {
+        "name": "Plane.001",
+        "slot": "hardware"
+       }
+      ]
+     },
+     "states": {
+      "folded": {
+       "carcass": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2159,
+         "height": 1700,
+         "depth": 598
+        }
+       },
+       "body": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2159,
+         "height": 1700,
+         "depth": 1099
+        }
+       },
+       "overall": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2159,
+         "height": 1700,
+         "depth": 1099
+        }
+       },
+       "extension": {
+        "min": {
+         "x": 35,
+         "y": 694,
+         "z": 619
+        },
+        "size": {
+         "width": 2089,
+         "height": 455,
+         "depth": 480
+        }
+       },
+       "triangles": 6559
+      },
+      "unfolded": {
+       "carcass": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2174,
+         "height": 1700,
+         "depth": 598
+        }
+       },
+       "body": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2174,
+         "height": 1700,
+         "depth": 1539
+        }
+       },
+       "overall": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2174,
+         "height": 1700,
+         "depth": 2070
+        }
+       },
+       "extension": {
+        "min": {
+         "x": 31,
+         "y": 0,
+         "z": 627
+        },
+        "size": {
+         "width": 2110,
+         "height": 321,
+         "depth": 1442
+        }
+       },
+       "triangles": 12322
+      }
+     }
+    },
+    "180x200": {
+     "file": "clickbed-o-desk/180x200.glb",
+     "objects": {
+      "folded": [
+       {
+        "name": "Box021.005_Untitled.020",
+        "slot": "body"
+       },
+       {
+        "name": "Box1002.005_Untitled.028",
+        "slot": "hardware"
+       },
+       {
+        "name": "Box1003.005_Untitled.029",
+        "slot": "body"
+       },
+       {
+        "name": "Box873.005_Untitled.030",
+        "slot": "front"
+       },
+       {
+        "name": "k1.003",
+        "slot": "hardware"
+       },
+       {
+        "name": "Plane.004_Plane.003",
+        "slot": "hardware"
+       }
+      ],
+      "unfolded": [
+       {
+        "name": "BezierCurve.003_CUBezierCurve.003",
+        "slot": "hardware"
+       },
+       {
+        "name": "Box021.007_Untitled.031",
+        "slot": "body"
+       },
+       {
+        "name": "Box021.009_Untitled.032",
+        "slot": "body"
+       },
+       {
+        "name": "Box1002.006_Untitled.033",
+        "slot": "hardware"
+       },
+       {
+        "name": "Box1003.006_Untitled.034",
+        "slot": "body"
+       },
+       {
+        "name": "Box873.006_Untitled.035",
+        "slot": "front"
+       },
+       {
+        "name": "Box885.003_Untitled.036",
+        "slot": "hardware"
+       },
+       {
+        "name": "Plane.005_Plane.006",
+        "slot": "hardware"
+       }
+      ]
+     },
+     "states": {
+      "folded": {
+       "carcass": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2159,
+         "height": 1900,
+         "depth": 598
+        }
+       },
+       "body": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2159,
+         "height": 1900,
+         "depth": 1099
+        }
+       },
+       "overall": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2159,
+         "height": 1900,
+         "depth": 1099
+        }
+       },
+       "extension": {
+        "min": {
+         "x": 35,
+         "y": 694,
+         "z": 619
+        },
+        "size": {
+         "width": 2089,
+         "height": 455,
+         "depth": 480
+        }
+       },
+       "triangles": 6559
+      },
+      "unfolded": {
+       "carcass": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2174,
+         "height": 1900,
+         "depth": 598
+        }
+       },
+       "body": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2174,
+         "height": 1900,
+         "depth": 1539
+        }
+       },
+       "overall": {
+        "min": {
+         "x": 0,
+         "y": 0,
+         "z": 0
+        },
+        "size": {
+         "width": 2174,
+         "height": 1900,
+         "depth": 2270
+        }
+       },
+       "extension": {
+        "min": {
+         "x": 31,
+         "y": 0,
+         "z": 638
+        },
+        "size": {
+         "width": 2110,
+         "height": 321,
+         "depth": 1632
+        }
+       },
+       "triangles": 12322
+      }
+     }
+    }
+   }
+  }
+ }
+}

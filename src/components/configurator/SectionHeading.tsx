@@ -1,4 +1,7 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { useCabinetText, type CabinetMessage } from "@/i18n/cabinet";
 
 /**
  * Shared selection styling: the accent (blue) marks the selected option with a border, a light
@@ -21,12 +24,13 @@ export function SectionHeading({ id, children }: { id: string; children: ReactNo
   );
 }
 
-export function ErrorList({ errors }: { errors: readonly { message: string }[] }) {
+export function ErrorList({ errors }: { errors: readonly CabinetMessage[] }) {
+  const text = useCabinetText();
   if (errors.length === 0) return null;
   return (
     <ul role="alert" className="space-y-1 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
       {errors.map((error, index) => (
-        <li key={index}>{error.message}</li>
+        <li key={index}>{text(error)}</li>
       ))}
     </ul>
   );

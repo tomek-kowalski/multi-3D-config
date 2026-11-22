@@ -15,10 +15,12 @@ import { SectionHeading } from "./SectionHeading";
 import { StructurePanel } from "./StructurePanel";
 import { AttachmentsPanel } from "./AttachmentsPanel";
 import { usePreviewStore } from "@/store/usePreviewStore";
+import { useT } from "@/i18n";
 
-function CabinetSummary() {
+export function CabinetSummary() {
+  const t = useT();
   const configuration = useConfiguratorStore((state) => state.configuration);
-  const { width, height, depth, panelThickness: t, backPanel, plinth } = configuration;
+  const { width, height, depth, panelThickness: thickness, backPanel, plinth } = configuration;
   const material = getMaterial(configuration.materials.body);
   const partCount = useMemo(() => buildCabinet(configuration).length, [configuration]);
   const doorLeaves = configuration.attachments.reduce(
@@ -29,29 +31,29 @@ function CabinetSummary() {
   const interior = getInteriorBounds(configuration).dimensions;
 
   const rows: readonly [string, string][] = [
-    ["Wymiary zewnętrzne", `${width} × ${height} × ${depth} mm`],
-    ["Wnętrze", `${formatMm(interior.width)} × ${formatMm(interior.height)} × ${formatMm(interior.depth)} mm`],
-    ["Przedziały", String(getLeafCompartments(configuration.compartments).length)],
-    ["Plecy", backPanel.enabled ? `${backPanel.thickness} mm` : "Brak"],
-    ["Cokół", plinth.enabled ? `${plinth.height} mm, cofnięcie ${plinth.setback} mm` : "Brak"],
-    ["Skrzydła drzwi", String(doorLeaves)],
-    ["Szuflady", String(drawerCount)],
-    ["Elementy", `${partCount} (płyty ${t} mm)`],
+    [t("cab.sumOuter"), `${width} × ${height} × ${depth} mm`],
+    [t("cab.sumInterior"), `${formatMm(interior.width)} × ${formatMm(interior.height)} × ${formatMm(interior.depth)} mm`],
+    [t("cab.compartments"), String(getLeafCompartments(configuration.compartments).length)],
+    [t("cab.backPanel"), backPanel.enabled ? `${backPanel.thickness} mm` : t("cab.none")],
+    [t("cab.plinth"), plinth.enabled ? t("cab.sumPlinth", { height: plinth.height, setback: plinth.setback }) : t("cab.none")],
+    [t("cab.sumDoorLeaves"), String(doorLeaves)],
+    [t("cab.sumDrawers"), String(drawerCount)],
+    [t("cab.sumParts"), t("cab.sumPartsValue", { count: partCount, thickness })],
   ];
 
   return (
     <section aria-labelledby="summary-heading" className="space-y-3">
-      <SectionHeading id="summary-heading">Podsumowanie</SectionHeading>
+      <SectionHeading id="summary-heading">{t("cab.summary")}</SectionHeading>
       <dl className="divide-y divide-stone-200 rounded-lg border border-stone-200 bg-stone-50 text-sm">
         <div className="flex items-center justify-between gap-4 px-3 py-2">
-          <dt className="text-stone-500">Wykończenie korpusu</dt>
+          <dt className="text-stone-500">{t("materialSlot.body")}</dt>
           <dd className="flex items-center gap-2 font-medium text-stone-800">
             <span
               className="size-3.5 rounded-full border border-black/10"
               style={{ backgroundColor: material.color }}
               aria-hidden="true"
             />
-            {material.name}
+            {t(`material.${material.id}`)}
           </dd>
         </div>
         {rows.map(([label, value]) => (
@@ -66,6 +68,7 @@ function CabinetSummary() {
 }
 
 export function ConfiguratorSidebar() {
+  const t = useT();
   const resetConfiguration = useConfiguratorStore((state) => state.reset);
   const closeAll = usePreviewStore((state) => state.closeAll);
   const reset = () => {
@@ -77,8 +80,8 @@ export function ConfiguratorSidebar() {
     // Mobile: anything scrolled into view (focus, keyboard navigation) stops below the pinned 3D viewer.
     <aside className="flex w-full flex-col border-t border-stone-200 bg-white [&_*]:scroll-mt-[calc(max(45svh,16rem)+1rem)] lg:h-full lg:w-[380px] lg:shrink-0 lg:border-l lg:border-t-0 lg:[&_*]:scroll-mt-0">
       <header className="border-b border-stone-200 px-6 py-5">
-        <p className="text-xs font-medium uppercase tracking-[0.12em] text-stone-500">Konfigurator</p>
-        <h1 className="mt-1 text-xl font-semibold tracking-tight text-stone-900">Szafka modułowa</h1>
+        <p className="text-xs font-medium uppercase tracking-[0.12em] text-stone-500">{t("cab.kicker")}</p>
+        <h1 className="mt-1 text-xl font-semibold tracking-tight text-stone-900">{t("furniture.cabinet")}</h1>
       </header>
 
       <div className="flex-1 space-y-8 px-6 py-6 lg:overflow-y-auto">
@@ -97,7 +100,7 @@ export function ConfiguratorSidebar() {
           onClick={reset}
           className="w-full rounded-lg border border-stone-300 px-4 py-2.5 text-sm font-medium text-stone-800 transition-colors hover:bg-stone-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-800"
         >
-          Przywróć domyślne
+          {t("cab.resetDefaults")}
         </button>
       </footer>
     </aside>

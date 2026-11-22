@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { useConfiguratorStore, type RejectionSource } from "@/store/useConfiguratorStore";
 import { NumericFieldControl } from "./DimensionField";
+import { useT } from "@/i18n";
 import { ErrorList, SectionHeading } from "./SectionHeading";
 
 interface ComponentToggleProps {
@@ -43,6 +44,7 @@ function ComponentToggle({ id, label, description, checked, onChange, source, ch
 }
 
 export function ConstructionPanel() {
+  const t = useT();
   const backPanelEnabled = useConfiguratorStore((state) => state.configuration.backPanel.enabled);
   const plinthEnabled = useConfiguratorStore((state) => state.configuration.plinth.enabled);
   const setBackPanelEnabled = useConfiguratorStore((state) => state.setBackPanelEnabled);
@@ -50,29 +52,29 @@ export function ConstructionPanel() {
 
   return (
     <section aria-labelledby="construction-heading" className="space-y-4">
-      <SectionHeading id="construction-heading">Konstrukcja</SectionHeading>
+      <SectionHeading id="construction-heading">{t("cab.construction")}</SectionHeading>
 
       <ComponentToggle
         id="toggle-back-panel"
-        label="Plecy"
-        description="Wpuszczane między boki oraz wieniec górny i dolny."
+        label={t("cab.backPanel")}
+        description={t("cab.backPanelDescription")}
         checked={backPanelEnabled}
         onChange={setBackPanelEnabled}
         source="backPanel"
       >
-        <NumericFieldControl field="backPanel.thickness" label="Grubość pleców" sliderStep={1} />
+        <NumericFieldControl field="backPanel.thickness" label={t("cabinetField.backPanel.thickness")} sliderStep={1} />
       </ComponentToggle>
 
       <ComponentToggle
         id="toggle-plinth"
-        label="Cokół"
-        description="Podstawa pod korpusem; wliczona w wysokość całkowitą."
+        label={t("cab.plinth")}
+        description={t("cab.plinthDescription")}
         checked={plinthEnabled}
         onChange={setPlinthEnabled}
         source="plinth"
       >
-        <NumericFieldControl field="plinth.height" label="Wysokość cokołu" sliderStep={5} />
-        <NumericFieldControl field="plinth.setback" label="Cofnięcie cokołu" sliderStep={5} />
+        <NumericFieldControl field="plinth.height" label={t("cabinetField.plinth.height")} sliderStep={5} />
+        <NumericFieldControl field="plinth.setback" label={t("cabinetField.plinth.setback")} sliderStep={5} />
       </ComponentToggle>
     </section>
   );
