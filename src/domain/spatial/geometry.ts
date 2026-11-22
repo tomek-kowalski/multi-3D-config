@@ -43,7 +43,10 @@ export interface PlacedBox {
   readonly yMax: Millimeters;
 }
 
-/** Overlaps smaller than this are treated as touching (adjacent furniture, flush against a wall). */
+/**
+ * Module-to-module overlaps smaller than this are treated as touching (adjacent furniture). Walls use
+ * the stricter rules of src/domain/arrangement/wallContact.ts.
+ */
 export const CONTACT_TOLERANCE_MM = 0.5;
 
 export function normalizeRotation(deg: number): number {
@@ -147,20 +150,6 @@ export function boxesIntersect(a: PlacedBox, b: PlacedBox, tolerance = CONTACT_T
     if (Math.min(aMax, bMax) - Math.max(aMin, bMin) <= tolerance) return false;
   }
   return true;
-}
-
-export interface RoomExtent {
-  readonly width: Millimeters;
-  readonly depth: Millimeters;
-  readonly height: Millimeters;
-}
-
-/** Whether the box lies inside the room volume (touching the walls, floor or ceiling is allowed). */
-export function boxInsideRoom(box: PlacedBox, room: RoomExtent, tolerance = CONTACT_TOLERANCE_MM): boolean {
-  if (box.yMin < -tolerance || box.yMax > room.height + tolerance) return false;
-  return box.corners.every(
-    (c) => c.x >= -tolerance && c.x <= room.width + tolerance && c.z >= -tolerance && c.z <= room.depth + tolerance,
-  );
 }
 
 /** Axis-aligned plan bounds of a placed box. */

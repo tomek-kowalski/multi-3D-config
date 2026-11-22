@@ -1,8 +1,9 @@
 import type { ModuleId, ModuleInstance } from "../modules/types";
 import { openingKeepFreeBox } from "../room/geometry";
 import type { RoomConfiguration } from "../room/types";
-import { boxesIntersect, boxInsideRoom, type PlacedBox } from "../spatial/geometry";
+import { boxesIntersect, type PlacedBox } from "../spatial/geometry";
 import { placedCollisionBoxes, placedOperationEnvelope } from "./spatial";
+import { insideRoom, meetsWallMounting } from "./wallContact";
 import type { Arrangement } from "./types";
 
 /**
@@ -14,7 +15,9 @@ export type CollisionPhase = "static" | "operation";
 export type CollisionIssue =
   | { readonly kind: "outside-room"; readonly moduleId: ModuleId; readonly phase: CollisionPhase }
   | { readonly kind: "module"; readonly moduleId: ModuleId; readonly otherId: ModuleId; readonly phase: CollisionPhase }
-  | { readonly kind: "opening"; readonly moduleId: ModuleId; readonly openingId: string; readonly phase: CollisionPhase };
+  | { readonly kind: "opening"; readonly moduleId: ModuleId; readonly openingId: string; readonly phase: CollisionPhase }
+  /** The product must be fixed to a wall, but its back does not stand against one. */
+  | { readonly kind: "wall-mounting"; readonly moduleId: ModuleId; readonly phase: "static" };
 
 const any = (a: readonly PlacedBox[], b: readonly PlacedBox[]) => a.some((x) => b.some((y) => boxesIntersect(x, y)));
 
@@ -42,10 +45,11 @@ export function detectCollisions(arrangement: Arrangement): CollisionIssue[] {
   const issues: CollisionIssue[] = [];
 
   for (const { module, boxes, envelope } of volumes) {
-    const inside = (b: PlacedBox) => boxInsideRoom(b, room);
-    const staticOutside = !boxes.every(inside);
+    // Wall penetration and room containment use the shared wall-contact geometry (src/domain/arrangement/wallContact.ts).
+    const staticOutside = !insideRoom(room, boxes);
     if (staticOutside) issues.push({ kind: "outside-room", moduleId: module.id, phase: "static" });
-    else if (!envelope.every(inside)) issues.push({ kind: "outside-room", moduleId: module.id, phase: "operation" });
+    else if (!insideRoom(room, envelope)) issues.push({ kind: "outside-room", moduleId: module.id, phase: "operation" });
+    if (!staticOutside && !meetsWallMounting(room, module)) issues.push({ kind: "wall-mounting", moduleId: module.id, phase: "static" });
 
     for (const opening of openingBoxes) {
       if (any(boxes, [opening.box])) issues.push({ kind: "opening", moduleId: module.id, openingId: opening.id, phase: "static" });
@@ -76,7 +80,7 @@ export function detectCollisions(arrangement: Arrangement): CollisionIssue[] {
 /** Whether a candidate module fits: inside the room and clear of the other modules (static volumes). */
 export function fitsAt(room: RoomConfiguration, others: readonly ModuleInstance[], candidate: ModuleInstance): boolean {
   const boxes = placedCollisionBoxes(candidate);
-  if (!boxes.every((b) => boxInsideRoom(b, room))) return false;
+  if (!insideRoom(room, boxes)) return false;
   return others.every((o) => o.id === candidate.id || !any(boxes, placedCollisionBoxes(o)));
 }
 

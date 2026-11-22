@@ -95,9 +95,12 @@ export const DECORS_WITHOUT_SWATCH: readonly string[] = OPTIONS.missingSwatches;
 
 /** The three ClickBed products: furniture type ↔ WooCommerce product ↔ supplied 3D asset folder. */
 export const BED_PRODUCTS = [
-  { typeId: "clickbed-o", nameKey: "furniture.clickbedO", productId: 4000, hasDesk: false },
-  { typeId: "clickbed-o-classico", nameKey: "furniture.clickbedOClassico", productId: 10759, hasDesk: false },
-  { typeId: "clickbed-o-desk", nameKey: "furniture.clickbedODesk", productId: 4184, hasDesk: true },
+  // `wallMountingSource`: where the "must be fixed to the wall" requirement is published. The spec sheets
+  // of O Classico and O Desk state "PRODUKT WYMAGA TRWAŁEGO MONTAŻU DO ŚCIANY!"; no such statement was
+  // found for ClickBed O (no spec sheet supplied, not on its product page), so none is assumed.
+  { typeId: "clickbed-o", nameKey: "furniture.clickbedO", productId: 4000, hasDesk: false, wallMountingSource: null },
+  { typeId: "clickbed-o-classico", nameKey: "furniture.clickbedOClassico", productId: 10759, hasDesk: false, wallMountingSource: "lib/furniture-spec/Clickbed O Classico.pdf" },
+  { typeId: "clickbed-o-desk", nameKey: "furniture.clickbedODesk", productId: 4184, hasDesk: true, wallMountingSource: "lib/furniture-spec/Clickbed O Desk.pdf" },
 ] as const;
 
 export type BedTypeId = (typeof BED_PRODUCTS)[number]["typeId"];

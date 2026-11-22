@@ -12,6 +12,7 @@ import { useConfiguratorStore } from "@/store/useConfiguratorStore";
 import { frameBox } from "./cameraFraming";
 import { ModuleObject } from "./modules/ModuleObject";
 import { RoomModel } from "./room/RoomModel";
+import { WallLabelProjector } from "./room/WallLabels";
 import { mmToM } from "./units";
 
 type OrbitControlsImpl = ComponentRef<typeof OrbitControls>;
@@ -114,6 +115,7 @@ export function RoomCanvas() {
       <directionalLight position={[4, 8, 6]} intensity={2.2} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004} shadow-normalBias={0.02} shadow-camera-left={-8} shadow-camera-right={8} shadow-camera-top={8} shadow-camera-bottom={-8} shadow-camera-far={30} />
       <directionalLight position={[-4, 5, -3]} intensity={0.6} />
       <RoomModel />
+      <WallLabelProjector />
       <ModulesLayer />
       <RoomCameraRig />
     </Canvas>

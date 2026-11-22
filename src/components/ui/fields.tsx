@@ -4,6 +4,7 @@ import { useId, useState, type ReactNode } from "react";
 import type { Issue } from "@/domain/shared/issues";
 import { formatIssue, useT } from "@/i18n";
 import { CheckIcon } from "@/components/configurator/SectionHeading";
+import { canStep, StepButton, stepValue } from "./stepper";
 
 export const buttonClass =
   "rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-800 transition-colors hover:bg-stone-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-800 disabled:cursor-not-allowed disabled:opacity-50";
@@ -25,8 +26,9 @@ export function IssueList({ issues }: { issues: readonly Issue[] }) {
 }
 
 /**
- * Whole-millimetre number input. The text is kept locally while typing and committed on Enter or
- * blur; a rejected value stays visible with its error until corrected (nothing is clamped).
+ * Whole-millimetre number input with − / + buttons. The text is kept locally while typing and
+ * committed on Enter or blur; a rejected value stays visible with its error until corrected (typed
+ * values are never clamped). The buttons step by `buttonStep` within [min, max] and commit at once.
  */
 export function MmField({
   label,
@@ -35,6 +37,9 @@ export function MmField({
   unit = "mm",
   hint,
   step = 1,
+  buttonStep = 1,
+  min,
+  max,
 }: {
   label: string;
   value: number;
@@ -42,7 +47,12 @@ export function MmField({
   onCommit: (value: number) => readonly Issue[];
   unit?: string;
   hint?: string;
+  /** Precision accepted by the input. */
   step?: number;
+  /** Increment of the − / + buttons. */
+  buttonStep?: number;
+  min?: number;
+  max?: number;
 }) {
   const id = useId();
   const [text, setText] = useState(String(value));
@@ -62,6 +72,18 @@ export function MmField({
     setIssues(onCommit(parsed));
   };
   const invalid = issues.length > 0;
+  const typed = text.trim() === "" ? Number.NaN : Number(text.replace(",", "."));
+  const current = Number.isFinite(typed) ? typed : value;
+  const stepOptions = { step: buttonStep, min, max };
+  const stepBy = (direction: 1 | -1) => {
+    const next = stepValue(current, direction, stepOptions);
+    setText(String(next));
+    if (Object.is(next, value)) {
+      setIssues([]);
+      return;
+    }
+    setIssues(onCommit(next));
+  };
   return (
     <div className="space-y-1.5">
       <div className="flex items-baseline justify-between gap-2">
@@ -75,11 +97,14 @@ export function MmField({
           invalid ? "border-red-400 focus-within:ring-red-200" : "border-stone-300 focus-within:border-stone-500 focus-within:ring-stone-200"
         }`}
       >
+        <StepButton direction={-1} label={label} disabled={!canStep(current, -1, stepOptions)} onStep={() => stepBy(-1)} />
         <input
           id={id}
           type="number"
           inputMode="numeric"
           step={step}
+          min={min}
+          max={max}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onBlur={commit}
@@ -91,11 +116,12 @@ export function MmField({
             }
           }}
           aria-invalid={invalid}
-          className="w-full min-w-0 bg-transparent px-3 py-2 text-sm tabular-nums text-stone-900 outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          className="w-full min-w-0 bg-transparent px-2 py-2 text-sm tabular-nums text-stone-900 outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
         />
-        <span className="select-none pr-3 text-xs text-stone-500" aria-hidden="true">
+        <span className="select-none pr-2 text-xs text-stone-500" aria-hidden="true">
           {unit}
         </span>
+        <StepButton direction={1} label={label} disabled={!canStep(current, 1, stepOptions)} onStep={() => stepBy(1)} />
       </div>
       <IssueList issues={issues} />
     </div>

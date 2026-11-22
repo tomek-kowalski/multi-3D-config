@@ -58,6 +58,12 @@ export interface FurnitureTypeDefinition<C = unknown> {
   productReference(configuration: C): ProductReference;
   /** WooCommerce line items that order this one module. */
   orderItems(configuration: C): Result<readonly WooLineItem[]>;
+  /**
+   * Set when the product must be fixed to a wall: its back face (local z = 0) has to stand against a
+   * wall within WALL_CONTACT_TOLERANCE_MM (src/domain/arrangement/wallContact.ts). `source` names the
+   * product information the requirement comes from.
+   */
+  readonly wallMounting?: { readonly face: "back"; readonly source: string };
   summary(configuration: C): readonly ConfigurationSummaryRow[];
 }
 

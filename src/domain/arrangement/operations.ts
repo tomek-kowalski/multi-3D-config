@@ -1,11 +1,12 @@
 import { getFurnitureType } from "../modules/registry";
 import type { FurnitureTypeId, ModuleId, ModuleInstance, OperationalStateId } from "../modules/types";
 import { wallFrame } from "../room/geometry";
-import type { RoomConfiguration, WallId } from "../room/types";
+import { WALL_IDS, type RoomConfiguration, type WallId } from "../room/types";
 import { fail, ok, type Result } from "../shared/issues";
 import { localAxes, localToRoom, normalizeRotation, type Placement } from "../spatial/geometry";
 import { fitsAt } from "./collisions";
-import { moduleFootprint } from "./spatial";
+import { moduleFootprint, placedCollisionBoxes } from "./spatial";
+import { GEOMETRY_EPSILON_MM, signedClearance } from "./wallContact";
 import type { Arrangement, Side } from "./types";
 
 /**
@@ -48,6 +49,26 @@ function roundPlacement(p: Placement): Placement {
   return { x: roundMm(p.x), y: roundMm(p.y), z: roundMm(p.z), rotationDeg: normalizeRotation(Math.round(p.rotationDeg * 10) / 10) };
 }
 
+/**
+ * Positions are whole millimetres, so a computed position (wall snap, auto-placement) can round half
+ * a millimetre into a wall when the footprint has an odd size. This moves such a placement back by
+ * whole millimetres along the wall's inward normal (walls are axis-aligned), so it touches instead of
+ * penetrating. It never applies to positions the customer typed or dragged (no automatic snapping).
+ */
+function keepOutOfWalls(room: RoomConfiguration, instance: ModuleInstance): Placement {
+  let { x, z } = instance.placement;
+  for (const wall of WALL_IDS) {
+    const frame = wallFrame(room, wall);
+    const clearance = signedClearance(placedCollisionBoxes({ ...instance, placement: { ...instance.placement, x, z } }), frame);
+    if (clearance < -GEOMETRY_EPSILON_MM && clearance > -1) {
+      const shift = Math.ceil(-clearance - GEOMETRY_EPSILON_MM);
+      x += frame.inward.x * shift;
+      z += frame.inward.z * shift;
+    }
+  }
+  return { ...instance.placement, x, z };
+}
+
 /** Rotation that puts a module's back against the given wall, facing into the room. */
 export const WALL_ROTATION: Readonly<Record<WallId, number>> = { back: 0, left: 90, front: 180, right: 270 };
 
@@ -62,12 +83,13 @@ function findFreePlacement(arrangement: Arrangement, probe: ModuleInstance): Pla
   for (const wall of ["back", "left", "right", "front"] as WallId[]) {
     const frame = wallFrame(room, wall);
     for (let along = fp.width / 2; along <= frame.length - fp.width / 2; along += STEP) {
-      const placement = roundPlacement({
+      const rounded = roundPlacement({
         x: frame.origin.x + frame.along.x * along + frame.inward.x * (fp.depth / 2),
         y: 0,
         z: frame.origin.z + frame.along.z * along + frame.inward.z * (fp.depth / 2),
         rotationDeg: WALL_ROTATION[wall],
       });
+      const placement = keepOutOfWalls(room, { ...probe, placement: rounded });
       if (fitsAt(room, arrangement.modules, { ...probe, placement })) return placement;
     }
   }
@@ -130,11 +152,14 @@ export function snapToWall(arrangement: Arrangement, id: ModuleId, wall: WallId)
   const along =
     (instance.placement.x - frame.origin.x) * frame.along.x + (instance.placement.z - frame.origin.z) * frame.along.z;
   const clamped = Math.min(Math.max(along, fp.width / 2), Math.max(fp.width / 2, frame.length - fp.width / 2));
-  return setPlacement(arrangement, id, {
-    x: roundMm(frame.origin.x + frame.along.x * clamped + frame.inward.x * (fp.depth / 2)),
-    z: roundMm(frame.origin.z + frame.along.z * clamped + frame.inward.z * (fp.depth / 2)),
+  const rounded = roundPlacement({
+    ...instance.placement,
+    x: frame.origin.x + frame.along.x * clamped + frame.inward.x * (fp.depth / 2),
+    z: frame.origin.z + frame.along.z * clamped + frame.inward.z * (fp.depth / 2),
     rotationDeg: WALL_ROTATION[wall],
   });
+  const { x, z, rotationDeg } = keepOutOfWalls(room, { ...instance, placement: rounded });
+  return setPlacement(arrangement, id, { x, z, rotationDeg });
 }
 
 /**

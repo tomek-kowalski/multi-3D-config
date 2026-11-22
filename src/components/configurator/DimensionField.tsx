@@ -7,6 +7,7 @@ import type { DimensionRange, NumericField } from "@/domain/furniture/types";
 import { useConfiguratorStore } from "@/store/useConfiguratorStore";
 import { useT } from "@/i18n";
 import { useCabinetText } from "@/i18n/cabinet";
+import { canStep, StepButton, stepValue } from "@/components/ui/stepper";
 
 interface DimensionFieldProps<F extends string> {
   /** Identifies the value; also used to derive the input id. */
@@ -81,6 +82,12 @@ export function DimensionField<F extends string>({
             : "border-stone-300 focus-within:border-stone-500 focus-within:ring-stone-200"
         }`}
       >
+        <StepButton
+          direction={-1}
+          label={label}
+          disabled={!canStep(value, -1, { min: range.min, max: range.max })}
+          onStep={() => onChange(field, stepValue(value, -1, { step: inputStep, min: range.min, max: range.max }))}
+        />
         <input
           id={inputId}
           type="number"
@@ -97,9 +104,15 @@ export function DimensionField<F extends string>({
           aria-describedby={invalid ? `${hintId} ${errorId}` : hintId}
           className="w-full min-w-0 bg-transparent px-3 py-2 text-base tabular-nums text-stone-900 outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
         />
-        <span className="select-none pr-3 text-sm text-stone-500" aria-hidden="true">
+        <span className="select-none pr-2 text-sm text-stone-500" aria-hidden="true">
           {unit}
         </span>
+        <StepButton
+          direction={1}
+          label={label}
+          disabled={!canStep(value, 1, { min: range.min, max: range.max })}
+          onStep={() => onChange(field, stepValue(value, 1, { step: inputStep, min: range.min, max: range.max }))}
+        />
       </div>
 
       <input

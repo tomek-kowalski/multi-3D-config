@@ -7,6 +7,9 @@ import type { Millimeters } from "../furniture/types";
 export const WALL_IDS = ["back", "right", "front", "left"] as const;
 export type WallId = (typeof WALL_IDS)[number];
 
+/** Short wall identifiers shown in the menus, on the walls in 3D and in wall-contact messages. */
+export const WALL_LETTERS: Readonly<Record<WallId, string>> = { back: "A", right: "B", front: "C", left: "D" };
+
 export type HexColor = `#${string}`;
 
 export type OpeningKind = "window" | "door";

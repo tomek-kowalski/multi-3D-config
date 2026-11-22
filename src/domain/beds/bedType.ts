@@ -138,6 +138,7 @@ export function createBedType(product: (typeof BED_PRODUCTS)[number]): Furniture
   return {
     id: product.typeId,
     geometrySource: "imported",
+    ...(product.wallMountingSource ? { wallMounting: { face: "back" as const, source: product.wallMountingSource } } : {}),
     nameKey: product.nameKey,
     createDefault: () => defaultConfiguration(options),
     footprint: (c) => volumes(c).footprint,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { boxesIntersect, boxInsideRoom, localAxes, localToRoom, placeBox, roomBox, roomToLocal } from "./geometry";
+import { boxesIntersect, localAxes, localToRoom, placeBox, roomBox, roomToLocal } from "./geometry";
 
 describe("module frame", () => {
   it("maps local axes for the four wall orientations", () => {
@@ -47,10 +47,4 @@ describe("intersection", () => {
     expect(boxesIntersect(diagonal, roomBox(-50, 50, -50, 50, 0, 10))).toBe(true);
   });
 
-  it("checks containment in the room volume", () => {
-    const room = { width: 3000, depth: 3000, height: 2500 };
-    expect(boxInsideRoom(roomBox(0, 3000, 0, 500, 0, 2500), room)).toBe(true);
-    expect(boxInsideRoom(roomBox(-10, 500, 0, 500, 0, 100), room)).toBe(false);
-    expect(boxInsideRoom(roomBox(0, 500, 0, 500, 0, 2600), room)).toBe(false);
-  });
 });

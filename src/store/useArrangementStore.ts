@@ -24,6 +24,8 @@ export interface ArrangementState {
   readonly arrangement: Arrangement;
   readonly selectedModuleId: ModuleId | null;
   readonly selectedOpeningId: string | null;
+  /** The wall the customer is working on; highlighted in the 3D view. */
+  readonly activeWall: WallId;
   readonly activeMenu: MenuId;
   readonly viewRequest: ViewRequest | null;
   /** True once the saved arrangement (if any) was loaded on the client. */
@@ -36,6 +38,7 @@ export interface ArrangementState {
   updateOpening: (id: string, patch: roomOps.OpeningPatch) => ActionResult;
   removeOpening: (id: string) => ActionResult;
   selectOpening: (id: string | null) => void;
+  setActiveWall: (wall: WallId) => void;
 
   addModule: (typeId: FurnitureTypeId) => ActionResult;
   addModuleNextTo: (typeId: FurnitureTypeId, side: Side) => ActionResult;
@@ -81,6 +84,7 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
     arrangement: INITIAL_ARRANGEMENT,
     selectedModuleId: null,
     selectedOpeningId: null,
+    activeWall: "back",
     activeMenu: "space",
     viewRequest: null,
     hydrated: false,
@@ -91,16 +95,26 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
     addOpening: (kind, wall) => {
       const result = roomOps.addOpening(get().arrangement.room, kind, wall);
       if (!result.ok) return { ok: false, issues: result.issues };
-      set({ arrangement: ops.setRoom(get().arrangement, result.value.room), selectedOpeningId: result.value.id });
+      set({ arrangement: ops.setRoom(get().arrangement, result.value.room), selectedOpeningId: result.value.id, activeWall: wall });
       return OK;
     },
-    updateOpening: (id, patch) => applyRoom(roomOps.updateOpening(get().arrangement.room, id, patch)),
+    updateOpening: (id, patch) => {
+      const result = applyRoom(roomOps.updateOpening(get().arrangement.room, id, patch));
+      if (result.ok && patch.wall) set({ activeWall: patch.wall });
+      return result;
+    },
     removeOpening: (id) => {
       const result = applyRoom(roomOps.removeOpening(get().arrangement.room, id));
       if (result.ok && get().selectedOpeningId === id) set({ selectedOpeningId: null });
       return result;
     },
-    selectOpening: (id) => set({ selectedOpeningId: id }),
+    selectOpening: (id) => {
+      const opening = id === null ? undefined : get().arrangement.room.openings.find((o) => o.id === id);
+      set({ selectedOpeningId: id, ...(opening ? { activeWall: opening.wall } : {}) });
+    },
+    setActiveWall: (wall) => {
+      if (get().activeWall !== wall) set({ activeWall: wall });
+    },
 
     addModule: (typeId) => apply(ops.addModule(get().arrangement, typeId), selectAdded),
     addModuleNextTo: (typeId, side) => {
@@ -117,7 +131,7 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
       apply(ops.removeModule(get().arrangement, id), () => (get().selectedModuleId === id ? { selectedModuleId: null } : {})),
     setPlacement: (id, patch) => apply(ops.setPlacement(get().arrangement, id, patch)),
     rotateModule: (id, delta) => apply(ops.rotateModule(get().arrangement, id, delta)),
-    snapToWall: (id, wall) => apply(ops.snapToWall(get().arrangement, id, wall)),
+    snapToWall: (id, wall) => apply(ops.snapToWall(get().arrangement, id, wall), () => ({ activeWall: wall })),
     setModuleState: (id, state) => apply(ops.setModuleState(get().arrangement, id, state)),
     updateModuleConfiguration: (id, configuration) => apply(ops.updateModuleConfiguration(get().arrangement, id, configuration)),
     selectModule: (id) => {
@@ -135,7 +149,7 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
       return OK;
     },
     exportJson: () => exportArrangementJson(get().arrangement),
-    reset: () => set({ arrangement: INITIAL_ARRANGEMENT, selectedModuleId: null, selectedOpeningId: null }),
+    reset: () => set({ arrangement: INITIAL_ARRANGEMENT, selectedModuleId: null, selectedOpeningId: null, activeWall: "back" }),
 
     hydrate: () => {
       if (get().hydrated) return;

@@ -27,6 +27,7 @@ import type { CabinetConfiguration } from "@/domain/furniture/types";
 import { useConfiguratorStore } from "@/store/useConfiguratorStore";
 import { useT, type Translate } from "@/i18n";
 import { useCabinetText, type CabinetMessage } from "@/i18n/cabinet";
+import { canStep, StepButton, stepValue } from "@/components/ui/stepper";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { CheckIcon, ErrorList, SectionHeading } from "./SectionHeading";
 
@@ -285,11 +286,14 @@ function ExactSizeInput({
   id,
   label,
   value,
+  range,
   onCommit,
 }: {
   id: string;
   label: string;
   value: number;
+  /** Allowed size from the complete validation; the − / + buttons stay within it. */
+  range: { min: number; max: number } | null;
   onCommit: (size: number) => CommitResult;
 }) {
   const shown = formatMm(value).replace(",", ".");
@@ -310,12 +314,22 @@ function ExactSizeInput({
     const result = onCommit(size);
     setErrors(result.ok ? [] : result.errors);
   };
+  const stepOptions = { step: 1, min: range ? Math.ceil(range.min) : undefined, max: range ? Math.floor(range.max) : undefined };
+  const typed = Number(text);
+  const current = text.trim() !== "" && Number.isFinite(typed) ? typed : value;
+  const stepBy = (direction: 1 | -1) => {
+    const next = stepValue(current, direction, stepOptions);
+    setText(String(next));
+    const result = onCommit(next);
+    setErrors(result.ok ? [] : result.errors);
+  };
   return (
     <div className="space-y-1">
       <label htmlFor={id} className="text-xs text-stone-600">
         {label}
       </label>
       <div className="flex items-center rounded-md border border-stone-300 bg-white focus-within:ring-2 focus-within:ring-stone-200">
+        <StepButton direction={-1} label={label} disabled={!canStep(current, -1, stepOptions)} onStep={() => stepBy(-1)} />
         <input
           id={id}
           type="number"
@@ -330,9 +344,10 @@ function ExactSizeInput({
           aria-invalid={errors.length > 0}
           className="w-full min-w-0 bg-transparent px-2 py-1 text-sm tabular-nums outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
         />
-        <span className="pr-2 text-xs text-stone-500" aria-hidden="true">
+        <span className="pr-1 text-xs text-stone-500" aria-hidden="true">
           mm
         </span>
+        <StepButton direction={1} label={label} disabled={!canStep(current, 1, stepOptions)} onStep={() => stepBy(1)} />
       </div>
       <ErrorList errors={errors} />
     </div>
@@ -388,12 +403,14 @@ function SplitControls({ owner, ownerLocation, isOwnSplit, layout, panelThicknes
           id={`${sliderId}-first`}
           label={t("cab.exact", { part: labels.parts[0] })}
           value={first}
+          range={sizeRange}
           onCommit={(size) => onRatio(ratioForFirstSize({ usable }, size))}
         />
         <ExactSizeInput
           id={`${sliderId}-second`}
           label={t("cab.exact", { part: labels.parts[1] })}
           value={usable - first}
+          range={sizeRange ? { min: usable - sizeRange.max, max: usable - sizeRange.min } : null}
           onCommit={(size) => onRatio(ratioForFirstSize({ usable }, usable - size))}
         />
       </div>

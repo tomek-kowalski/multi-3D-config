@@ -6,7 +6,14 @@ import { detectCollisions, issuesForModule, type CollisionIssue } from "@/domain
 import { moduleFootprint } from "@/domain/arrangement/spatial";
 import { getFurnitureType, listFurnitureTypes } from "@/domain/modules/registry";
 import type { ModuleInstance } from "@/domain/modules/types";
-import { WALL_IDS } from "@/domain/room/types";
+import { WALL_IDS, WALL_LETTERS } from "@/domain/room/types";
+import {
+  backWallContact,
+  moduleWallRelations,
+  reportedWallRelations,
+  wallContactDisplay,
+  type WallRelation,
+} from "@/domain/arrangement/wallContact";
 import type { Issue } from "@/domain/shared/issues";
 import { isMessageKey, useT, type Translate } from "@/i18n";
 import { downloadJson } from "@/services/woocommerce";
@@ -38,7 +45,53 @@ export function describeCollision(t: Translate, issue: CollisionIssue, modules: 
       const otherModule = modules.find((m) => m.id === other);
       return t("collision.module", { module: selfId ?? issue.moduleId, other: otherModule ? `${typeName(t, otherModule.typeId)} (${other})` : other }) + phase;
     }
+    case "wall-mounting":
+      return t("collision.wallMounting", { module: issue.moduleId });
   }
+}
+
+/** Localized line for a wall relation, from the shared display rules (src/domain/arrangement/wallContact.ts). */
+export function wallRelationText(t: Translate, relation: WallRelation): string {
+  const display = wallContactDisplay(relation);
+  const params = { wall: display.wallLetter, distance: display.distanceText };
+  return display.kind === "collision"
+    ? t("wallContact.collision", params)
+    : display.kind === "contact"
+      ? t("wallContact.contact", params)
+      : t("wallContact.distance", params);
+}
+
+/** Measured clearance to the walls and, for products that must be wall-mounted, the requirement status. */
+function WallContactInfo({ module }: { module: ModuleInstance }) {
+  const t = useT();
+  const room = useArrangementStore((s) => s.arrangement.room);
+  const relations = reportedWallRelations(moduleWallRelations(room, module));
+  const mounting = getFurnitureType(module.typeId).wallMounting;
+  const back = mounting ? backWallContact(room, module) : null;
+  const tone = (r: WallRelation) =>
+    r.status === "collision" ? "text-red-700" : r.status === "contact" ? "text-emerald-700" : "text-stone-700";
+  return (
+    <div className="space-y-1.5" aria-live="polite">
+      <p className="text-sm font-medium text-stone-800">{t("wallContact.title")}</p>
+      {relations.length === 0 ? (
+        <p className="text-xs text-stone-500">{t("wallContact.none")}</p>
+      ) : (
+        <ul className="space-y-0.5 text-sm tabular-nums">
+          {relations.map((r) => (
+            <li key={r.wall} className={`font-medium ${tone(r)}`} data-wall={r.wall} data-status={r.status}>
+              {wallRelationText(t, r)}
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="text-xs text-stone-500">{t("wallContact.hint")}</p>
+      {mounting && (
+        <p className={`rounded-md px-2 py-1.5 text-xs ${back ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-900"}`}>
+          {t("wallContact.mountingRequired")} {back ? t("wallContact.mountingMet", { wall: WALL_LETTERS[back.wall] }) : t("wallContact.mountingMissing")}
+        </p>
+      )}
+    </div>
+  );
 }
 
 function Catalog() {
@@ -122,10 +175,12 @@ function ModuleList({ collisions }: { collisions: readonly CollisionIssue[] }) {
 function SelectedModuleControls({ module, collisions }: { module: ModuleInstance; collisions: readonly CollisionIssue[] }) {
   const t = useT();
   const modules = useArrangementStore((s) => s.arrangement.modules);
+  const room = useArrangementStore((s) => s.arrangement.room);
   const store = useArrangementStore.getState;
   const [issues, setIssues] = useState<readonly Issue[]>([]);
   const [nextType, setNextType] = useState(listFurnitureTypes()[0].id);
   const type = getFurnitureType(module.typeId);
+  const footprint = type.footprint(module.configuration);
   const states = type.states(module.configuration);
   const run = (r: ActionResult) => setIssues(issuesOf(r));
   const own = issuesForModule(collisions, module.id);
@@ -139,9 +194,9 @@ function SelectedModuleControls({ module, collisions }: { module: ModuleInstance
       <Card selected>
         <p className="text-xs text-stone-500">{t("arrangement.positionHint")}</p>
         <div className="grid grid-cols-2 gap-2">
-          <MmField label={t("arrangement.x")} value={module.placement.x} onCommit={place("x")} />
-          <MmField label={t("arrangement.z")} value={module.placement.z} onCommit={place("z")} />
-          <MmField label={t("arrangement.y")} value={module.placement.y} onCommit={place("y")} />
+          <MmField label={t("arrangement.x")} value={module.placement.x} min={0} max={room.width} onCommit={place("x")} />
+          <MmField label={t("arrangement.z")} value={module.placement.z} min={0} max={room.depth} onCommit={place("z")} />
+          <MmField label={t("arrangement.y")} value={module.placement.y} min={0} max={Math.max(0, room.height - footprint.height)} onCommit={place("y")} />
           <MmField label={t("arrangement.rotation")} unit="°" step={0.1} value={module.placement.rotationDeg} onCommit={place("rotationDeg")} />
         </div>
         <div className="grid grid-cols-2 gap-2">
@@ -162,6 +217,7 @@ function SelectedModuleControls({ module, collisions }: { module: ModuleInstance
             ))}
           </div>
         </div>
+        <WallContactInfo module={module} />
         {states.length > 1 && (
           <Segmented
             label={t("arrangement.state")}

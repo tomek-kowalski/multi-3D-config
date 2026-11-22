@@ -7,6 +7,7 @@ import { LOCALES, useLocaleStore, useLocaleSync, useT } from "@/i18n";
 import { bindCabinetSession } from "@/store/cabinetSession";
 import { persistArrangement, useArrangementStore, type MenuId } from "@/store/useArrangementStore";
 import { primaryButtonClass } from "@/components/ui/fields";
+import { WallLabelOverlay } from "@/components/three/room/WallLabels";
 import { ArrangementPanel, typeName } from "./ArrangementPanel";
 import { ModulePanel } from "./ModulePanel";
 import { OrderDialog } from "./OrderDialog";
@@ -98,6 +99,7 @@ export function RoomConfigurator() {
         className="sticky top-0 z-20 h-[45svh] min-h-64 w-full shrink-0 overflow-hidden shadow-md lg:relative lg:z-auto lg:h-full lg:min-h-0 lg:min-w-0 lg:flex-1 lg:shrink lg:shadow-none"
       >
         <RoomCanvas />
+        <WallLabelOverlay />
         <ViewControls />
         <p className="pointer-events-none absolute bottom-3 left-1/2 max-w-[calc(100%-2rem)] -translate-x-1/2 truncate rounded-full bg-white/80 px-3 py-1 text-xs text-stone-600 shadow-sm backdrop-blur">
           {t("app.sceneHint")}

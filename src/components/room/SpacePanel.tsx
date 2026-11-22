@@ -4,7 +4,7 @@ import { useState } from "react";
 import { SectionHeading } from "@/components/configurator/SectionHeading";
 import { DOOR_COLOR_PRESETS, FLOOR_COLOR_PRESETS, ROOM_LIMITS, WALL_COLOR_PRESETS } from "@/domain/room/defaults";
 import { wallLength } from "@/domain/room/geometry";
-import { WALL_IDS, type OpeningKind, type RoomOpening, type WallId } from "@/domain/room/types";
+import { WALL_IDS, WALL_LETTERS, type OpeningKind, type RoomOpening, type WallId } from "@/domain/room/types";
 import type { Issue } from "@/domain/shared/issues";
 import { useT } from "@/i18n";
 import { useArrangementStore, type ActionResult } from "@/store/useArrangementStore";
@@ -25,6 +25,8 @@ function RoomDimensions() {
             key={key}
             label={t(`space.${key}`)}
             hint={`${ROOM_LIMITS[key].min}–${ROOM_LIMITS[key].max}`}
+            min={ROOM_LIMITS[key].min}
+            max={ROOM_LIMITS[key].max}
             value={room[key]}
             onCommit={(v) => issuesOf(setDimension(key, v))}
           />
@@ -38,14 +40,41 @@ function RoomDimensions() {
 function RoomColors() {
   const t = useT();
   const room = useArrangementStore((s) => s.arrangement.room);
+  const activeWall = useArrangementStore((s) => s.activeWall);
+  const setActiveWall = useArrangementStore((s) => s.setActiveWall);
   const setWallColor = useArrangementStore((s) => s.setWallColor);
   const setFloorColor = useArrangementStore((s) => s.setFloorColor);
   return (
     <section aria-labelledby="room-colors" className="space-y-4">
-      <SectionHeading id="room-colors">{t("space.colors")}</SectionHeading>
-      {WALL_IDS.map((wall) => (
-        <ColorField key={wall} label={t(`wall.${wall}`)} value={room.wallColors[wall]} presets={WALL_COLOR_PRESETS} onChange={(c) => setWallColor(wall, c)} />
-      ))}
+      <SectionHeading id="room-colors">{t("space.walls")}</SectionHeading>
+      <p className="text-xs text-stone-500">{t("space.wallsHint")}</p>
+      {WALL_IDS.map((wall) => {
+        const active = wall === activeWall;
+        return (
+          // Any interaction inside the card (click, keyboard focus) makes this wall the active one.
+          <div
+            key={wall}
+            data-wall-card={wall}
+            data-active={active || undefined}
+            onPointerDownCapture={() => setActiveWall(wall)}
+            onFocusCapture={() => setActiveWall(wall)}
+            className={`space-y-2 rounded-xl border p-3 transition-colors ${active ? "border-blue-500 bg-blue-50/60 shadow-sm" : "border-stone-200"}`}
+          >
+            <button
+              type="button"
+              aria-pressed={active}
+              onClick={() => setActiveWall(wall)}
+              className="flex w-full items-center justify-between text-left text-xs font-semibold text-stone-600"
+            >
+              <span className={`flex size-6 items-center justify-center rounded-full text-xs ${active ? "bg-blue-600 text-white" : "bg-stone-200 text-stone-700"}`}>
+                {WALL_LETTERS[wall]}
+              </span>
+              {active && <span className="text-blue-700">{t("space.activeWall")}</span>}
+            </button>
+            <ColorField label={t(`wall.${wall}`)} value={room.wallColors[wall]} presets={WALL_COLOR_PRESETS} onChange={(c) => setWallColor(wall, c)} />
+          </div>
+        );
+      })}
       <ColorField label={t("space.floor")} value={room.floorColor} presets={FLOOR_COLOR_PRESETS} onChange={setFloorColor} />
     </section>
   );
@@ -60,8 +89,24 @@ function OpeningCard({ opening }: { opening: RoomOpening }) {
   const select = useArrangementStore((s) => s.selectOpening);
   const [wallIssues, setWallIssues] = useState<readonly Issue[]>([]);
   const length = wallLength(room, opening.wall);
-  const field = (key: "offset" | "elevation" | "width" | "height" | "clearanceDepth", hint?: string) => (
-    <MmField label={t(`opening.${key}`)} hint={hint} value={opening[key]} onCommit={(v) => issuesOf(update(opening.id, { [key]: v }))} />
+  const limits = ROOM_LIMITS.opening;
+  // Ranges in which the opening stays inside its wall and below the ceiling (validation still decides).
+  const ranges = {
+    offset: { min: 0, max: length - opening.width },
+    elevation: { min: 0, max: room.height - opening.height },
+    width: { min: limits.width.min, max: Math.min(limits.width.max, length - opening.offset) },
+    height: { min: limits.height.min, max: Math.min(limits.height.max, room.height - opening.elevation) },
+    clearanceDepth: limits.clearanceDepth,
+  } as const;
+  const field = (key: keyof typeof ranges, hint?: string) => (
+    <MmField
+      label={t(`opening.${key}`)}
+      hint={hint}
+      value={opening[key]}
+      min={ranges[key].min}
+      max={ranges[key].max}
+      onCommit={(v) => issuesOf(update(opening.id, { [key]: v }))}
+    />
   );
   return (
     <Card selected={selected}>
@@ -99,7 +144,8 @@ function Openings() {
   const t = useT();
   const openings = useArrangementStore((s) => s.arrangement.room.openings);
   const add = useArrangementStore((s) => s.addOpening);
-  const [wall, setWall] = useState<WallId>("back");
+  const wall = useArrangementStore((s) => s.activeWall);
+  const setWall = useArrangementStore((s) => s.setActiveWall);
   const [issues, setIssues] = useState<readonly Issue[]>([]);
   const addKind = (kind: OpeningKind) => setIssues(issuesOf(add(kind, wall)));
   return (
