@@ -31,14 +31,15 @@ const SAME_ROTATION_DEG = 0.5;
 
 /**
  * - ok: the position is free;
- * - warning: physically free, but the position blocks something that is checked separately — the
- *   operation of a transforming bed (its swept space) or a wall-mounting requirement; can be confirmed;
+ * - warning: physically free, but the position blocks the operation of a transforming bed (its swept
+ *   space), which is checked separately; can be confirmed;
  * - invalid: the module would physically collide (another module, the room's walls, a window/door or
- *   its clearance); explained, cannot be confirmed.
+ *   its clearance) or a wall-mounted bed would not be fixed to a wall; explained, cannot be confirmed.
  */
 export type DockingVerdict = "ok" | "warning" | "invalid";
 
 export interface DockingProposal {
+  readonly kind: "module";
   readonly moduleId: ModuleId;
   readonly targetId: ModuleId;
   /** Side of the target module (seen from its front) the moved module would stand on. */
@@ -61,13 +62,16 @@ function sameOrientation(a: number, b: number): boolean {
   return Math.min(d, 360 - d) < SAME_ROTATION_DEG;
 }
 
-/** Physical problems (cannot dock) versus checks that are reported separately (can dock, with a warning). */
-export function isPhysicalIssue(issue: CollisionIssue): boolean {
-  return issue.phase === "static" && issue.kind !== "wall-mounting";
+/**
+ * Problems of the docked position itself (cannot dock): physical collisions and a missing wall mounting
+ * (docking must not leave a wall-mounted bed unmounted). Operation issues are reported separately.
+ */
+export function isBlockingIssue(issue: CollisionIssue): boolean {
+  return issue.phase === "static";
 }
 
 function verdictOf(issues: readonly CollisionIssue[]): DockingVerdict {
-  if (issues.some(isPhysicalIssue)) return "invalid";
+  if (issues.some(isBlockingIssue)) return "invalid";
   return issues.length > 0 ? "warning" : "ok";
 }
 
@@ -105,7 +109,7 @@ export function dockingCandidates(arrangement: Arrangement, moduleId: ModuleId, 
       const issues = detectCollisions(candidate).filter(
         (i) => i.moduleId === moving.id || (i.kind === "module" && i.otherId === moving.id),
       );
-      candidates.push({ moduleId: moving.id, targetId: target.id, side, placement, distanceMm, verdict: verdictOf(issues), issues });
+      candidates.push({ kind: "module", moduleId: moving.id, targetId: target.id, side, placement, distanceMm, verdict: verdictOf(issues), issues });
     }
   }
   return candidates.sort((a, b) => a.distanceMm - b.distanceMm);

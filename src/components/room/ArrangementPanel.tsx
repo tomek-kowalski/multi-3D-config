@@ -232,6 +232,20 @@ function SelectedModuleControls({ module, collisions }: { module: ModuleInstance
               </button>
             ))}
           </div>
+          <div className="space-y-1 pt-1">
+            <button
+              type="button"
+              className={`${buttonClass} w-full`}
+              onClick={() => {
+                store().requestWallDocking(module.id);
+                // Already against a wall: nothing to do; otherwise say if no wall can take it.
+                if (!store().dockingProposal && !backWallContact(room, module)) run({ ok: false, issues: [{ code: "wall_docking_none" }] });
+              }}
+            >
+              {t("wallDocking.request")}
+            </button>
+            <p className="text-xs text-stone-500">{t("wallDocking.requestHint")}</p>
+          </div>
         </div>
         <WallContactInfo module={module} />
         {states.length > 1 && (

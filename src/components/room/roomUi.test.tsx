@@ -322,3 +322,62 @@ describe("collision note in the 3D view", () => {
     expect(document.querySelector("[data-collision-notes]")).toBeNull();
   });
 });
+
+describe("wall docking of a wall-mounted bed", () => {
+  /** ClickBed O Classico 180 mm in front of the back wall, slightly askew. */
+  const bedNearWall = () => {
+    store().reset();
+    store().setDockingEnabled(true);
+    store().addModule("clickbed-o-classico");
+    store().setPlacement("module-1", { x: 2000, z: 380, rotationDeg: 2 });
+  };
+
+  it("offers to dock the bed to the wall instead of repeating the mounting warning while positioning", () => {
+    bedNearWall();
+    render(
+      <>
+        <DockingPrompt />
+        <CollisionNotes />
+      </>,
+    );
+    // While dragging: neither the prompt nor the wall-mounting warning.
+    act(() => {
+      store().setDragging("module-1");
+      store().proposeDockingFor("module-1");
+    });
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(document.querySelector("[data-collision-notes]")).toBeNull();
+    // Dropped near the wall: one actionable question.
+    act(() => {
+      store().setDragging(null);
+      store().proposeDockingFor("module-1");
+    });
+    const dialog = screen.getByRole("alertdialog");
+    expect(dialog.getAttribute("data-docking-kind")).toBe("wall");
+    expect(dialog.textContent).toContain("Dosunąć ClickBed O Classico (module-1) do ściany A?");
+    expect(dialog.textContent).toContain("Mebel zostanie obrócony o 2° i ustawiony tyłem do ściany.");
+    expect(within(dialog).getByRole("button", { name: "Anuluj" })).toBeTruthy();
+    expect(document.querySelector("[data-collision-notes]")).toBeNull();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Dosuń" }));
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    // Back on the wall, square to it; along the wall the mounting face keeps its place (2° turn: 7 mm).
+    const docked = store().arrangement.modules[0].placement;
+    expect(docked).toMatchObject({ z: 200, rotationDeg: 0 });
+    expect(Math.abs(docked.x - 2000)).toBeLessThan(10);
+    expect(document.querySelector("[data-collision-notes]")).toBeNull();
+  });
+
+  it("keeps reporting the missing mounting after the proposal is cancelled (final validation)", () => {
+    bedNearWall();
+    act(() => store().proposeDockingFor("module-1"));
+    render(
+      <>
+        <DockingPrompt />
+        <CollisionNotes />
+      </>,
+    );
+    fireEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Anuluj" }));
+    expect(store().arrangement.modules[0].placement).toMatchObject({ x: 2000, z: 380, rotationDeg: 2 });
+    expect(screen.getByRole("status").textContent).toMatch(/wymaga montażu do ściany/);
+  });
+});

@@ -1,5 +1,26 @@
 import { create } from "zustand";
 import { proposeDocking, type DockingProposal } from "@/domain/arrangement/docking";
+import { proposeWallDocking, requiresWallMounting, type WallDockingProposal } from "@/domain/arrangement/wallDocking";
+
+export type AnyDockingProposal = DockingProposal | WallDockingProposal;
+
+/**
+ * The one docking proposal to show for a moved module. Furniture docking for every module; for
+ * wall-mounted furniture also wall docking — a dockable furniture position wins (it keeps the backs on
+ * the wall the neighbour stands against), otherwise the wall position; impossible positions are shown
+ * only to explain why, the wall's first. The proposal shown so far is kept while it stays valid.
+ */
+export function chooseDocking(arrangement: Arrangement, id: ModuleId, shown: AnyDockingProposal | null): AnyDockingProposal | null {
+  const own = shown && shown.moduleId === id ? shown : null;
+  const furniture = proposeDocking(arrangement, id, own?.kind === "module" ? { targetId: own.targetId, side: own.side } : null);
+  const instance = arrangement.modules.find((m) => m.id === id);
+  if (!instance || !requiresWallMounting(instance)) return furniture;
+  const wall = proposeWallDocking(arrangement, id, { previousWall: own?.kind === "wall" ? own.wall : null });
+  const usable = (p: AnyDockingProposal | null) => p !== null && p.verdict !== "invalid";
+  if (usable(furniture)) return furniture;
+  if (usable(wall)) return wall;
+  return wall ?? furniture;
+}
 import * as ops from "@/domain/arrangement/operations";
 import type { Arrangement, Side } from "@/domain/arrangement/types";
 import type { FurnitureTypeId, ModuleId, OperationalStateId } from "@/domain/modules/types";
@@ -35,7 +56,8 @@ export interface ArrangementState {
   /** Whether cabinets moved next to another cabinet get a docking proposal. */
   readonly dockingEnabled: boolean;
   /** A docking position waiting for the customer's confirmation (preview in 3D). */
-  readonly dockingProposal: DockingProposal | null;
+  /** A docking position waiting for the customer's confirmation: next to another module, or against a wall. */
+  readonly dockingProposal: AnyDockingProposal | null;
   /**
    * The module being dragged in the 3D view (null when nothing is): its placement is shown live (green
    * when valid, red on a collision) and the docking proposal is previewed but only asked for on drop.
@@ -64,6 +86,8 @@ export interface ArrangementState {
   setDockingEnabled: (enabled: boolean) => void;
   /** Looks for a docking position for the module (after it was moved); shows it for confirmation. */
   proposeDockingFor: (id: ModuleId) => void;
+  /** The customer asks to dock the module to a wall (wall-mounted furniture): any wall, however far. */
+  requestWallDocking: (id: ModuleId) => void;
   /** Starts/ends a drag of a module in the 3D view. */
   setDragging: (id: ModuleId | null) => void;
   /** Applies the proposed position (re-checked first). */
@@ -161,12 +185,10 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
     setShowWallLabels: (show) => set({ showWallLabels: show }),
     setDockingEnabled: (enabled) => set({ dockingEnabled: enabled, ...(enabled ? {} : { dockingProposal: null }) }),
     proposeDockingFor: (id) => {
-      // The proposal shown so far (same module) is kept while it stays valid: no flicker while dragging.
-      const shown = get().dockingProposal;
-      const previous = shown && shown.moduleId === id ? { targetId: shown.targetId, side: shown.side } : null;
-      const proposal = get().dockingEnabled ? proposeDocking(get().arrangement, id, previous) : null;
-      set({ dockingProposal: proposal });
+      if (!get().dockingEnabled) return set({ dockingProposal: null });
+      set({ dockingProposal: chooseDocking(get().arrangement, id, get().dockingProposal) });
     },
+    requestWallDocking: (id) => set({ dockingProposal: proposeWallDocking(get().arrangement, id, { explicit: true }) }),
     setDragging: (id) => {
       if (get().draggingModuleId !== id) set({ draggingModuleId: id });
     },
@@ -176,13 +198,17 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
       // A physically impossible position is only explained, never applied.
       if (proposal.verdict === "invalid") return { ok: false, issues: [{ code: "docking_invalid" }] };
       // The arrangement may have changed since the proposal: only apply it if it is still the one proposed.
-      const current = proposeDocking(get().arrangement, proposal.moduleId, { targetId: proposal.targetId, side: proposal.side });
+      const current =
+        proposal.kind === "wall"
+          ? proposeWallDocking(get().arrangement, proposal.moduleId, { explicit: true, previousWall: proposal.wall })
+          : proposeDocking(get().arrangement, proposal.moduleId, { targetId: proposal.targetId, side: proposal.side });
       if (
         !current ||
         current.verdict === "invalid" ||
         current.placement.x !== proposal.placement.x ||
         current.placement.z !== proposal.placement.z ||
-        current.placement.y !== proposal.placement.y
+        current.placement.y !== proposal.placement.y ||
+        current.placement.rotationDeg !== proposal.placement.rotationDeg
       ) {
         set({ dockingProposal: null });
         return { ok: false, issues: [{ code: "docking_no_longer_valid" }] };

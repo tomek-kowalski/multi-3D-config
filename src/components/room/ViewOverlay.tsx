@@ -7,6 +7,7 @@ import { useT } from "@/i18n";
 import { useArrangementStore } from "@/store/useArrangementStore";
 import { buttonClass, primaryButtonClass } from "@/components/ui/fields";
 import { describeCollision, typeName } from "./ArrangementPanel";
+import { WALL_LETTERS } from "@/domain/room/types";
 import { prewarmPhotoRenderer } from "@/components/three/photo/photoService";
 import { PhotoPreview } from "./PhotoPreview";
 import { RoomDimensions, SpacePanel } from "./SpacePanel";
@@ -120,15 +121,22 @@ const MAX_COLLISION_NOTES = 3;
 export function CollisionNotes() {
   const t = useT();
   const arrangement = useArrangementStore((s) => s.arrangement);
+  const draggingId = useArrangementStore((s) => s.draggingModuleId);
+  const wallProposalFor = useArrangementStore((s) => (s.dockingProposal?.kind === "wall" ? s.dockingProposal.moduleId : null));
   const lines = useMemo(() => {
     const seen = new Set<string>();
     const label = (id: string) => {
       const m = arrangement.modules.find((x) => x.id === id);
       return m ? `${typeName(t, m.typeId)} (${id})` : id;
     };
-    for (const issue of detectCollisions(arrangement)) seen.add(describeCollision(t, issue, arrangement.modules, issue.moduleId, label));
+    for (const issue of detectCollisions(arrangement)) {
+      // While a wall-mounted module is being positioned (dragged, or its wall-docking proposal is open),
+      // its missing wall mounting is not repeated; it stays reported if the proposal is declined.
+      if (issue.kind === "wall-mounting" && (issue.moduleId === draggingId || issue.moduleId === wallProposalFor)) continue;
+      seen.add(describeCollision(t, issue, arrangement.modules, issue.moduleId, label));
+    }
     return [...seen];
-  }, [arrangement, t]);
+  }, [arrangement, t, draggingId, wallProposalFor]);
   if (lines.length === 0) return null;
   return (
     <div
@@ -160,9 +168,19 @@ export function DockingPrompt() {
   // While dragging the position is only previewed in 3D; the question comes once, on drop.
   const dragging = useArrangementStore((s) => s.draggingModuleId !== null);
   if (!proposal || dragging) return null;
-  const side = t(proposal.side === "left" ? "docking.left" : "docking.right");
-  const names = { module: describe(proposal.moduleId), target: describe(proposal.targetId), side };
   const invalid = proposal.verdict === "invalid";
+  const wall = proposal.kind === "wall";
+  let question: string;
+  const notes: string[] = [];
+  if (proposal.kind === "wall") {
+    const names = { module: describe(proposal.moduleId), wall: WALL_LETTERS[proposal.wall] };
+    question = t(invalid ? "wallDocking.invalid" : "wallDocking.prompt", names);
+    if (!invalid && Math.abs(proposal.rotationDeltaDeg) >= 1) notes.push(t("wallDocking.turn", { degrees: Math.round(Math.abs(proposal.rotationDeltaDeg)) }));
+    if (!invalid && proposal.slidMm !== 0) notes.push(t("wallDocking.slid", { distance: Math.abs(proposal.slidMm) }));
+  } else {
+    const side = t(proposal.side === "left" ? "docking.left" : "docking.right");
+    question = t(invalid ? "docking.invalid" : "docking.prompt", { module: describe(proposal.moduleId), target: describe(proposal.targetId), side });
+  }
   // Why it cannot dock (invalid) or what docking would block (warning), in the menu's collision wording.
   const reasons = proposal.issues.map((issue) => describeCollision(t, issue, modules, proposal.moduleId, describe));
   return (
@@ -171,12 +189,18 @@ export function DockingPrompt() {
       aria-labelledby="docking-prompt"
       data-docking-prompt
       data-docking-verdict={proposal.verdict}
+      data-docking-kind={proposal.kind}
       className={`absolute bottom-12 left-1/2 z-20 flex w-[min(32rem,calc(100%-2rem))] -translate-x-1/2 flex-wrap items-center justify-between gap-3 rounded-xl border bg-white/95 px-4 py-3 shadow-lg backdrop-blur ${
         invalid ? "border-red-300" : proposal.verdict === "warning" ? "border-amber-300" : "border-emerald-300"
       }`}
     >
       <div id="docking-prompt" className="space-y-1 text-sm text-stone-800">
-        <p>{t(invalid ? "docking.invalid" : "docking.prompt", names)}</p>
+        <p>{question}</p>
+        {notes.map((n) => (
+          <p key={n} className="text-xs text-stone-600">
+            {n}
+          </p>
+        ))}
         {proposal.verdict === "warning" && <p className="text-xs text-amber-800">{t("docking.warning")}</p>}
         {reasons.length > 0 && (
           <ul className={`list-disc pl-4 text-xs ${invalid ? "text-red-700" : "text-amber-800"}`}>
@@ -194,7 +218,7 @@ export function DockingPrompt() {
         ) : (
           <>
             <button type="button" className={`${buttonClass} px-3 py-1.5 text-xs`} onClick={reject}>
-              {t("docking.reject")}
+              {t(wall ? "wallDocking.cancel" : "docking.reject")}
             </button>
             <button type="button" className={`${primaryButtonClass} px-3 py-1.5 text-xs`} onClick={() => confirm()}>
               {t("docking.confirm")}

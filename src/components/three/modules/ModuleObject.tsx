@@ -1,9 +1,9 @@
 "use client";
 
 import { Edges } from "@react-three/drei";
-import { useThree, type ThreeEvent } from "@react-three/fiber";
-import { Suspense, useEffect } from "react";
-import { Plane, Raycaster, Vector2, Vector3 } from "three";
+import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
+import { Suspense, useEffect, useRef } from "react";
+import { Group, Mesh, Plane, Raycaster, Vector2, Vector3 } from "three";
 import type { BoxMm } from "@/domain/compartments/types";
 import { getFurnitureType } from "@/domain/modules/registry";
 import type { ModuleInstance } from "@/domain/modules/types";
@@ -41,9 +41,34 @@ function VolumeBox({ box, color, opacity, edges = true, loading = false }: { box
   );
 }
 
-const DOCKING_COLOR = "#059669";
 
-/** Ghost of the proposed docking position: the moved module's volume at the proposed placement. */
+/** Id of the docking preview in the status outlines (FurnitureOutlines). */
+export const DOCKING_PREVIEW_ID = "docking-preview";
+const PREVIEW_OPACITY = 0.45;
+
+/** Makes the preview's own (per-instance) materials translucent; the real furniture is never touched. */
+function Translucent({ children }: { children: React.ReactNode }) {
+  const ref = useRef<Group>(null);
+  useFrame(() => {
+    ref.current?.traverse((o) => {
+      if (!(o instanceof Mesh)) return;
+      for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
+        if (m.opacity === PREVIEW_OPACITY && m.transparent) continue;
+        m.transparent = true;
+        m.opacity = PREVIEW_OPACITY;
+        m.depthWrite = false;
+        m.needsUpdate = true;
+      }
+    });
+  });
+  return <group ref={ref}>{children}</group>;
+}
+
+/**
+ * Preview of a docking proposal (next to another module or against a wall): the furniture itself at the
+ * proposed position, translucent, with a green outline (red when the position is impossible; see
+ * FurnitureOutlines). The module stays where it is until the customer confirms. Never part of photos.
+ */
 export function DockingPreview() {
   const proposal = useArrangementStore((s) => s.dockingProposal);
   const docked = useArrangementStore((s) => s.arrangement.modules.find((m) => m.id === s.dockingProposal?.moduleId));
@@ -51,15 +76,18 @@ export function DockingPreview() {
   const type = getFurnitureType(docked.typeId);
   const footprint = type.footprint(docked.configuration);
   const { placement } = proposal;
+  const renderModule = getModuleRenderer(docked.typeId);
   return (
     <group
       position={[mmToM(placement.x), mmToM(placement.y), mmToM(placement.z)]}
       rotation={[0, (placement.rotationDeg * Math.PI) / 180, 0]}
+      userData={{ moduleId: DOCKING_PREVIEW_ID, photoExclude: true }}
+      raycast={() => null}
     >
       <group position={[-mmToM(footprint.width) / 2, 0, -mmToM(footprint.depth) / 2]}>
-        {type.collisionBoxes(docked.configuration, docked.state).map((b, i) => (
-          <VolumeBox key={i} box={b} color={proposal.verdict === "invalid" ? COLLISION_COLOR : DOCKING_COLOR} opacity={0.18} />
-        ))}
+        <Suspense fallback={null}>
+          <Translucent>{renderModule({ module: { ...docked, placement }, editing: false })}</Translucent>
+        </Suspense>
       </group>
     </group>
   );

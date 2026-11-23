@@ -10,7 +10,7 @@ import { planBounds } from "@/domain/spatial/geometry";
 import { useArrangementStore } from "@/store/useArrangementStore";
 import { useConfiguratorStore } from "@/store/useConfiguratorStore";
 import { frameBox } from "./cameraFraming";
-import { DockingPreview, ModuleObject } from "./modules/ModuleObject";
+import { DOCKING_PREVIEW_ID, DockingPreview, ModuleObject } from "./modules/ModuleObject";
 import { FurnitureOutlines } from "./modules/FurnitureOutlines";
 import { collidingModules, furnitureStatuses } from "./modules/furnitureStatus";
 import { RoomModel } from "./room/RoomModel";
@@ -30,10 +30,16 @@ function ModulesLayer() {
   const movingId = useArrangementStore((s) => s.draggingModuleId);
   const issues = useMemo(() => detectCollisions(arrangement), [arrangement]);
   const colliding = useMemo(() => collidingModules(issues), [issues]);
-  const statuses = useMemo(
-    () => furnitureStatuses(arrangement.modules.map((m) => m.id), issues, selectedId, movingId),
-    [arrangement.modules, issues, selectedId, movingId],
-  );
+  const proposal = useArrangementStore((s) => s.dockingProposal);
+  const statuses = useMemo(() => {
+    // While a wall-mounted module is being positioned (dragged, or a wall-docking proposal is open),
+    // its missing wall mounting is not flagged again: the proposal is the answer to it.
+    const positioning = new Set([movingId, proposal?.kind === "wall" ? proposal.moduleId : null]);
+    const shown = issues.filter((i) => !(i.kind === "wall-mounting" && positioning.has(i.moduleId)));
+    const map = furnitureStatuses(arrangement.modules.map((m) => m.id), shown, selectedId, movingId);
+    if (proposal) map.set(DOCKING_PREVIEW_ID, proposal.verdict === "invalid" ? "collision" : "valid");
+    return map;
+  }, [arrangement.modules, issues, selectedId, movingId, proposal]);
   return (
     <>
       {arrangement.modules.map((m) => (

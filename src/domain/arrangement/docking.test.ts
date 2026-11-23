@@ -138,9 +138,9 @@ describe("docking works across furniture types", () => {
   it("keeps wall-mounting requirements: a wall-mounted bed only docks where its back is on a wall", () => {
     const atWall = pair("clickbed-o-classico", { x: 2000 }, "clickbed-o-classico", { x: 4240, z: 220 });
     expect(proposeDocking(atWall, "module-2")).toMatchObject({ placement: { x: 4180, z: 200 } });
-    // Target 300 mm in front of the wall: the docked bed would not be fixed to a wall either (explained).
+    // Target 300 mm in front of the wall: docking would leave the bed unmounted — explained, not applicable.
     const awayFromWall = pair("clickbed-o-classico", { x: 2000, z: 500 }, "clickbed-o-classico", { x: 4240, z: 520 });
-    expect(proposeDocking(awayFromWall, "module-2")).toMatchObject({ verdict: "warning", issues: [{ kind: "wall-mounting" }] });
+    expect(proposeDocking(awayFromWall, "module-2")).toMatchObject({ verdict: "invalid", issues: [{ kind: "wall-mounting" }] });
   });
 
   it("leaves both configurations independent after docking", () => {

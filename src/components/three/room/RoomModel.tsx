@@ -10,6 +10,7 @@ import { planBounds } from "@/domain/spatial/geometry";
 import { useArrangementStore } from "@/store/useArrangementStore";
 import { CLICK_TOLERANCE_PX } from "../PanelMesh";
 import { showKeepFreeVolume } from "../debug";
+import { STATUS_COLORS } from "../modules/furnitureStatus";
 import { photoTag } from "../photo/tags";
 import { mmToM } from "../units";
 
@@ -33,7 +34,7 @@ const HIGHLIGHT = "#2563eb";
  * A wall as a single inward-facing surface with holes for its openings. Its back face is culled, so
  * the camera always sees into the room through the walls on its side.
  */
-function Wall({ room, wall, active }: { room: RoomConfiguration; wall: WallId; active: boolean }) {
+function Wall({ room, wall, active, docking }: { room: RoomConfiguration; wall: WallId; active: boolean; docking: string | null }) {
   const frame = wallFrame(room, wall);
   const openings = room.openings.filter((o) => o.wall === wall);
   const geometry = useMemo(() => {
@@ -82,9 +83,11 @@ function Wall({ room, wall, active }: { room: RoomConfiguration; wall: WallId; a
           raycast={() => null}
         />
       ))}
-      {active && (
+      {active && !docking && (
         <Line points={wallHighlightOutline(room, wall)} color={ACTIVE_WALL_COLOR} lineWidth={4} raycast={() => null} />
       )}
+      {/* The wall a wall-docking proposal mounts to (green; red when it is not possible). */}
+      {docking && <Line points={wallHighlightOutline(room, wall)} color={docking} lineWidth={4} raycast={() => null} />}
     </group>
   );
 }
@@ -160,6 +163,9 @@ export function RoomModel() {
   const selectedOpeningId = useArrangementStore((s) => s.selectedOpeningId);
   const activeWall = useArrangementStore((s) => s.activeWall);
   const highlighted = wallHighlights(activeWall);
+  const proposal = useArrangementStore((s) => s.dockingProposal);
+  const dockingWall =
+    proposal?.kind === "wall" ? { wall: proposal.wall, color: proposal.verdict === "invalid" ? STATUS_COLORS.collision : STATUS_COLORS.valid } : null;
   const W = mmToM(room.width);
   const D = mmToM(room.depth);
   return (
@@ -169,7 +175,7 @@ export function RoomModel() {
         <meshStandardMaterial color={room.floorColor} roughness={0.9} />
       </mesh>
       {WALL_IDS.map((wall) => (
-        <Wall key={wall} room={room} wall={wall} active={highlighted[wall]} />
+        <Wall key={wall} room={room} wall={wall} active={highlighted[wall]} docking={dockingWall?.wall === wall ? dockingWall.color : null} />
       ))}
       <ActiveWallBand room={room} wall={activeWall} />
       {sceneOpenings(room).map((o) => (

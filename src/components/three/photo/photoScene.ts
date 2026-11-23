@@ -63,7 +63,13 @@ export function takeSnapshot(root: Object3D): SceneSnapshot {
   let loading = 0;
   const bounds = new Box3();
   const furnitureBounds = new Box3();
-  root.traverseVisible((object) => {
+  const visit = (object: Object3D, visitor: (o: Object3D) => void) => {
+    // Invisible subtrees and previews (e.g. a docking proposal not yet confirmed) are not part of a photo.
+    if (!object.visible || object.userData.photoExclude) return;
+    visitor(object);
+    for (const child of object.children) visit(child, visitor);
+  };
+  visit(root, (object) => {
     if (!(object instanceof Mesh)) return;
     const tag = readPhotoTag(object.userData);
     if (!tag) return;
