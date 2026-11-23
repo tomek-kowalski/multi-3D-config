@@ -235,6 +235,7 @@ export const en: Readonly<Record<MessageKey, string>> = {
   "issue.bed.unknown_category": "This model has no decor category {value}.",
   "issue.bed.decor_not_in_category": "Decor {value} is not in category {category}.",
   "issue.bed.firmness_required": "Choose the mattress firmness.",
+  "issue.bed.mattress_not_offered": "This model does not offer a mattress.",
   "issue.bed.firmness_without_mattress": "Firmness is only chosen with the mattress.",
   "issue.bed.addon_not_offered": "This model does not offer \"{addon}\".",
   "issue.bed.invalid_addon_value": "Invalid option value.",

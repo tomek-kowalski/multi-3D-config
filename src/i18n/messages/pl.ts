@@ -236,6 +236,7 @@ export const pl = {
   "issue.bed.unknown_category": "Ten model nie ma kategorii dekoru {value}.",
   "issue.bed.decor_not_in_category": "Dekor {value} nie należy do kategorii {category}.",
   "issue.bed.firmness_required": "Wybierz twardość materaca.",
+  "issue.bed.mattress_not_offered": "Ten model nie oferuje materaca.",
   "issue.bed.firmness_without_mattress": "Twardość wybiera się tylko z materacem.",
   "issue.bed.addon_not_offered": "Ten model nie oferuje opcji „{addon}”.",
   "issue.bed.invalid_addon_value": "Nieprawidłowa wartość opcji.",

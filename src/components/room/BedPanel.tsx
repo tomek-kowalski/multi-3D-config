@@ -4,7 +4,7 @@ import { useState } from "react";
 import { CheckIcon, SectionHeading } from "@/components/configurator/SectionHeading";
 import { NO_SWATCH_COLOR } from "@/components/three/modules/BedModel";
 import type { BedConfiguration } from "@/domain/beds/bedType";
-import { BED_PRODUCTS, findDecor, getBedOptions, type BedDecor, type BedDecorCategory } from "@/domain/beds/catalog";
+import { BED_PRODUCTS, findDecor, getBedOptions, offersMattress, type BedDecor, type BedDecorCategory } from "@/domain/beds/catalog";
 import { BED_SPECS, displaySpec, type BedSizeSpec } from "@/domain/beds/specs";
 import type { ModuleInstance } from "@/domain/modules/types";
 import type { Issue } from "@/domain/shared/issues";
@@ -142,17 +142,29 @@ export function BedPanel({ module }: { module: ModuleInstance }) {
 
       <section aria-labelledby="bed-options" className="space-y-4">
         <SectionHeading id="bed-options">{t("bed.options")}</SectionHeading>
-        <Segmented
-          label={t("bed.mattress")}
-          value={config.mattress ? "yes" : "no"}
-          options={[
-            { value: "no", label: t("common.no") },
-            { value: "yes", label: t("common.yes") },
-          ]}
-          onChange={(v) => update(v === "yes" ? { mattress: true, firmness: config.firmness ?? options.firmness.values[0].label } : { mattress: false, firmness: null })}
-        />
-        {config.mattress && (
-          <Segmented label={t("bed.firmness")} value={config.firmness ?? ""} options={options.firmness.values.map((v) => ({ value: v.label, label: v.label }))} onChange={(firmness) => update({ firmness })} />
+        {/* Only for products whose shop form offers a mattress; never selected by default. */}
+        {options.firmness && offersMattress(options) && (
+          <div className="space-y-4" data-mattress-control>
+            <Segmented
+              label={t("bed.mattress")}
+              value={config.mattress ? "yes" : "no"}
+              options={[
+                { value: "no", label: t("common.no") },
+                { value: "yes", label: t("common.yes") },
+              ]}
+              onChange={(v) =>
+                update(v === "yes" ? { mattress: true, firmness: config.firmness ?? options.firmness!.values[0].label } : { mattress: false, firmness: null })
+              }
+            />
+            {config.mattress && (
+              <Segmented
+                label={t("bed.firmness")}
+                value={config.firmness ?? ""}
+                options={options.firmness.values.map((v) => ({ value: v.label, label: v.label }))}
+                onChange={(firmness) => update({ firmness })}
+              />
+            )}
+          </div>
         )}
         {options.addons.map((addon) => {
           const key = `addon.${addon.id}`;

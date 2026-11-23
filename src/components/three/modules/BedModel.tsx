@@ -2,8 +2,8 @@
 
 import { useGLTF } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
-import { useEffect, useMemo } from "react";
-import { Color, Mesh, MeshStandardMaterial, RepeatWrapping, SRGBColorSpace, TextureLoader, type Object3D, type Texture } from "three";
+import { useEffect, useLayoutEffect, useMemo } from "react";
+import { Color, Mesh, PropertyBinding, MeshStandardMaterial, RepeatWrapping, SRGBColorSpace, TextureLoader, type Object3D, type Texture } from "three";
 import type { BedConfiguration } from "@/domain/beds/bedType";
 import { findDecor, getBedModel, getBedOptions, type BedDecor } from "@/domain/beds/catalog";
 
@@ -44,6 +44,19 @@ function applyDecor(material: MeshStandardMaterial, decor: BedDecor | null, inva
 }
 
 /**
+ * Mattress nodes as written by the converter ("<state>:mattress") and as named after loading:
+ * three's GLTFLoader sanitizes node names (PropertyBinding.sanitizeNodeName strips ":"), so the loaded
+ * scene calls them "unfoldedmattress". Both spellings are recognised.
+ */
+const MATTRESS_NODE_NAMES = new Set(
+  ["folded:mattress", "unfolded:mattress"].flatMap((name) => [name, PropertyBinding.sanitizeNodeName(name)]),
+);
+
+export function isMattressNode(name: string): boolean {
+  return MATTRESS_NODE_NAMES.has(name);
+}
+
+/**
  * Visibility of a named node of a converted bed model (see scripts/assets/convert-clickbed.mjs), or
  * null for nodes it does not control:
  * - the state nodes "folded" / "unfolded": only the displayed state is visible;
@@ -53,8 +66,40 @@ function applyDecor(material: MeshStandardMaterial, decor: BedDecor | null, inva
  */
 export function bedNodeVisible(name: string, state: string, mattress: boolean): boolean | null {
   if (name === "folded" || name === "unfolded") return name === state;
-  if (name.endsWith(":mattress")) return mattress;
+  if (isMattressNode(name)) return mattress;
   return null;
+}
+
+/**
+ * Clones a loaded bed model for one instance: own materials (decors never leak between beds), shadows,
+ * and every mattress embedded in the supplied model hidden from the start, so nothing is ever drawn
+ * with a mattress unless the configuration explicitly includes one.
+ */
+export function prepareBedScene(scene: Object3D): { root: Object3D; materials: Map<string, MeshStandardMaterial> } {
+  const root = scene.clone(true);
+  const materials = new Map<string, MeshStandardMaterial>();
+  root.traverse((child: Object3D) => {
+    if (isMattressNode(child.name)) child.visible = false;
+    if (!(child instanceof Mesh)) return;
+    const source = child.material as MeshStandardMaterial;
+    let material = materials.get(source.name);
+    if (!material) {
+      material = source.clone();
+      materials.set(source.name, material);
+    }
+    child.material = material;
+    child.castShadow = true;
+    child.receiveShadow = true;
+  });
+  return { root, materials };
+}
+
+/** Applies the displayed state and the mattress selection to a prepared bed scene. */
+export function applyBedVisibility(root: Object3D, state: string, mattress: boolean): void {
+  root.traverse((child) => {
+    const visible = bedNodeVisible(child.name, state, mattress);
+    if (visible !== null) child.visible = visible;
+  });
 }
 
 /**
@@ -67,23 +112,7 @@ export function BedModel({ typeId, productId, configuration, state }: { typeId: 
   const { scene } = useGLTF(`/models/clickbed/${model!.file}`);
   const invalidate = useThree((s) => s.invalidate);
 
-  const { root, materials } = useMemo(() => {
-    const root = scene.clone(true);
-    const materials = new Map<string, MeshStandardMaterial>();
-    root.traverse((child: Object3D) => {
-      if (!(child instanceof Mesh)) return;
-      const source = child.material as MeshStandardMaterial;
-      let material = materials.get(source.name);
-      if (!material) {
-        material = source.clone();
-        materials.set(source.name, material);
-      }
-      child.material = material;
-      child.castShadow = true;
-      child.receiveShadow = true;
-    });
-    return { root, materials };
-  }, [scene]);
+  const { root, materials } = useMemo(() => prepareBedScene(scene), [scene]);
 
   useEffect(() => {
     const options = getBedOptions(productId);
@@ -94,11 +123,9 @@ export function BedModel({ typeId, productId, configuration, state }: { typeId: 
     invalidate();
   }, [materials, productId, configuration.decorCategory, configuration.frontDecor, configuration.bodyDecor, invalidate]);
 
-  useEffect(() => {
-    root.traverse((child) => {
-      const visible = bedNodeVisible(child.name, state, configuration.mattress);
-      if (visible !== null) child.visible = visible;
-    });
+  // Layout effect: applied before the browser paints, so a change never shows a stale frame.
+  useLayoutEffect(() => {
+    applyBedVisibility(root, state, configuration.mattress);
     invalidate();
   }, [root, state, configuration.mattress, invalidate]);
 

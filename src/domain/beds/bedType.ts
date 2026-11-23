@@ -2,7 +2,7 @@ import type { WooLineItem } from "../commerce/types";
 import type { FurnitureTypeDefinition } from "../modules/types";
 import { fail, ok, type Issue, type Result } from "../shared/issues";
 import { computeBedVolumes, BED_STATES, type BedVolumes } from "./bedGeometry";
-import { BED_PRODUCTS, findDecor, getBedModel, getBedOptions, type BedAddon, type BedProductOptions } from "./catalog";
+import { BED_PRODUCTS, findDecor, getBedModel, getBedOptions, offersMattress, type BedAddon, type BedProductOptions } from "./catalog";
 import { BED_SPECS, displaySpec } from "./specs";
 
 /**
@@ -57,7 +57,8 @@ export function validateBed(options: BedProductOptions, c: BedConfiguration): Is
     if (!findDecor(options, c.decorCategory, c.bodyDecor))
       issues.push({ code: "bed.decor_not_in_category", path: "bodyDecor", params: { value: c.bodyDecor, category: category.label } });
   }
-  if (c.mattress && !options.firmness.values.some((v) => v.label === c.firmness))
+  if (c.mattress && !offersMattress(options)) issues.push({ code: "bed.mattress_not_offered", path: "mattress" });
+  else if (c.mattress && !options.firmness!.values.some((v) => v.label === c.firmness))
     issues.push({ code: "bed.firmness_required", path: "firmness" });
   if (!c.mattress && c.firmness !== null) issues.push({ code: "bed.firmness_without_mattress", path: "firmness" });
   const offered = new Set(options.addons.map((a) => a.id));
@@ -87,9 +88,13 @@ export function bedFormFields(options: BedProductOptions, c: BedConfiguration): 
     [size.categoryField]: category.value,
     [category.frontField]: front.frontValue,
     [category.bodyField]: body.bodyValue,
-    [size.mattressField]: c.mattress ? options.mattress.values.tak : options.mattress.values.nie,
   };
-  if (c.mattress) fields[options.firmness.field] = options.firmness.values.find((v) => v.label === c.firmness)!.value;
+  // The mattress is sent only as the shop's own mattress field ("Nie" unless explicitly selected), and
+  // the firmness only with a selected mattress; nothing is sent for products without a mattress option.
+  if (offersMattress(options)) {
+    fields[size.mattressField!] = c.mattress ? options.mattress!.values.tak : options.mattress!.values.nie;
+    if (c.mattress) fields[options.firmness!.field] = options.firmness!.values.find((v) => v.label === c.firmness)!.value;
+  }
   for (const addon of options.addons) fields[addon.field] = c.addons[addon.id] ? addon.values.tak : addon.values.nie;
   return ok(fields);
 }

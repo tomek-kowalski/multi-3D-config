@@ -109,7 +109,9 @@ def build(epo, swatches):
                 "bodyField": body[0]["name"],
                 "decors": decors,
             })
-        firmness = by_label(LABEL_FIRMNESS)[0]
+        # The mattress is optional: products without it simply have no mattress/firmness fields.
+        firmness_fields = by_label(LABEL_FIRMNESS)
+        mattress_values = by_label(LABEL_MATTRESS)
         addons = []
         for f in fields:
             if f["label"] in ADDON_LABELS:
@@ -119,11 +121,14 @@ def build(epo, swatches):
         products.append({
             "productId": product["productId"],
             "url": product["url"],
-            "sizes": [dict(s, categoryField=category_fields[s["key"]], mattressField=mattress_fields[s["key"]]) for s in sizes],
+            "sizes": [
+                dict(s, categoryField=category_fields[s["key"]], **({"mattressField": mattress_fields[s["key"]]} if s["key"] in mattress_fields else {}))
+                for s in sizes
+            ],
             "sizeField": size_field["name"],
             "categories": categories,
-            "mattress": {"values": {display(v).lower(): v for v in by_label(LABEL_MATTRESS)[0]["values"]}},
-            "firmness": {"field": firmness["name"], "values": [{"label": display(v), "value": v} for v in firmness["values"]]},
+            **({"mattress": {"values": {display(v).lower(): v for v in mattress_values[0]["values"]}}} if mattress_values else {}),
+            **({"firmness": {"field": firmness_fields[0]["name"], "values": [{"label": display(v), "value": v} for v in firmness_fields[0]["values"]]}} if firmness_fields else {}),
             "addons": addons,
             "termsField": terms["name"],
             "termsValue": terms["values"][0],

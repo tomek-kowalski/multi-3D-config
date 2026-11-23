@@ -106,10 +106,10 @@ describe("mattress selection per bed", () => {
     const order = unwrap(buildOrder(reloaded));
     const fields = order.modules.map((m) => (m.items[0].kind === "product-options" ? m.items[0].fields : {}));
     const options = getBedOptions(4000);
-    const mattressField = options.sizes.find((s) => s.key === "140x200")!.mattressField;
-    expect(fields[0][mattressField]).toBe(options.mattress.values.tak);
-    expect(fields[0][options.firmness.field]).toBe("H4_1");
-    expect(fields[1][mattressField]).toBe(options.mattress.values.nie);
+    const mattressField = options.sizes.find((s) => s.key === "140x200")!.mattressField!;
+    expect(fields[0][mattressField]).toBe(options.mattress!.values.tak);
+    expect(fields[0][options.firmness!.field]).toBe("H4_1");
+    expect(fields[1][mattressField]).toBe(options.mattress!.values.nie);
     expect(order.modules[0].summary.find((r) => r.labelKey === "summary.mattress")?.value).toBe("Velora Silver H4");
   });
 });

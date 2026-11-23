@@ -43,7 +43,8 @@ export interface BedSizeOption {
   readonly label: string;
   readonly value: string;
   readonly categoryField: string;
-  readonly mattressField: string;
+  /** The size's mattress yes/no field; absent when the product offers no mattress. */
+  readonly mattressField?: string;
 }
 
 export interface BedAddon {
@@ -59,8 +60,9 @@ export interface BedProductOptions {
   readonly sizeField: string;
   readonly sizes: readonly BedSizeOption[];
   readonly categories: readonly BedDecorCategory[];
-  readonly mattress: { readonly values: { readonly nie: string; readonly tak: string } };
-  readonly firmness: { readonly field: string; readonly values: readonly { readonly label: string; readonly value: string }[] };
+  /** Mattress option of the shop form; absent when the product offers no mattress. */
+  readonly mattress?: { readonly values: { readonly nie: string; readonly tak: string } };
+  readonly firmness?: { readonly field: string; readonly values: readonly { readonly label: string; readonly value: string }[] };
   readonly addons: readonly BedAddon[];
   readonly termsField: string;
   readonly termsValue: string;
@@ -113,6 +115,19 @@ export function getBedOptions(productId: number): BedProductOptions {
 
 export function getBedModel(typeId: string, size: string): ModelSizeEntry | null {
   return MODELS.models[typeId]?.sizes[size] ?? null;
+}
+
+/**
+ * Whether the product's shop form offers a mattress (a yes/no field for every size and a firmness
+ * choice). Only then is the mattress control shown, validated and sent to the shop.
+ */
+export function offersMattress(options: BedProductOptions): boolean {
+  return (
+    options.mattress !== undefined &&
+    options.firmness !== undefined &&
+    options.firmness.values.length > 0 &&
+    options.sizes.every((s) => typeof s.mattressField === "string")
+  );
 }
 
 export function findDecor(options: BedProductOptions, categoryId: string, decorId: string): BedDecor | null {
