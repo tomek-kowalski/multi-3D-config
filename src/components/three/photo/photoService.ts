@@ -3,12 +3,13 @@ import { toArrangementDocument } from "@/domain/serialization/arrangementJson";
 import type { PhotoMode } from "./capabilities";
 import type { PhotoProgress, RenderedPhoto } from "./photoEngine";
 import type { PhotoViewId } from "./photoCamera";
-import { settingsKey, type PhotoSettings } from "./photoSettings";
+import { settingsKey, type PhotoQualityRequest, type PhotoSettings } from "./photoSettings";
 
 export interface PhotoRequest {
   /** Number of views (1–3): front-right, front-left, front. */
   readonly count: 1 | 2 | 3;
-  readonly settings?: Partial<PhotoSettings>;
+  /** quality "auto" (the default): chosen per device from measured performance (capabilities.ts). */
+  readonly settings?: Partial<Omit<PhotoSettings, "quality">> & { readonly quality?: PhotoQualityRequest };
   readonly signal?: AbortSignal;
   readonly onProgress?: (progress: PhotoProgress) => void;
   /** The converging image while path tracing (JPEG, every few seconds). */
@@ -28,6 +29,17 @@ export function registerPhotoRenderer(renderer: PhotoRenderer | null): void {
 
 export function getPhotoRenderer(): PhotoRenderer | null {
   return active;
+}
+
+let warm: (() => Promise<void>) | null = null;
+
+export function registerPhotoPrewarm(prewarm: (() => Promise<void>) | null): void {
+  warm = prewarm;
+}
+
+/** Starts preparing the fast renderer (no-op without a mounted 3D view). */
+export function prewarmPhotoRenderer(): void {
+  void warm?.();
 }
 
 /**

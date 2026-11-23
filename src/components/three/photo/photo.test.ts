@@ -28,7 +28,7 @@ import { applyBedVisibility, prepareBedScene, SWATCH_SIZE_M } from "../modules/B
 import { opensContextMenu } from "../modules/ModuleObject";
 import { wallHiddenForCamera } from "../room/roomScene";
 import { createBackendPool } from "./backendPool";
-import { chooseRenderMode, MIN_TEXTURE_SIZE, type GpuChoice } from "./capabilities";
+import { autoQuality, chooseRenderMode, MIN_TEXTURE_SIZE, readPerformance, recordPerformance, type GpuChoice } from "./capabilities";
 import {
   arrangementFacingDeg,
   boxCorners,
@@ -48,6 +48,8 @@ import { DEFAULT_PHOTO_SETTINGS, QUALITY_PRESETS, resolvePhotoSettings } from ".
 import { photoTag } from "./tags";
 
 const GPU: GpuChoice = { mode: "pathtraced", reason: null };
+/** Path tracing settings (the default quality is the fast renderer). */
+const PT = { ...DEFAULT_PHOTO_SETTINGS, quality: "standard" as const };
 
 function arrangement(types: string[] = ["cabinet", "clickbed-o", "cabinet"]): Arrangement {
   let a: Arrangement = { room: { ...DEFAULT_ROOM, width: 6000 }, modules: [] };
@@ -108,7 +110,7 @@ function fakeBackend(mode: "pathtraced" | "raster", options: { perStep?: number;
       log.push(`${mode}:scene:${scene.children.length}`);
     },
     step() {
-      samples += mode === "raster" ? 1 : (options.perStep ?? 16);
+      samples += options.perStep ?? (mode === "raster" ? 48 : 16);
       return samples;
     },
     async output() {
@@ -135,8 +137,8 @@ function engineDeps(overrides: Partial<PhotoEngineDeps> = {}, clock = { t: 0 }):
 
 describe("photo settings and GPU detection", () => {
   it("renders 1920 × 1080 by default with neutral (colour-preserving) tone mapping", () => {
-    expect(DEFAULT_PHOTO_SETTINGS).toMatchObject({ width: 1920, height: 1080, toneMapping: "neutral", quality: "standard" });
-    expect(resolvePhotoSettings({ width: 99999, quality: "nope" as never })).toMatchObject({ width: 4096, quality: "standard" });
+    expect(DEFAULT_PHOTO_SETTINGS).toMatchObject({ width: 1920, height: 1080, toneMapping: "neutral", quality: "fast" });
+    expect(resolvePhotoSettings({ width: 99999, quality: "nope" as never })).toMatchObject({ width: 4096, quality: "fast" });
     for (const p of Object.values(QUALITY_PRESETS)) expect(p.minSamples).toBeLessThan(p.samples);
   });
 
@@ -347,7 +349,7 @@ describe("render engine", () => {
     const progress: number[] = [];
     const photos = await renderPhotoViews(
       views(),
-      DEFAULT_PHOTO_SETTINGS,
+      PT,
       engineDeps({ createBackend: (mode) => (backends.push(fakeBackend(mode)), backends.at(-1)!) }),
       { onProgress: (p) => progress.push(p.fraction) },
     );
@@ -364,7 +366,7 @@ describe("render engine", () => {
   it("can be cancelled; nothing is returned and the GPU resources are freed", async () => {
     const abort = new AbortController();
     const backend = fakeBackend("pathtraced", { perStep: 1 });
-    const run = renderPhotoViews(views(), DEFAULT_PHOTO_SETTINGS, engineDeps({ createBackend: () => backend }), {
+    const run = renderPhotoViews(views(), PT, engineDeps({ createBackend: () => backend }), {
       signal: abort.signal,
       onProgress: (p) => p.samples >= 5 && abort.abort(),
     });
@@ -376,24 +378,25 @@ describe("render engine", () => {
     const backend = fakeBackend("pathtraced", { perStep: 0.01 });
     const clock = { t: 0 };
     const deps = engineDeps({ createBackend: () => backend, now: () => (clock.t += 10_000) }, clock);
-    await expect(renderPhotoViews(views().slice(0, 1), DEFAULT_PHOTO_SETTINGS, deps)).rejects.toMatchObject({ code: "insufficient_samples" });
+    await expect(renderPhotoViews(views().slice(0, 1), PT, deps)).rejects.toMatchObject({ code: "insufficient_samples" });
     expect(backend.disposed).toBe(true);
   });
 
   it("falls back to the labelled raster renderer when the GPU cannot run the path tracer", async () => {
     const log: string[] = [];
     const deps = engineDeps({ createBackend: (mode) => fakeBackend(mode, { failSetScene: mode === "pathtraced", log }) });
-    const [photo] = await renderPhotoViews(views().slice(0, 1), DEFAULT_PHOTO_SETTINGS, deps);
-    expect(photo).toMatchObject({ mode: "raster", samples: 1, fallbackReason: "pathtracer_failed" });
+    const [photo] = await renderPhotoViews(views().slice(0, 1), PT, deps);
+    expect(photo).toMatchObject({ mode: "raster", fallbackReason: "pathtracer_failed" });
+    expect(photo.samples).toBe(QUALITY_PRESETS.fast.samples); // the fast renderer accumulates its frames
     expect(log).toEqual(["pathtraced:dispose", "raster:scene:0", "raster:dispose"]);
     await expect(
-      renderPhotoViews(views().slice(0, 1), { ...DEFAULT_PHOTO_SETTINGS, allowRasterFallback: false }, deps),
+      renderPhotoViews(views().slice(0, 1), { ...PT, allowRasterFallback: false }, deps),
     ).rejects.toMatchObject({ code: "failed" });
   });
 
   it("reports unsupported browsers and labels detected fallbacks", async () => {
-    await expect(renderPhotoViews(views(), DEFAULT_PHOTO_SETTINGS, engineDeps({ choice: { mode: "unsupported", reason: "no_webgl" } }))).rejects.toBeInstanceOf(PhotoRenderError);
-    const [raster] = await renderPhotoViews(views().slice(0, 1), DEFAULT_PHOTO_SETTINGS, engineDeps({ choice: { mode: "raster", reason: "software_gpu" } }));
+    await expect(renderPhotoViews(views(), PT, engineDeps({ choice: { mode: "unsupported", reason: "no_webgl" } }))).rejects.toBeInstanceOf(PhotoRenderError);
+    const [raster] = await renderPhotoViews(views().slice(0, 1), PT, engineDeps({ choice: { mode: "raster", reason: "software_gpu" } }));
     expect(raster).toMatchObject({ mode: "raster", fallbackReason: "software_gpu" });
   });
 });
@@ -411,6 +414,7 @@ describe("photo job", () => {
     const deps: PhotoJobDeps = {
       capture: captures,
       choice: () => GPU,
+      autoQuality: () => "standard",
       loadEnvironment: async () => new Texture(),
       upgradeTextures: async () => 0,
       createBackend: (mode) => (created.push(fakeBackend(mode)), created.at(-1)!),
@@ -438,7 +442,7 @@ describe("photo job", () => {
     expect(created).toHaveLength(2);
     const fresh = await runPhotoJob({ count: 1, reuse: false }, deps);
     expect(fresh[0]).not.toBe(first[0]);
-    const draft = await runPhotoJob({ count: 1, settings: { quality: "draft" } }, deps);
+    const draft = await runPhotoJob({ count: 1, settings: { quality: "high" } }, deps);
     expect(draft[0]).not.toBe(fresh[0]); // other settings: not reused
   });
 
@@ -526,7 +530,7 @@ describe("render engine timing and previews", () => {
     };
     // Each step "takes" 30 s: compilation (4 steps = 120 s) must not eat the standard 150 s budget.
     let t = 0;
-    const [photo] = await renderPhotoViews(view(), DEFAULT_PHOTO_SETTINGS, engineDeps({ createBackend: () => backend, now: () => (t += 30_000) }), {
+    const [photo] = await renderPhotoViews(view(), PT, engineDeps({ createBackend: () => backend, now: () => (t += 30_000) }), {
       onProgress: (p) => phases.push(p.phase),
     });
     expect(phases.slice(1, 4)).toEqual(["compiling", "compiling", "compiling"]);
@@ -537,14 +541,14 @@ describe("render engine timing and previews", () => {
   it("gives up on a path tracer that never produces a sample and uses the labelled fallback", async () => {
     const stuck: PhotoBackend = { ...fakeBackend("pathtraced"), compiling: true, step: () => 0 };
     let t = 0;
-    const [photo] = await renderPhotoViews(view(), DEFAULT_PHOTO_SETTINGS, engineDeps({ createBackend: (mode) => (mode === "pathtraced" ? stuck : fakeBackend("raster")), now: () => (t += 20_000) }));
+    const [photo] = await renderPhotoViews(view(), PT, engineDeps({ createBackend: (mode) => (mode === "pathtraced" ? stuck : fakeBackend("raster")), now: () => (t += 20_000) }));
     expect(photo).toMatchObject({ mode: "raster", fallbackReason: "pathtracer_failed" });
   });
 
   it("delivers the converging image while path tracing", async () => {
     const previews: Blob[] = [];
     let t = 0;
-    await renderPhotoViews(view(), DEFAULT_PHOTO_SETTINGS, engineDeps({ createBackend: () => fakeBackend("pathtraced", { perStep: 4 }), now: () => (t += 3_000) }), {
+    await renderPhotoViews(view(), PT, engineDeps({ createBackend: () => fakeBackend("pathtraced", { perStep: 4 }), now: () => (t += 3_000) }), {
       onPreview: (_view, image) => previews.push(image),
     });
     expect(previews.length).toBeGreaterThan(2);
@@ -598,15 +602,70 @@ describe("output validity", () => {
 
   it("never delivers an image with invalid (NaN / black) pixels; falls back to the labelled raster render", async () => {
     const corrupt = { ...fakeBackend("pathtraced"), invalidFraction: () => 0.22 };
-    const [photo] = await renderPhotoViews(view(), DEFAULT_PHOTO_SETTINGS, engineDeps({ createBackend: (mode) => (mode === "pathtraced" ? corrupt : fakeBackend("raster")) }));
+    const [photo] = await renderPhotoViews(view(), PT, engineDeps({ createBackend: (mode) => (mode === "pathtraced" ? corrupt : fakeBackend("raster")) }));
     expect(photo).toMatchObject({ mode: "raster", fallbackReason: "pathtracer_failed" });
     await expect(
-      renderPhotoViews(view(), { ...DEFAULT_PHOTO_SETTINGS, allowRasterFallback: false }, engineDeps({ createBackend: () => ({ ...fakeBackend("pathtraced"), invalidFraction: () => 0.22 }) })),
+      renderPhotoViews(view(), { ...PT, allowRasterFallback: false }, engineDeps({ createBackend: () => ({ ...fakeBackend("pathtraced"), invalidFraction: () => 0.22 }) })),
     ).rejects.toMatchObject({ code: "failed" });
   });
 
   it("accepts a valid image (a few dark crevice pixels are fine)", async () => {
-    const [photo] = await renderPhotoViews(view(), DEFAULT_PHOTO_SETTINGS, engineDeps({ createBackend: () => ({ ...fakeBackend("pathtraced"), invalidFraction: () => 0.0002 }) }));
+    const [photo] = await renderPhotoViews(view(), PT, engineDeps({ createBackend: () => ({ ...fakeBackend("pathtraced"), invalidFraction: () => 0.0002 }) }));
     expect(photo.mode).toBe("pathtraced");
+  });
+});
+
+describe("automatic quality from measured performance", () => {
+  function memoryStore() {
+    const data = new Map<string, string>();
+    return { getItem: (k: string) => data.get(k) ?? null, setItem: (k: string, v: string) => void data.set(k, v) };
+  }
+  const timings = (sampling: number) => ({ setScene: 200, firstSample: 105_000, sampling });
+
+  it("uses the fast renderer until this device has proven fast path tracing", () => {
+    const store = memoryStore();
+    expect(autoQuality(GPU, readPerformance(store))).toBe("fast"); // nothing measured yet
+    // Intel UHD 620 as measured: 71 samples in 150 s at 1920×1080.
+    const slow = recordPerformance({ mode: "pathtraced", samples: 71, width: 1920, height: 1080, timings: timings(150_000) }, store);
+    expect(slow.pathtracedSppPerSecond).toBeCloseTo(0.47, 2);
+    expect(slow.pathtracerStartupMs).toBe(105_200);
+    expect(autoQuality(GPU, slow)).toBe("fast");
+    // A GPU that reaches 192 samples in 40 s.
+    const quick = recordPerformance({ mode: "pathtraced", samples: 192, width: 1920, height: 1080, timings: timings(40_000) }, store);
+    expect(autoQuality(GPU, quick)).toBe("standard");
+    // …but never where path tracing is unavailable.
+    expect(autoQuality({ mode: "raster", reason: "software_gpu" }, quick)).toBe("fast");
+  });
+
+  it("normalizes to 1920×1080 and records the fast renderer's frame time", () => {
+    const store = memoryStore();
+    const half = recordPerformance({ mode: "pathtraced", samples: 100, width: 960, height: 540, timings: timings(25_000) }, store);
+    expect(half.pathtracedSppPerSecond).toBe(1); // 4 spp/s at a quarter of the pixels
+    const raster = recordPerformance({ mode: "raster", samples: 96, width: 1920, height: 1080, timings: timings(4800) }, store);
+    expect(raster.rasterFrameMs).toBe(50);
+    expect(raster.pathtracedSppPerSecond).toBe(1); // earlier measurements kept
+  });
+
+  it("resolves the requested 'auto' per device in the photo job", async () => {
+    clearPhotoCache();
+    const { scene } = liveScene();
+    const a = arrangement();
+    const settingsSeen: string[] = [];
+    let t = 0;
+    const deps: PhotoJobDeps = {
+      capture: () => ({ arrangement: a, snapshot: takeSnapshot(scene) }),
+      choice: () => GPU,
+      autoQuality: () => "fast",
+      loadEnvironment: async () => new Texture(),
+      upgradeTextures: async () => 0,
+      createBackend: (mode, s) => (settingsSeen.push(`${mode}:${s.quality}`), fakeBackend(mode)),
+      now: () => (t += 50),
+      nextFrame: async () => {},
+      sleep: async () => {},
+    };
+    const [photo] = await runPhotoJob({ count: 1 }, deps);
+    expect(settingsSeen).toEqual(["raster:fast"]);
+    expect(photo.settings.quality).toBe("fast");
+    expect(photo.timings).toMatchObject({ snapshot: expect.any(Number), prepare: expect.any(Number), job: expect.any(Number), sampling: expect.any(Number) });
   });
 });

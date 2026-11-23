@@ -4,15 +4,10 @@ import { WebGLPathTracer } from "three-gpu-pathtracer";
 import {
   ACESFilmicToneMapping,
   AgXToneMapping,
-  Box3,
-  DirectionalLight,
   EquirectangularReflectionMapping,
   NeutralToneMapping,
-  PMREMGenerator,
   ShaderMaterial,
   SRGBColorSpace,
-  Vector3,
-  VSMShadowMap,
   WebGLRenderer,
   type DataTexture,
   type PerspectiveCamera,
@@ -21,10 +16,10 @@ import {
   type ToneMapping,
 } from "three";
 import { HDRLoader } from "three/examples/jsm/loaders/HDRLoader.js";
-import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
 import { FullScreenQuad } from "three/examples/jsm/postprocessing/Pass.js";
 import type { PhotoMode } from "./capabilities";
 import { GuidedDenoiser } from "./denoiser";
+import { createFastRasterBackend } from "./rasterBackend";
 import type { PhotoBackend } from "./photoEngine";
 import { QUALITY_PRESETS, type PhotoSettings, type PhotoToneMapping } from "./photoSettings";
 
@@ -171,67 +166,7 @@ export function createPathTracedBackend(initial: PhotoSettings, environment: Tex
   };
 }
 
-/**
- * Raster fallback, used only when path tracing is unavailable and always labelled as such: WebGL
- * rasterization with the same scene, materials and HDRI (prefiltered), a soft shadow map, and
- * supersampling. Not a photorealistic render.
- */
-export function createRasterBackend(settings: PhotoSettings, environment: Texture): PhotoBackend {
-  const factor = QUALITY_PRESETS[settings.quality].supersample;
-  const renderer = createRenderer(settings.width * factor, settings.height * factor, true);
-  renderer.toneMapping = TONE_MAPPING[settings.toneMapping];
-  renderer.toneMappingExposure = settings.exposure;
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = VSMShadowMap;
-  RectAreaLightUniformsLib.init();
-  const pmrem = new PMREMGenerator(renderer);
-  const prefiltered = pmrem.fromEquirectangular(environment).texture;
-  let current: { scene: Scene; camera: PerspectiveCamera } | null = null;
-
-  return {
-    mode: "raster" as PhotoMode,
-    async setScene(scene: Scene, camera: PerspectiveCamera) {
-      scene.environment = prefiltered;
-      // A soft key light from above the front for contact shadows (area lights cast none in raster).
-      const bounds = new Box3().setFromObject(scene);
-      const center = bounds.getCenter(new Vector3());
-      const size = bounds.getSize(new Vector3());
-      const key = new DirectionalLight("#fffaf2", 1.1);
-      key.position.set(center.x + size.x * 0.25, center.y + size.y * 2 + 3, center.z + size.z * 0.8 + 2);
-      key.target.position.copy(center);
-      key.castShadow = true;
-      key.shadow.mapSize.set(4096, 4096);
-      key.shadow.radius = 12;
-      key.shadow.blurSamples = 24;
-      key.shadow.bias = -0.0004;
-      const half = Math.max(size.x, size.z) * 0.75 + 1;
-      Object.assign(key.shadow.camera, { left: -half, right: half, top: half, bottom: -half, near: 0.1, far: 60 });
-      scene.add(key, key.target);
-      scene.updateMatrixWorld(true);
-      current = { scene, camera };
-    },
-    step() {
-      if (current) renderer.render(current.scene, current.camera);
-      return 1;
-    },
-    async output(format = "png") {
-      if (factor === 1) return canvasToBlob(renderer.domElement, format);
-      // Downsample the supersampled frame to the requested size.
-      const out = document.createElement("canvas");
-      out.width = settings.width;
-      out.height = settings.height;
-      const ctx = out.getContext("2d");
-      if (!ctx) throw new Error("2D canvas unavailable");
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = "high";
-      ctx.drawImage(renderer.domElement, 0, 0, settings.width, settings.height);
-      return canvasToBlob(out, format);
-    },
-    dispose() {
-      prefiltered.dispose();
-      pmrem.dispose();
-      renderer.dispose();
-      renderer.forceContextLoss();
-    },
-  };
+/** Fast photorealistic rasterization (see rasterBackend.ts); also the fallback when path tracing is unavailable. */
+export function createRasterBackend(settings: PhotoSettings, environment: Texture) {
+  return createFastRasterBackend(settings, environment, (s) => TONE_MAPPING[s.toneMapping]);
 }

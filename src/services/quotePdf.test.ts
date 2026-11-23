@@ -95,11 +95,11 @@ describe("quotation PDF", () => {
     }
   });
 
-  it("says how each rendering was made: a raster fallback is never captioned as photorealistic", async () => {
+  it("says how each rendering was made: a rasterized image is never captioned as path traced", async () => {
     const { text } = await readPdf(buildQuotePdf({ quote: quote(), images: [image(), image("raster")], fonts, t, locale: "pl-PL" }));
     const flat = text.replace(/\s+/g, " ");
     expect(flat).toContain("Wizualizacja 1 z 2 — fotorealistyczny rendering (path tracing, 192 próbek na piksel)");
-    expect(flat).toContain("Wizualizacja 2 z 2 — podgląd rastrowy (bez path tracingu, nie jest renderingiem fotorealistycznym)");
+    expect(flat).toContain("Wizualizacja 2 z 2 — szybki rendering PBR (rasteryzacja z oświetleniem HDRI, miękkimi cieniami i okluzją otoczenia, bez path tracingu)");
   });
 
   it("includes exactly the given renderings", async () => {

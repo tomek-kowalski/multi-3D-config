@@ -43,7 +43,19 @@ export interface RenderedPhoto {
   readonly settings: PhotoSettings;
   /** Why the raster fallback was used, when it was. */
   readonly fallbackReason: string | null;
+  /** Measured stage durations in ms (see PhotoTimings). */
+  readonly timings: PhotoTimings;
 }
+
+/**
+ * Where the time of one image went, measured:
+ * - setScene: scene upload (path tracer: BVH construction, material and texture packing);
+ * - firstSample: from the end of setScene to the first accumulated sample (shader compilation);
+ * - sampling: accumulating samples (path tracer) or frames (raster);
+ * - output: denoising, tone mapping and PNG encoding;
+ * - job-level stages (snapshot, textures, environment, …) are added by the photo job.
+ */
+export type PhotoTimings = Readonly<Record<string, number>>;
 
 export interface PhotoProgress {
   readonly phase: "preparing" | "compiling" | "rendering" | "finishing";
@@ -94,6 +106,7 @@ const STEP_BUDGET_MS = 40;
  */
 export const COMPILE_TIMEOUT_MS = 180_000;
 const PREVIEW_INTERVAL_MS = 6_000;
+const RASTER_PREVIEW_INTERVAL_MS = 800;
 /** More invalid pixels than this means the GPU computed garbage (e.g. driver bugs): never delivered. */
 export const MAX_INVALID_FRACTION = 0.01;
 
@@ -122,16 +135,19 @@ export async function renderPhotoViews(
   options: PhotoRunOptions = {},
 ): Promise<RenderedPhoto[]> {
   const { signal, onProgress, onPreview } = options;
-  const preset = QUALITY_PRESETS[settings.quality];
   if (deps.choice.mode === "unsupported") throw new PhotoRenderError("unsupported");
-  if (deps.choice.mode === "raster" && !settings.allowRasterFallback) throw new PhotoRenderError("unsupported");
+  // "fast" is rasterized by choice; standard/high are path traced where the GPU can (else the labelled fallback).
+  const wantsPathTracing = settings.quality !== "fast";
+  if (wantsPathTracing && deps.choice.mode === "raster" && !settings.allowRasterFallback) throw new PhotoRenderError("unsupported");
 
-  let mode: PhotoMode = deps.choice.mode;
-  let fallbackReason: string | null = deps.choice.reason;
+  let mode: PhotoMode = wantsPathTracing ? deps.choice.mode : "raster";
+  let fallbackReason: string | null = wantsPathTracing ? deps.choice.reason : null;
+  /** The preset of the backend actually rendering (a raster fallback uses the fast preset). */
+  const presetFor = () => QUALITY_PRESETS[mode === "pathtraced" ? settings.quality : "fast"];
   let backend: PhotoBackend | null = null;
   const results: RenderedPhoto[] = [];
 
-  const target = () => (mode === "pathtraced" ? preset.samples : 1);
+  const target = () => presetFor().samples;
   const report = (phase: PhotoProgress["phase"], view: number, samples: number) => {
     const perView = Math.min(1, samples / target());
     const done = phase === "finishing" ? 1 : phase === "rendering" ? perView * 0.97 : 0;
@@ -139,15 +155,19 @@ export async function renderPhotoViews(
   };
 
   /** Sets the view's scene and accumulates samples until the target or the time limit. */
+  let stage: Record<string, number> = {};
   const accumulate = async (b: PhotoBackend, built: { scene: Scene; camera: PerspectiveCamera }, index: number) => {
+    const sceneStarted = deps.now();
     try {
       await b.setScene(built.scene, built.camera);
     } catch (error) {
       throw new BackendFailure(error);
     }
     const setupStarted = deps.now();
+    stage = { setScene: Math.round(setupStarted - sceneStarted) };
     let samplingStarted: number | null = null;
     let lastPreview = setupStarted;
+    let previews = 0;
     let samples = 0;
     while (samples < target()) {
       checkAbort(signal);
@@ -157,12 +177,20 @@ export async function renderPhotoViews(
         throw new BackendFailure(error);
       }
       const now = deps.now();
-      if (samples > 0 && samplingStarted === null) samplingStarted = now;
+      if (samples > 0 && samplingStarted === null) {
+        samplingStarted = now;
+        stage.firstSample = Math.round(now - setupStarted);
+      }
       report(samples === 0 && b.compiling ? "compiling" : "rendering", index, samples);
-      if (samplingStarted !== null && now - samplingStarted >= preset.maxSeconds * 1000) break;
+      if (samplingStarted !== null && now - samplingStarted >= presetFor().maxSeconds * 1000) break;
       // Shaders that never finish compiling (driver failure) leave the path tracer at zero samples.
       if (samplingStarted === null && now - setupStarted > COMPILE_TIMEOUT_MS) throw new BackendFailure("no samples");
-      if (onPreview && mode === "pathtraced" && samples >= 1 && samples < target() && now - lastPreview >= PREVIEW_INTERVAL_MS) {
+      // Fast renderer: a usable preview after a few frames, then often; path tracing: every few seconds.
+      const interval = mode === "raster" ? RASTER_PREVIEW_INTERVAL_MS : PREVIEW_INTERVAL_MS;
+      // The fast renderer's first frame is already a complete image: shown at once, then refreshed.
+      const first = mode === "raster" && previews === 0 && samples >= 1;
+      if (onPreview && samples >= 1 && samples < target() && (first || now - lastPreview >= interval)) {
+        previews++;
         lastPreview = now;
         onPreview(index, await b.output("jpeg"));
       }
@@ -170,6 +198,7 @@ export async function renderPhotoViews(
     }
     const invalid = b.invalidFraction?.();
     if (invalid !== undefined && invalid > MAX_INVALID_FRACTION) throw new BackendFailure(`invalid pixels: ${(invalid * 100).toFixed(1)}%`);
+    stage.sampling = Math.round(deps.now() - (samplingStarted ?? setupStarted));
     return samples;
   };
 
@@ -196,24 +225,27 @@ export async function renderPhotoViews(
           samples = await accumulate(backend, built, index);
         }
         checkAbort(signal);
-        if (mode === "pathtraced" && samples < preset.minSamples) {
-          throw new PhotoRenderError("insufficient_samples", `${Math.floor(samples)} of ${preset.minSamples} samples`);
+        if (samples < presetFor().minSamples) {
+          throw new PhotoRenderError("insufficient_samples", `${Math.floor(samples)} of ${presetFor().minSamples} samples`);
         }
         report("finishing", index, samples);
+        const outputStarted = deps.now();
         const blob = await backend.output("png");
+        stage.output = Math.round(deps.now() - outputStarted);
         results.push({
           viewId: view.id,
           blob,
           width: settings.width,
           height: settings.height,
           mode,
-          samples: mode === "pathtraced" ? Math.floor(samples) : 1,
+          samples: Math.floor(samples),
           targetSamples: target(),
           durationMs: Math.round(deps.now() - started),
           camera: view.camera,
           hiddenWalls: view.hiddenWalls,
           settings,
-          fallbackReason: mode === "raster" ? fallbackReason : null,
+          fallbackReason: mode === "raster" && wantsPathTracing ? fallbackReason : null,
+          timings: { ...stage },
         });
       } finally {
         built.dispose?.();

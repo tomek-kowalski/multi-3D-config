@@ -37,6 +37,7 @@ function fakePhotos(count: number): RenderedPhoto[] {
     hiddenWalls: [],
     settings: DEFAULT_PHOTO_SETTINGS,
     fallbackReason: null,
+    timings: {},
   }));
 }
 

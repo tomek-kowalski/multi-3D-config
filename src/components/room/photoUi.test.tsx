@@ -26,6 +26,7 @@ function photo(mode: "pathtraced" | "raster" = "pathtraced", fallbackReason: str
     hiddenWalls: [],
     settings: DEFAULT_PHOTO_SETTINGS,
     fallbackReason,
+    timings: {},
   };
 }
 
@@ -53,6 +54,9 @@ function controllableRenderer() {
 
 const flush = () => act(() => new Promise((r) => setTimeout(r, 0)));
 
+/** The fast photorealistic rasterization result (96 frames). */
+const fast = () => ({ ...photo("raster"), samples: 96 });
+
 beforeEach(() => {
   useLocaleStore.setState({ locale: "pl" });
   store().reset();
@@ -76,18 +80,24 @@ describe("Renderuj obraz", () => {
     expect(next.hasAttribute("data-render-image")).toBe(true);
   });
 
-  it("starts a photorealistic render of the whole arrangement, shows progress and then the image", async () => {
+  it("shows the fast photorealistic image first, then refines it (auto quality), with progress", async () => {
     const r = controllableRenderer();
     render(<ViewOverlay />);
     fireEvent.click(screen.getByRole("button", { name: "Renderuj obraz" }));
     expect(screen.getByRole("dialog", { name: "Wizualizacja fotorealistyczna" })).toBeTruthy();
     await flush();
-    expect(r.renderer).toHaveBeenCalledTimes(1);
-    expect(r.requests[0]).toMatchObject({ count: 1, settings: { quality: "standard" }, reuse: true });
+    // 1. The fast renderer, immediately.
+    expect(r.requests[0]).toMatchObject({ count: 1, settings: { quality: "fast" }, reuse: true });
+    r.progress({ samples: 48, targetSamples: 96, mode: "raster", fraction: 0.5 });
+    expect(screen.getByRole("status").textContent).toBe("Szybki rendering: 48 z 96 klatek");
+    expect(screen.getByRole("button", { name: "Pobierz PNG" }).hasAttribute("disabled")).toBe(true);
+    await r.finish([fast()]);
+    // 2. The requested quality (auto), with the fast image shown meanwhile.
+    expect(r.requests[1]).toMatchObject({ count: 1, settings: { quality: "auto" }, reuse: true });
+    expect(document.querySelector("[data-photo-progressive]")).toBeTruthy();
     r.progress({ samples: 96, fraction: 0.5 });
     expect(screen.getByRole("status").textContent).toBe("Path tracing: 96 z 192 próbek na piksel");
     expect((screen.getByRole("progressbar") as HTMLProgressElement).value).toBe(0.5);
-    expect(screen.getByRole("button", { name: "Pobierz PNG" }).hasAttribute("disabled")).toBe(true);
     await r.finish([photo()]);
     const img = screen.getByRole("img", { name: /Fotorealistyczna wizualizacja/ }) as HTMLImageElement;
     expect(img.getAttribute("src")).toBe("blob:photo");
@@ -101,6 +111,7 @@ describe("Renderuj obraz", () => {
     render(<ViewOverlay />);
     fireEvent.click(screen.getByRole("button", { name: "Renderuj obraz" }));
     await flush();
+    await r.finish([fast()]);
     const result = photo();
     await r.finish([result]);
     fireEvent.click(screen.getByRole("button", { name: "Pobierz PNG" }));
@@ -111,24 +122,39 @@ describe("Renderuj obraz", () => {
     expect(photoFileName(new Date(2026, 10, 24, 9, 5))).toBe("wizualizacja-20261124-0905.png");
   });
 
-  it("can be cancelled and then rendered again", async () => {
+  it("cancelling path tracing keeps the finished fast image; a retry renders again without reuse", async () => {
     const r = controllableRenderer();
     render(<ViewOverlay />);
     fireEvent.click(screen.getByRole("button", { name: "Renderuj obraz" }));
     await flush();
+    const quick = fast();
+    await r.finish([quick]);
     r.progress({ samples: 10, fraction: 0.05 });
     fireEvent.click(screen.getByRole("button", { name: "Anuluj" }));
     await flush();
-    expect(r.requests[0].signal?.aborted).toBe(true);
-    expect(screen.getByRole("alert").textContent).toBe("Renderowanie zostało anulowane.");
-    // Retry, at another quality, without reusing an earlier result.
-    fireEvent.click(screen.getByRole("button", { name: "Wysoka" }));
+    expect(r.requests[1].signal?.aborted).toBe(true);
+    expect(document.querySelector("[data-photo-mode]")?.getAttribute("data-photo-mode")).toBe("raster");
+    expect(screen.getByRole("img", { name: /Fotorealistyczna wizualizacja/ })).toBeTruthy();
+    // Retry at path tracing (high): the fast phase may reuse its image, the high-quality one may not.
+    fireEvent.click(screen.getByRole("button", { name: "Path tracing (wysoka)" }));
     fireEvent.click(screen.getByRole("button", { name: "Renderuj ponownie" }));
     await flush();
-    expect(r.renderer).toHaveBeenCalledTimes(2);
-    expect(r.requests[1]).toMatchObject({ count: 1, settings: { quality: "high" }, reuse: false });
+    expect(r.requests[2]).toMatchObject({ settings: { quality: "fast" }, reuse: true });
+    await r.finish([quick]);
+    expect(r.requests[3]).toMatchObject({ count: 1, settings: { quality: "high" }, reuse: false });
     await r.finish([photo()]);
-    expect(screen.getByRole("img", { name: /Fotorealistyczna wizualizacja/ })).toBeTruthy();
+    expect(document.querySelector("[data-photo-mode]")?.getAttribute("data-photo-mode")).toBe("pathtraced");
+  });
+
+  it("cancelling before any image shows the cancellation", async () => {
+    const r = controllableRenderer();
+    render(<ViewOverlay />);
+    fireEvent.click(screen.getByRole("button", { name: "Renderuj obraz" }));
+    await flush();
+    r.progress({ samples: 4, targetSamples: 96, mode: "raster", fraction: 0.04 });
+    fireEvent.click(screen.getByRole("button", { name: "Anuluj" }));
+    await flush();
+    expect(screen.getByRole("alert").textContent).toBe("Renderowanie zostało anulowane.");
   });
 
   it("shows a failure and recovers with a retry", async () => {
@@ -138,22 +164,26 @@ describe("Renderuj obraz", () => {
     await flush();
     await r.fail(new PhotoRenderError("insufficient_samples"));
     expect(screen.getByRole("alert").textContent).toMatch(/wystarczającej liczby próbek/);
+    fireEvent.click(screen.getByRole("button", { name: "Szybki" }));
     fireEvent.click(screen.getByRole("button", { name: "Renderuj ponownie" }));
     await flush();
-    await r.finish([photo()]);
+    expect(r.requests.at(-1)).toMatchObject({ settings: { quality: "fast" }, reuse: false });
+    await r.finish([fast()]);
     expect(screen.getByRole("img", { name: /Fotorealistyczna wizualizacja/ })).toBeTruthy();
   });
 
-  it("labels the raster fallback clearly as not photorealistic", async () => {
+  it("labels the fast renderer as rasterization, and a path-tracing fallback with its reason", async () => {
     const r = controllableRenderer();
     render(<ViewOverlay />);
     fireEvent.click(screen.getByRole("button", { name: "Renderuj obraz" }));
     await flush();
+    await r.finish([fast()]);
     await r.finish([photo("raster", "software_gpu")]);
     const badge = document.querySelector("[data-photo-mode]")!;
     expect(badge.getAttribute("data-photo-mode")).toBe("raster");
-    expect(badge.textContent).toMatch(/NIE jest rendering fotorealistyczny/);
+    expect(badge.textContent).toMatch(/rasteryzacja, bez path tracingu/);
     expect(badge.textContent).toMatch(/programowy renderer/);
+    expect(badge.textContent).not.toMatch(/\(path tracing\)/);
   });
 
   it("closing the preview cancels a running render and leaves the configurator as it was", async () => {

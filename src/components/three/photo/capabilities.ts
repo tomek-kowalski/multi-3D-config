@@ -52,3 +52,73 @@ export function probeGpu(createCanvas: () => HTMLCanvasElement = () => document.
     return null;
   }
 }
+
+/**
+ * Measured rendering performance of this device, kept in localStorage: the automatic quality choice
+ * is based on what this GPU actually achieved, not on its name.
+ * - pathtracedSppPerSecond: path-traced samples per second, normalized to 1920×1080;
+ * - rasterFrameMs: milliseconds per fast-rasterized frame, normalized to 1920×1080;
+ * - pathtracerStartupMs: setup + shader compilation before the first sample.
+ */
+export interface DevicePerformance {
+  readonly pathtracedSppPerSecond?: number;
+  readonly rasterFrameMs?: number;
+  readonly pathtracerStartupMs?: number;
+}
+
+const PERFORMANCE_KEY = "multi3d.photo.performance.v1";
+const FULL_HD = 1920 * 1080;
+/**
+ * Path tracing is chosen automatically only from this throughput on: the standard quality (192 samples
+ * at 1920×1080) then takes about a minute. Slower GPUs (e.g. Intel UHD 620: ~0.5) get the fast renderer.
+ */
+export const AUTO_PATH_TRACING_MIN_SPP = 3;
+
+type KeyValueStore = Pick<Storage, "getItem" | "setItem">;
+
+function defaultStore(): KeyValueStore | null {
+  try {
+    return typeof localStorage === "undefined" ? null : localStorage;
+  } catch {
+    return null;
+  }
+}
+
+export function readPerformance(store: KeyValueStore | null = defaultStore()): DevicePerformance {
+  try {
+    const value = JSON.parse(store?.getItem(PERFORMANCE_KEY) ?? "{}") as DevicePerformance;
+    return value && typeof value === "object" ? value : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Records the measured throughput of a finished render (sampling time only, compilation excluded). */
+export function recordPerformance(
+  photo: { mode: PhotoMode; samples: number; width: number; height: number; timings: Readonly<Record<string, number>> },
+  store: KeyValueStore | null = defaultStore(),
+): DevicePerformance {
+  const current = readPerformance(store);
+  const sampling = photo.timings.sampling;
+  if (!store || !sampling || photo.samples <= 0) return current;
+  const scale = (photo.width * photo.height) / FULL_HD;
+  const next: DevicePerformance =
+    photo.mode === "pathtraced"
+      ? {
+          ...current,
+          pathtracedSppPerSecond: Math.round(((photo.samples * scale) / (sampling / 1000)) * 100) / 100,
+          pathtracerStartupMs: (photo.timings.setScene ?? 0) + (photo.timings.firstSample ?? 0),
+        }
+      : { ...current, rasterFrameMs: Math.round((sampling / photo.samples / scale) * 10) / 10 };
+  try {
+    store.setItem(PERFORMANCE_KEY, JSON.stringify(next));
+  } catch {
+    // storage full or disabled: the choice falls back to the fast renderer
+  }
+  return next;
+}
+
+/** The quality "auto" stands for on this device. */
+export function autoQuality(choice: GpuChoice, performance: DevicePerformance): "fast" | "standard" {
+  return choice.mode === "pathtraced" && (performance.pathtracedSppPerSecond ?? 0) >= AUTO_PATH_TRACING_MIN_SPP ? "standard" : "fast";
+}

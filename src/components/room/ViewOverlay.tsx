@@ -6,6 +6,7 @@ import { useT } from "@/i18n";
 import { useArrangementStore } from "@/store/useArrangementStore";
 import { buttonClass, primaryButtonClass } from "@/components/ui/fields";
 import { typeName } from "./ArrangementPanel";
+import { prewarmPhotoRenderer } from "@/components/three/photo/photoService";
 import { PhotoPreview } from "./PhotoPreview";
 import { RoomDimensions, SpacePanel } from "./SpacePanel";
 
@@ -88,7 +89,16 @@ export function ViewOverlay() {
         >
           {t("view.roomDimensions")}
         </button>
-        <button type="button" className={overlayButton} aria-haspopup="dialog" data-render-image onClick={() => setPhotoOpen(true)}>
+        <button
+          type="button"
+          className={overlayButton}
+          aria-haspopup="dialog"
+          data-render-image
+          // Prepare the renderer while the pointer is on its way to the click.
+          onPointerEnter={prewarmPhotoRenderer}
+          onFocus={prewarmPhotoRenderer}
+          onClick={() => setPhotoOpen(true)}
+        >
           {t("photo.button")}
         </button>
       </div>

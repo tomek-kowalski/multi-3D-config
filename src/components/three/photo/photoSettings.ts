@@ -4,11 +4,19 @@
  * configuration give a reusable result (see photoService.ts).
  */
 
-export type PhotoQuality = "draft" | "standard" | "high";
-export const PHOTO_QUALITIES: readonly PhotoQuality[] = ["draft", "standard", "high"];
+/**
+ * fast: photorealistic rasterization (seconds; rasterBackend.ts). standard/high: path tracing (minutes on
+ * integrated GPUs). "auto" (a request only) is resolved per device from measured performance.
+ */
+export type PhotoQuality = "fast" | "standard" | "high";
+export const PHOTO_QUALITIES: readonly PhotoQuality[] = ["fast", "standard", "high"];
+export type PhotoQualityRequest = PhotoQuality | "auto";
+
+/** Part of every cache key: completed renders of an older renderer are never reused. */
+export const RENDERER_VERSION = 3;
 
 export interface QualityPreset {
-  /** Path-traced samples per pixel to accumulate. */
+  /** Path-traced samples per pixel (fast: rasterized frames) to accumulate. */
   readonly samples: number;
   /** Fewer samples than this (time limit hit first) is too noisy: the render fails instead. */
   readonly minSamples: number;
@@ -16,14 +24,12 @@ export interface QualityPreset {
   readonly bounces: number;
   /** Sampling time limit for one image, in seconds (counted from the first sample; compilation excluded). */
   readonly maxSeconds: number;
-  /** Raster fallback: supersampling factor per axis. */
-  readonly supersample: number;
 }
 
 export const QUALITY_PRESETS: Readonly<Record<PhotoQuality, QualityPreset>> = {
-  draft: { samples: 48, minSamples: 12, bounces: 3, maxSeconds: 60, supersample: 1 },
-  standard: { samples: 192, minSamples: 32, bounces: 4, maxSeconds: 150, supersample: 2 },
-  high: { samples: 640, minSamples: 96, bounces: 6, maxSeconds: 420, supersample: 2 },
+  fast: { samples: 96, minSamples: 24, bounces: 0, maxSeconds: 30 },
+  standard: { samples: 192, minSamples: 32, bounces: 4, maxSeconds: 150 },
+  high: { samples: 640, minSamples: 96, bounces: 6, maxSeconds: 420 },
 };
 
 /**
@@ -48,7 +54,7 @@ export interface PhotoSettings {
 export const DEFAULT_PHOTO_SETTINGS: PhotoSettings = {
   width: 1920,
   height: 1080,
-  quality: "standard",
+  quality: "fast",
   toneMapping: "neutral",
   exposure: 1,
   denoise: true,
@@ -73,5 +79,5 @@ export function resolvePhotoSettings(overrides: Partial<PhotoSettings> = {}): Ph
 
 /** Stable key of the settings (part of the reuse key of a rendering). */
 export function settingsKey(s: PhotoSettings): string {
-  return [s.width, s.height, s.quality, s.toneMapping, s.exposure, s.denoise ? 1 : 0, s.allowRasterFallback ? 1 : 0, s.frameMargin].join("|");
+  return [RENDERER_VERSION, s.width, s.height, s.quality, s.toneMapping, s.exposure, s.denoise ? 1 : 0, s.allowRasterFallback ? 1 : 0, s.frameMargin].join("|");
 }

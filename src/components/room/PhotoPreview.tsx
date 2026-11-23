@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PhotoRenderError, type PhotoProgress, type RenderedPhoto } from "@/components/three/photo/photoEngine";
 import { getPhotoRenderer } from "@/components/three/photo/photoService";
-import { PHOTO_QUALITIES, type PhotoQuality } from "@/components/three/photo/photoSettings";
+import { PHOTO_QUALITIES, type PhotoQualityRequest } from "@/components/three/photo/photoSettings";
 import { useT } from "@/i18n";
 import { downloadBlob } from "@/services/download";
 import { buttonClass, primaryButtonClass, Segmented } from "@/components/ui/fields";
@@ -27,11 +27,12 @@ export function photoFileName(date: Date): string {
  */
 export function PhotoPreview({ onClose }: { onClose: () => void }) {
   const t = useT();
-  const [quality, setQuality] = useState<PhotoQuality>("standard");
+  const [quality, setQuality] = useState<PhotoQualityRequest>("auto");
   const [state, setState] = useState<State>({ kind: "rendering", progress: null, preview: null });
   const controller = useRef<AbortController | null>(null);
   const url = useRef<string | null>(null);
   const previewUrl = useRef<string | null>(null);
+  const open = useRef(true);
 
   const release = () => {
     if (url.current) URL.revokeObjectURL(url.current);
@@ -43,7 +44,7 @@ export function PhotoPreview({ onClose }: { onClose: () => void }) {
   };
 
   const render = useCallback(
-    async (reuse: boolean, q: PhotoQuality) => {
+    async (reuse: boolean, q: PhotoQualityRequest) => {
       controller.current?.abort();
       const abort = new AbortController();
       controller.current = abort;
@@ -54,31 +55,48 @@ export function PhotoPreview({ onClose }: { onClose: () => void }) {
         setState({ kind: "error", code: "no_renderer" });
         return;
       }
-      try {
-        const [photo] = await renderer({
-          count: 1,
-          settings: { quality: q },
-          reuse,
-          signal: abort.signal,
-          onProgress: (progress) => {
-            if (!abort.signal.aborted) setState((s) => ({ kind: "rendering", progress, preview: s.kind === "rendering" ? s.preview : null }));
-          },
-          onPreview: (_view, image) => {
-            if (abort.signal.aborted) return;
-            releasePreview();
-            const next = URL.createObjectURL(image);
-            previewUrl.current = next;
-            setState((s) => (s.kind === "rendering" ? { ...s, preview: next } : s));
-          },
-        });
+      const showPreview = (image: Blob) => {
         if (abort.signal.aborted) return;
+        releasePreview();
+        const next = URL.createObjectURL(image);
+        previewUrl.current = next;
+        setState((s) => (s.kind === "rendering" ? { ...s, preview: next } : s));
+      };
+      const finish = (photo: RenderedPhoto) => {
+        if (!open.current) return;
         release();
         releasePreview();
         url.current = URL.createObjectURL(photo.blob);
         setState({ kind: "done", photo, url: url.current });
+      };
+      const request = (quality: PhotoQualityRequest, again: boolean) =>
+        renderer({
+          count: 1,
+          settings: { quality },
+          reuse: !again,
+          signal: abort.signal,
+          onProgress: (progress) => {
+            if (!abort.signal.aborted) setState((s) => ({ kind: "rendering", progress, preview: s.kind === "rendering" ? s.preview : null }));
+          },
+          onPreview: (_view, image) => showPreview(image),
+        });
+      // 1. The fast photorealistic image first (seconds): the customer sees a useful result right away.
+      let fast: RenderedPhoto | null = null;
+      try {
+        [fast] = await request("fast", !reuse && q === "fast");
+        if (abort.signal.aborted) return;
+        if (q === "fast") return finish(fast);
+        showPreview(fast.blob);
+        // 2. Path tracing (or "auto" on a fast GPU) refines it; on a slow GPU "auto" is the fast image (cached).
+        const [photo] = await request(q, !reuse);
+        if (abort.signal.aborted) return;
+        finish(photo);
       } catch (error) {
-        if (controller.current !== abort) return; // superseded by a newer render
-        setState({ kind: "error", code: error instanceof PhotoRenderError ? error.code : "failed" });
+        if (controller.current !== abort && !abort.signal.aborted) return; // superseded by a newer render
+        const code = error instanceof PhotoRenderError ? error.code : "failed";
+        // Path tracing cancelled or failed: the finished fast image stays available.
+        if (fast) return finish(fast);
+        if (controller.current === abort) setState({ kind: "error", code });
       }
     },
     [],
@@ -86,8 +104,10 @@ export function PhotoPreview({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     // Start once when opened, after the dialog has been painted.
-    const timer = setTimeout(() => void render(true, "standard"), 0);
+    open.current = true;
+    const timer = setTimeout(() => void render(true, "auto"), 0);
     return () => {
+      open.current = false;
       clearTimeout(timer);
       controller.current?.abort();
       release();
@@ -146,7 +166,7 @@ export function PhotoPreview({ onClose }: { onClose: () => void }) {
                       ? t("photo.compiling")
                       : progress.mode === "pathtraced"
                       ? t("photo.progressPathtraced", { samples: Math.floor(progress.samples), target: progress.targetSamples })
-                      : t("photo.progressRaster")}
+                      : t("photo.progressRaster", { frames: Math.floor(progress.samples), target: progress.targetSamples })}
                 </p>
                 <progress className="h-2 w-2/3" max={1} value={progress?.fraction ?? 0} aria-label={t("photo.progress")} />
                 <p className="text-xs text-stone-500">{Math.round((progress?.fraction ?? 0) * 100)}%</p>
@@ -164,8 +184,8 @@ export function PhotoPreview({ onClose }: { onClose: () => void }) {
           <Segmented
             label={t("photo.quality")}
             value={quality}
-            options={PHOTO_QUALITIES.map((q) => ({ value: q, label: t(`photo.quality.${q}`) }))}
-            onChange={(v) => setQuality(v as PhotoQuality)}
+            options={(["auto", ...PHOTO_QUALITIES] as const).map((q) => ({ value: q, label: t(`photo.quality.${q}`) }))}
+            onChange={(v) => setQuality(v as PhotoQualityRequest)}
           />
         </div>
 
@@ -201,14 +221,15 @@ export function PhotoBadge({ photo }: { photo: RenderedPhoto }) {
   const size = `${photo.width}×${photo.height}`;
   if (photo.mode === "pathtraced") {
     return (
-      <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900" data-photo-mode="pathtraced">
+      <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900" data-photo-mode="pathtraced" data-photo-timings={JSON.stringify(photo.timings)}>
         {t("photo.badgePathtraced", { samples: photo.samples, size, seconds: Math.round(photo.durationMs / 1000) })}
       </p>
     );
   }
   return (
-    <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900" data-photo-mode="raster">
-      {t("photo.badgeRaster", { size })} {photo.fallbackReason && t(`photo.fallback.${photo.fallbackReason}` as Parameters<typeof t>[0])}
+    <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900" data-photo-mode="raster" data-photo-timings={JSON.stringify(photo.timings)}>
+      {t(photo.fallbackReason ? "photo.badgeRasterFallback" : "photo.badgeRaster", { size, frames: photo.samples, seconds: Math.round(photo.durationMs / 1000) })}{" "}
+      {photo.fallbackReason && t(`photo.fallback.${photo.fallbackReason}` as Parameters<typeof t>[0])}
     </p>
   );
 }

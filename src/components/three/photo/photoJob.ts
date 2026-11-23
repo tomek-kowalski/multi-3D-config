@@ -5,13 +5,17 @@ import { planPhotoViews, toThreeCamera } from "./photoCamera";
 import { PhotoRenderError, renderPhotoViews, type PhotoBackend, type RenderedPhoto } from "./photoEngine";
 import { buildPhotoScene, type SceneSnapshot } from "./photoScene";
 import { cachedPhoto, configurationKey, photoCacheKey, storePhoto, type PhotoRequest } from "./photoService";
-import { resolvePhotoSettings, type PhotoSettings } from "./photoSettings";
+import { resolvePhotoSettings, type PhotoQuality, type PhotoSettings } from "./photoSettings";
 
 /** What a photo request needs from the app and the browser (injected, so it is testable without a GPU). */
 export interface PhotoJobDeps {
   /** The current configuration and a snapshot of the live scene, taken together (same moment). */
   capture(): { arrangement: Arrangement; snapshot: SceneSnapshot };
   choice(): GpuChoice;
+  /** The quality "auto" stands for on this device (measured performance). */
+  autoQuality(): PhotoQuality;
+  /** Records the measured performance of a finished render. */
+  recordPerformance?(photo: RenderedPhoto): void;
   loadEnvironment(): Promise<Texture>;
   /** Swaps decor previews for HD images in the snapshot (failures keep the preview images). */
   upgradeTextures(snapshot: SceneSnapshot): Promise<unknown>;
@@ -41,8 +45,11 @@ export async function runPhotoJob(request: PhotoRequest, deps: PhotoJobDeps): Pr
   running = true;
   let snapshot: SceneSnapshot | null = null;
   try {
-    const settings = resolvePhotoSettings(request.settings);
+    const requested = request.settings?.quality ?? "auto";
+    const settings = resolvePhotoSettings({ ...request.settings, quality: requested === "auto" ? deps.autoQuality() : requested });
+    const jobStarted = deps.now();
     let captured = deps.capture();
+    let snapshotMs = deps.now() - jobStarted;
     // Furniture models still loading: wait for them (never render a placeholder box).
     const waitUntil = deps.now() + MODEL_WAIT_MS;
     while (captured.snapshot.loading > 0) {
@@ -50,7 +57,9 @@ export async function runPhotoJob(request: PhotoRequest, deps: PhotoJobDeps): Pr
       if (request.signal?.aborted) throw new PhotoRenderError("cancelled");
       if (deps.now() >= waitUntil) throw new PhotoRenderError("models_loading");
       await deps.sleep(MODEL_POLL_MS);
+      const t = deps.now();
       captured = deps.capture();
+      snapshotMs = deps.now() - t;
     }
     snapshot = captured.snapshot;
     const { arrangement } = captured;
@@ -64,10 +73,12 @@ export async function runPhotoJob(request: PhotoRequest, deps: PhotoJobDeps): Pr
     if (missing.length === 0) return reused as RenderedPhoto[];
 
     const choice = deps.choice();
+    const prepareStarted = deps.now();
     const [environment] = await Promise.all([deps.loadEnvironment(), deps.upgradeTextures(snapshot)]);
+    const prepareMs = deps.now() - prepareStarted;
     if (request.signal?.aborted) throw new PhotoRenderError("cancelled");
     const frozen = snapshot;
-    const rendered = await renderPhotoViews(
+    const renderedRaw = await renderPhotoViews(
       missing,
       settings,
       {
@@ -82,6 +93,10 @@ export async function runPhotoJob(request: PhotoRequest, deps: PhotoJobDeps): Pr
       },
       { signal: request.signal, onProgress: request.onProgress, onPreview: request.onPreview },
     );
+    // Job-level stages: snapshot (scene copy), prepare (HDRI + HD decor textures), total of the request.
+    const jobTimings = { snapshot: Math.round(snapshotMs), prepare: Math.round(prepareMs), job: Math.round(deps.now() - jobStarted) };
+    const rendered = renderedRaw.map((photo) => ({ ...photo, timings: { ...photo.timings, ...jobTimings } }));
+    rendered.forEach((photo) => deps.recordPerformance?.(photo));
     rendered.forEach((photo) => storePhoto(photoCacheKey(configuration, settings, photo.viewId), photo));
     let next = 0;
     return reused.map((photo) => photo ?? rendered[next++]);
