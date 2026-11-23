@@ -147,3 +147,15 @@ export function wallLabels(room: RoomConfiguration, activeWall: WallId | null): 
 export function sceneOpenings(room: Pick<RoomConfiguration, "openings">): readonly RoomOpening[] {
   return room.openings;
 }
+
+/**
+ * Photos: a wall the camera stands behind (outside the room) would block the view; the photo renderer
+ * leaves it out of that photo, with its windows and doors (the configuration is not changed).
+ */
+export function wallHiddenForCamera(room: RoomConfiguration, wall: WallId, camera: readonly [number, number, number] | null): boolean {
+  if (!camera) return false;
+  const frame = wallFrame(room, wall);
+  const x = camera[0] * 1000;
+  const z = camera[2] * 1000;
+  return (x - frame.origin.x) * frame.inward.x + (z - frame.origin.z) * frame.inward.z < 0;
+}

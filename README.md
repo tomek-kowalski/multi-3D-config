@@ -75,6 +75,27 @@ WooCommerce stays the only source of products and prices; the configurator store
 
 The plugin is in `wordpress/multi3d-configurator`. Copy it to `wp-content/plugins` and activate it. Optionally define `MULTI3D_ALLOWED_ORIGIN` in `wp-config.php` for cross-origin price reads.
 
+## Quotations ("Drukuj ofertę")
+
+The order dialog has two tabs: **Cały układ (N)** (cart hand-off of the complete arrangement) and
+**Drukuj ofertę**. A quotation always covers the whole arrangement:
+
+1. the arrangement is validated (`buildOrder`) and priced with WooCommerce Store API prices
+   (`src/domain/commerce/quote.ts`). There is no pricing logic: a line the shop does not price shows
+   "cena do potwierdzenia", and product options are priced by the shop in the cart;
+2. 1–3 renderings (front right, front left, front) are captured from the live Three.js scene in
+   presentation mode: no selection, collision, envelope, label or editing overlays, and walls between
+   the camera and the furniture hidden. The previous camera, canvas size and UI state are restored
+   afterwards (`src/components/three/presentation`);
+3. one PDF is built with jsPDF and the embedded DejaVu Sans (Polish characters; `public/fonts`), then
+   either downloaded or sent by e-mail. Both actions use the same cached quotation.
+
+The WordPress plugin (`includes/quotes.php`) stores quotations. The quotation JSON (configuration plus
+pricing snapshot) is post meta; the PDF and renderings are files in a protected uploads folder.
+Temporary quotations are deleted after 60 days (daily WP-Cron). A quotation whose cart is ordered is
+marked "ordered" and kept, and the order gets its own copy. The plugin sends e-mails with `wp_mail`
+(rate-limited per IP).
+
 ## Commands
 
 ```bash

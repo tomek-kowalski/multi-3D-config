@@ -99,7 +99,8 @@ def build(epo, swatches):
                     "name": decor_name,
                     "frontValue": v_front,
                     "bodyValue": v_body,
-                    "swatch": None if not swatch else {"hex": swatch["hex"], "texture": swatch["file"], "namePl": swatch["namePl"], "catalogCode": swatch["code"], "match": match},
+                    "swatch": None if not swatch else {"hex": swatch["hex"], "texture": swatch["file"], "namePl": swatch["namePl"], "catalogCode": swatch["code"], "match": match,
+                               "grain": swatch.get("grain", {}).get("direction", "none")},
                 })
             categories.append({
                 "id": re.sub(r"[^a-z0-9]+", "-", label.lower()).strip("-"),

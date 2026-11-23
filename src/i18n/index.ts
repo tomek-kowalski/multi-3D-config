@@ -90,3 +90,15 @@ export function formatIssue(t: Translate, issue: Issue): string {
   }
   return t("issue.generic", { code: issue.code });
 }
+
+/**
+ * Display value of a configuration summary row: material ids (cabinet finishes) are shown with their
+ * localized names; everything else is product data shown as is.
+ */
+export function summaryValue(t: (key: string, params?: MessageParams) => string, row: { labelKey: string; value: string }): string {
+  if (row.labelKey === "summary.bodyMaterial") {
+    const key = `material.${row.value}`;
+    if (isMessageKey(key)) return t(key);
+  }
+  return row.value;
+}

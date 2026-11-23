@@ -9,8 +9,14 @@ import { getFurnitureType } from "@/domain/modules/registry";
 import type { ModuleInstance } from "@/domain/modules/types";
 import { useArrangementStore } from "@/store/useArrangementStore";
 import { CLICK_TOLERANCE_PX } from "../PanelMesh";
+import { photoTag } from "../photo/tags";
 import { mmToM } from "../units";
 import { getModuleRenderer } from "./moduleRenderers";
+
+/** A right-drag pans the camera; only a right click (no pointer movement) opens the furniture menu. */
+export function opensContextMenu(pointerTravelPx: number): boolean {
+  return pointerTravelPx <= CLICK_TOLERANCE_PX;
+}
 
 const SELECT_COLOR = "#2563eb";
 const COLLISION_COLOR = "#dc2626";
@@ -18,13 +24,14 @@ const ENVELOPE_COLOR = "#f59e0b";
 /** Drag positions snap to this grid (mm); exact values are typed in the menu. */
 const DRAG_SNAP_MM = 10;
 
-function VolumeBox({ box, color, opacity, edges = true }: { box: BoxMm; color: string; opacity: number; edges?: boolean }) {
+function VolumeBox({ box, color, opacity, edges = true, loading = false }: { box: BoxMm; color: string; opacity: number; edges?: boolean; loading?: boolean }) {
   const { position: p, dimensions: d } = box;
   return (
     <mesh
       position={[mmToM(p.x + d.width / 2), mmToM(p.y + d.height / 2), mmToM(p.z + d.depth / 2)]}
       scale={[mmToM(d.width) + 0.004, mmToM(d.height) + 0.004, mmToM(d.depth) + 0.004]}
       raycast={() => null}
+      userData={loading ? photoTag("loading") : undefined}
     >
       <boxGeometry />
       <meshBasicMaterial color={color} transparent opacity={opacity} depthWrite={false} />
@@ -59,7 +66,7 @@ export function DockingPreview() {
 
 /** Placeholder while a model loads. */
 function LoadingBox({ box }: { box: BoxMm }) {
-  return <VolumeBox box={box} color="#a8a29e" opacity={0.25} />;
+  return <VolumeBox box={box} color="#a8a29e" opacity={0.25} loading />;
 }
 
 /** The active drag, if any. Kept outside React: it only lives between pointer down and up. */
@@ -149,6 +156,7 @@ function useDrag(instance: ModuleInstance) {
 export function ModuleObject({ module, selected, colliding }: { module: ModuleInstance; selected: boolean; colliding: boolean }) {
   const select = useArrangementStore((s) => s.selectModule);
   const setMenu = useArrangementStore((s) => s.setActiveMenu);
+  const openContextMenu = useArrangementStore((s) => s.openContextMenu);
   const type = getFurnitureType(module.typeId);
   const footprint = type.footprint(module.configuration);
   const boxes = type.collisionBoxes(module.configuration, module.state);
@@ -169,6 +177,12 @@ export function ModuleObject({ module, selected, colliding }: { module: ModuleIn
         }
       }}
       onPointerDown={selected ? startDrag : undefined}
+      onContextMenu={(event: ThreeEvent<MouseEvent>) => {
+        if (!opensContextMenu(event.delta)) return;
+        event.stopPropagation();
+        event.nativeEvent.preventDefault();
+        openContextMenu(module.id, event.nativeEvent.clientX, event.nativeEvent.clientY);
+      }}
     >
       <group position={[-mmToM(footprint.width) / 2, 0, -mmToM(footprint.depth) / 2]}>
         <Suspense fallback={<LoadingBox box={boxes[0]} />}>

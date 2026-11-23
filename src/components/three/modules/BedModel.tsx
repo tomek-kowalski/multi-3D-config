@@ -6,11 +6,16 @@ import { useEffect, useLayoutEffect, useMemo } from "react";
 import { Color, Mesh, PropertyBinding, MeshStandardMaterial, RepeatWrapping, SRGBColorSpace, TextureLoader, type Object3D, type Texture } from "three";
 import type { BedConfiguration } from "@/domain/beds/bedType";
 import { findDecor, getBedModel, getBedOptions, type BedDecor } from "@/domain/beds/catalog";
+import { photoTag, type PhotoRole } from "../photo/tags";
+import type { PhotoDecor } from "../photo/photoMaterials";
 
 /** Neutral preview for decors the supplied catalog has no swatch for. */
 export const NO_SWATCH_COLOR = "#B9B6B0";
 /** Real-world size covered by one decor swatch image (UVs are in metres). */
-const SWATCH_SIZE_M = 0.6;
+export const SWATCH_SIZE_M = 0.6;
+
+/** Material slot of the converted models → photo role (see convert-clickbed.mjs). */
+const SLOT_ROLES: Readonly<Record<string, PhotoRole>> = { body: "board", front: "board", mattress: "fabric", hardware: "metal" };
 
 const loader = new TextureLoader();
 const textures = new Map<string, Texture>();
@@ -40,6 +45,13 @@ function applyDecor(material: MeshStandardMaterial, decor: BedDecor | null, inva
   const gloss = decor && /^(MG|AG)$/.test(decor.structure);
   material.roughness = gloss ? 0.25 : 0.65;
   material.metalness = decor && decor.code.startsWith("AL") ? 0.35 : 0;
+  // The photorealistic renderer reads the decor from here (HD texture, surface structure).
+  const photo: PhotoDecor | null = decor?.swatch
+    ? { texture: decor.swatch.texture, code: decor.code, structure: decor.structure, swatchSizeM: SWATCH_SIZE_M }
+    : decor
+      ? { texture: null, code: decor.code, structure: decor.structure, swatchSizeM: SWATCH_SIZE_M }
+      : null;
+  material.userData.decor = photo;
   material.needsUpdate = true;
 }
 
@@ -88,6 +100,7 @@ export function prepareBedScene(scene: Object3D): { root: Object3D; materials: M
       materials.set(source.name, material);
     }
     child.material = material;
+    child.userData = { ...child.userData, ...photoTag(SLOT_ROLES[source.name] ?? "metal") };
     child.castShadow = true;
     child.receiveShadow = true;
   });

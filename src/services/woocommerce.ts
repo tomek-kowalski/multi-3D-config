@@ -85,7 +85,7 @@ export const ORDER_FIELD = "multi3d_order";
  * created in the customer's own shop session; the plugin then redirects to the cart. `accepted` holds
  * the shop's terms fields the customer ticked (field name → value).
  */
-export function submitOrderToShop(payload: OrderPayload, accepted: Readonly<Record<string, string>>): boolean {
+export function submitOrderToShop(payload: OrderPayload, accepted: Readonly<Record<string, string>>, quoteNumber?: string): boolean {
   const base = shopUrl();
   if (!base) return false;
   const form = document.createElement("form");
@@ -99,7 +99,7 @@ export function submitOrderToShop(payload: OrderPayload, accepted: Readonly<Reco
     input.value = value;
     form.appendChild(input);
   };
-  field(ORDER_FIELD, JSON.stringify({ ...payload, acceptedTerms: accepted }));
+  field(ORDER_FIELD, JSON.stringify({ ...payload, acceptedTerms: accepted, ...(quoteNumber ? { quoteNumber } : {}) }));
   document.body.appendChild(form);
   form.submit();
   return true;

@@ -1,3 +1,4 @@
+import type { RoomConfiguration } from "../room/types";
 import { getFurnitureType } from "../modules/registry";
 import type { ModuleFootprint, ModuleInstance } from "../modules/types";
 import { placeBox, type PlacedBox } from "../spatial/geometry";
@@ -34,5 +35,26 @@ export function moduleLocalExtentX(module: Pick<ModuleInstance, "typeId" | "conf
   return {
     min: Math.min(...boxes.map((b) => b.position.x)),
     max: Math.max(...boxes.map((b) => b.position.x + b.dimensions.width)),
+  };
+}
+
+/**
+ * Axis-aligned bounds (room millimetres) of everything placed, in the displayed states; the room's
+ * floor area when nothing is placed. Used to frame presentation renderings.
+ */
+export function arrangementBounds(arrangement: { room: RoomConfiguration; modules: readonly ModuleInstance[] }): {
+  min: { x: number; y: number; z: number };
+  max: { x: number; y: number; z: number };
+} {
+  const boxes = arrangement.modules.flatMap((m) => placedCollisionBoxes(m));
+  if (boxes.length === 0) {
+    const { width, depth, height } = arrangement.room;
+    return { min: { x: 0, y: 0, z: 0 }, max: { x: width, y: height, z: depth } };
+  }
+  const xs = boxes.flatMap((b) => b.corners.map((c) => c.x));
+  const zs = boxes.flatMap((b) => b.corners.map((c) => c.z));
+  return {
+    min: { x: Math.min(...xs), y: Math.min(...boxes.map((b) => b.yMin)), z: Math.min(...zs) },
+    max: { x: Math.max(...xs), y: Math.max(...boxes.map((b) => b.yMax)), z: Math.max(...zs) },
   };
 }

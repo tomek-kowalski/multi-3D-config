@@ -30,6 +30,10 @@ const MULTI3D_MAX_BYTES     = 1048576;
 const MULTI3D_SESSION_KEY   = 'multi3d_arrangement';
 const MULTI3D_CART_ITEM_KEY = 'multi3d';
 
+require_once __DIR__ . '/includes/quotes.php';
+register_activation_hook( __FILE__, 'multi3d_schedule_quote_purge' );
+register_deactivation_hook( __FILE__, 'multi3d_unschedule_quote_purge' );
+
 add_action( 'wp_loaded', 'multi3d_handle_cart_request', 20 );
 
 function multi3d_handle_cart_request() {
@@ -54,6 +58,9 @@ function multi3d_handle_cart_request() {
 	if ( null === WC()->cart ) {
 		wc_load_cart();
 	}
+
+	// Lets the quotation module link the order to a stored quotation (includes/quotes.php).
+	do_action( 'multi3d_cart_request', $order );
 
 	$accepted = is_array( $order['acceptedTerms'] ?? null ) ? $order['acceptedTerms'] : array();
 	$added    = 0;

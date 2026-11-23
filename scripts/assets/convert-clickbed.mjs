@@ -23,9 +23,10 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { BufferAttribute, BufferGeometry, Box3, Vector3 } from "three";
+import { BufferGeometry, Box3, Vector3 } from "three";
 import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 import { mergeGeometries, mergeVertices } from "three/addons/utils/BufferGeometryUtils.js";
+import { boxProjectUvs } from "./uv.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const SOURCE = process.argv[2];
@@ -83,34 +84,6 @@ const SLOTS = Object.keys(SLOT_MATERIALS);
 const STATES = ["folded", "unfolded"];
 /** Hinges and rails sit up to ~1 cm in front of the carcass; geometry beyond 2 cm counts as extension. */
 const EXTENSION_MARGIN_M = 0.02;
-
-/** Planar UVs in metres along the two axes of each triangle's dominant plane (for decor swatches). */
-function boxProjectUvs(geometry) {
-  const pos = geometry.getAttribute("position");
-  const uv = new Float32Array(pos.count * 2);
-  const a = new Vector3();
-  const b = new Vector3();
-  const c = new Vector3();
-  for (let i = 0; i < pos.count; i += 3) {
-    a.fromBufferAttribute(pos, i);
-    b.fromBufferAttribute(pos, i + 1);
-    c.fromBufferAttribute(pos, i + 2);
-    const n = new Vector3().crossVectors(b.clone().sub(a), c.clone().sub(a));
-    const ax = Math.abs(n.x);
-    const ay = Math.abs(n.y);
-    const az = Math.abs(n.z);
-    for (let k = 0; k < 3; k++) {
-      const x = pos.getX(i + k);
-      const y = pos.getY(i + k);
-      const z = pos.getZ(i + k);
-      // Grain runs along the longest panel direction (X) on fronts/tops, vertically on sides.
-      const [u, v] = az >= ax && az >= ay ? [x, y] : ay >= ax ? [x, z] : [z, y];
-      uv[(i + k) * 2] = u;
-      uv[(i + k) * 2 + 1] = v;
-    }
-  }
-  geometry.setAttribute("uv", new BufferAttribute(uv, 2));
-}
 
 function boundsMm(box) {
   const mm = (v) => Math.round(v * 1000);
@@ -264,11 +237,12 @@ for (const model of MODELS) {
             if (p.geometry.getAttribute("normal")) g.setAttribute("normal", p.geometry.getAttribute("normal").clone());
             else g.computeVertexNormals();
             g.translate(offset.x, offset.y, offset.z);
+            // UVs per part (before merging): u along the part's longer side, so the grain follows it.
+            boxProjectUvs(g);
             return g;
           });
         if (geometries.length === 0) continue;
         const merged = mergeGeometries(geometries);
-        boxProjectUvs(merged);
         const indexed = mergeVertices(merged, 1e-5);
         fullBox.union(new Box3().setFromBufferAttribute(indexed.getAttribute("position")));
         result[state][slot] = indexed;

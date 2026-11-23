@@ -1,10 +1,12 @@
 "use client";
 
 import Image from "next/image";
+import { useState } from "react";
 import { useT } from "@/i18n";
 import { useArrangementStore } from "@/store/useArrangementStore";
 import { buttonClass, primaryButtonClass } from "@/components/ui/fields";
 import { typeName } from "./ArrangementPanel";
+import { PhotoPreview } from "./PhotoPreview";
 import { RoomDimensions, SpacePanel } from "./SpacePanel";
 
 /** Logo asset, used unmodified (270 × 300 px); displayed at a responsive height, width from its ratio. */
@@ -55,6 +57,7 @@ export function ViewOverlay() {
   const hasSelection = useArrangementStore((s) => s.selectedModuleId !== null);
   const roomPanelOpen = useArrangementStore((s) => s.roomPanelOpen);
   const setRoomPanelOpen = useArrangementStore((s) => s.setRoomPanelOpen);
+  const [photoOpen, setPhotoOpen] = useState(false);
   return (
     <>
       <div className="pointer-events-none absolute left-3 top-3 z-10">
@@ -85,8 +88,12 @@ export function ViewOverlay() {
         >
           {t("view.roomDimensions")}
         </button>
+        <button type="button" className={overlayButton} aria-haspopup="dialog" data-render-image onClick={() => setPhotoOpen(true)}>
+          {t("photo.button")}
+        </button>
       </div>
       {roomPanelOpen && <RoomDimensionsPanel onClose={() => setRoomPanelOpen(false)} />}
+      {photoOpen && <PhotoPreview onClose={() => setPhotoOpen(false)} />}
     </>
   );
 }

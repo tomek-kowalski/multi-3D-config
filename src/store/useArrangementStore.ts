@@ -39,6 +39,8 @@ export interface ArrangementState {
   readonly activeMenu: MenuId;
   /** Whether the room panel ("Wymiary pomieszczenia": dimensions, walls, openings) is open. */
   readonly roomPanelOpen: boolean;
+  /** Right-click menu of a furniture module (screen position in CSS pixels). */
+  readonly contextMenu: { readonly moduleId: ModuleId; readonly x: number; readonly y: number } | null;
   readonly viewRequest: ViewRequest | null;
   /** True once the saved arrangement (if any) was loaded on the client. */
   readonly hydrated: boolean;
@@ -73,6 +75,9 @@ export interface ArrangementState {
 
   setActiveMenu: (menu: MenuId) => void;
   setRoomPanelOpen: (open: boolean) => void;
+  /** Selects the module and opens its context menu at the pointer. */
+  openContextMenu: (moduleId: ModuleId, x: number, y: number) => void;
+  closeContextMenu: () => void;
   requestView: (kind: ViewRequest["kind"]) => void;
   replaceArrangement: (arrangement: Arrangement) => void;
   importJson: (json: string) => ActionResult;
@@ -111,6 +116,7 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
     dockingProposal: null,
     activeMenu: "arrangement",
     roomPanelOpen: false,
+    contextMenu: null,
     viewRequest: null,
     hydrated: false,
 
@@ -174,6 +180,7 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
     removeModule: (id) =>
       apply(ops.removeModule(get().arrangement, id), () => ({
         dockingProposal: null,
+        contextMenu: null,
         ...(get().selectedModuleId === id ? { selectedModuleId: null } : {}),
       })),
     // Any new position supersedes a pending docking proposal.
@@ -189,8 +196,16 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
 
     setActiveMenu: (menu) => set({ activeMenu: menu }),
     setRoomPanelOpen: (open) => set({ roomPanelOpen: open }),
+    openContextMenu: (moduleId, x, y) => {
+      if (!get().arrangement.modules.some((m) => m.id === moduleId)) return;
+      set({ selectedModuleId: moduleId, contextMenu: { moduleId, x, y } });
+    },
+    closeContextMenu: () => {
+      if (get().contextMenu) set({ contextMenu: null });
+    },
     requestView: (kind) => set({ viewRequest: { kind, seq: (get().viewRequest?.seq ?? 0) + 1 } }),
-    replaceArrangement: (arrangement) => set({ arrangement, selectedModuleId: null, selectedOpeningId: null, dockingProposal: null }),
+    replaceArrangement: (arrangement) =>
+      set({ arrangement, selectedModuleId: null, selectedOpeningId: null, dockingProposal: null, contextMenu: null }),
     importJson: (json) => {
       const result = importArrangementJson(json);
       if (!result.ok) return { ok: false, issues: result.issues };
@@ -199,7 +214,14 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
     },
     exportJson: () => exportArrangementJson(get().arrangement),
     reset: () =>
-      set({ arrangement: INITIAL_ARRANGEMENT, selectedModuleId: null, selectedOpeningId: null, activeWall: "back", dockingProposal: null }),
+      set({
+        arrangement: INITIAL_ARRANGEMENT,
+        selectedModuleId: null,
+        selectedOpeningId: null,
+        activeWall: "back",
+        dockingProposal: null,
+        contextMenu: null,
+      }),
 
     hydrate: () => {
       if (get().hydrated) return;

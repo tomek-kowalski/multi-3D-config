@@ -5,6 +5,7 @@ import type { Vector3Mm } from "@/domain/geometry/types";
 import { getHardwareFinish, HANDLE_RULES } from "@/domain/hardware/catalog";
 import type { HardwarePart } from "@/domain/hardware/geometry";
 import { CLICK_TOLERANCE_PX } from "./PanelMesh";
+import { photoTag } from "./photo/tags";
 import { mmToM } from "./units";
 
 const ORIGIN: Vector3Mm = { x: 0, y: 0, z: 0 };
@@ -46,7 +47,7 @@ export function HandleMesh({ part, origin = ORIGIN, onSelect }: HandleMeshProps)
   if (part.type === "knob") {
     const { diameter, projection } = HANDLE_RULES.knob;
     return (
-      <mesh position={[center[0], center[1], center[2] + mmToM(projection / 2)]} rotation-x={Math.PI / 2} castShadow onClick={onClick}>
+      <mesh position={[center[0], center[1], center[2] + mmToM(projection / 2)]} rotation-x={Math.PI / 2} castShadow onClick={onClick} userData={photoTag("metal")}>
         <cylinderGeometry args={[mmToM(diameter / 2), mmToM(diameter / 4), mmToM(projection), 24]} />
         {material}
       </mesh>
@@ -59,7 +60,7 @@ export function HandleMesh({ part, origin = ORIGIN, onSelect }: HandleMeshProps)
     const spacing = length * 0.8;
     return (
       <group position={center} onClick={onClick}>
-        <mesh position-z={mmToM(standoff)} rotation-z={vertical ? 0 : Math.PI / 2} castShadow>
+        <mesh position-z={mmToM(standoff)} rotation-z={vertical ? 0 : Math.PI / 2} castShadow userData={photoTag("metal")}>
           <cylinderGeometry args={[mmToM(diameter / 2), mmToM(diameter / 2), mmToM(length), 16]} />
           {material}
         </mesh>
@@ -69,6 +70,7 @@ export function HandleMesh({ part, origin = ORIGIN, onSelect }: HandleMeshProps)
             position={[vertical ? 0 : mmToM((sign * spacing) / 2), vertical ? mmToM((sign * spacing) / 2) : 0, mmToM(standoff / 2)]}
             rotation-x={Math.PI / 2}
             castShadow
+            userData={photoTag("metal")}
           >
             <cylinderGeometry args={[mmToM(diameter / 3), mmToM(diameter / 3), mmToM(standoff), 12]} />
             {material}
@@ -79,7 +81,7 @@ export function HandleMesh({ part, origin = ORIGIN, onSelect }: HandleMeshProps)
   }
 
   return (
-    <mesh position={[center[0], center[1], center[2] + mmToM(d.depth / 2)]} onClick={onClick}>
+    <mesh position={[center[0], center[1], center[2] + mmToM(d.depth / 2)]} onClick={onClick} userData={photoTag("dark")}>
       <boxGeometry args={[mmToM(d.width), mmToM(d.height), mmToM(d.depth)]} />
       <meshStandardMaterial color={RECESS_COLOR} roughness={0.9} />
     </mesh>

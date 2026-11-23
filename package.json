@@ -15,10 +15,13 @@
   "dependencies": {
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.2",
+    "jspdf": "^4.2.1",
     "next": "16.4.6",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "three": "^0.186.1",
+    "three-gpu-pathtracer": "^0.0.27",
+    "three-mesh-bvh": "^0.9.18",
     "zustand": "^5.0.16"
   },
   "devDependencies": {
@@ -29,9 +32,11 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/three": "^0.186.0",
+    "dejavu-fonts-ttf": "^2.37.3",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
     "jsdom": "^26.1.0",
+    "pdfjs-dist": "^5.7.284",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.12"

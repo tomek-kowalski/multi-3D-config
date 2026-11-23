@@ -110,7 +110,8 @@
         "texture": "8685-SM.jpg",
         "namePl": "Biel Alpejska",
         "catalogCode": "8685 SM",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -125,7 +126,8 @@
         "texture": "K001-PW.jpg",
         "namePl": "Dąb Craft Biały",
         "catalogCode": "K001 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -149,7 +151,8 @@
         "texture": "K019-PW.jpg",
         "namePl": "Wiąz Liberty Srebrny",
         "catalogCode": "K019 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -164,7 +167,8 @@
         "texture": "K017-PW.jpg",
         "namePl": "Wiąz Liberty Jasny",
         "catalogCode": "K017 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -175,11 +179,12 @@
        "frontValue": "K002 PW Grey Craft Oak_5",
        "bodyValue": "K002 PW Grey Craft Oak_5",
        "swatch": {
-        "hex": "#AD9C85",
+        "hex": "#AD9D85",
         "texture": "K002-PW.jpg",
         "namePl": "Dąb Craft Szary",
         "catalogCode": "K002 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -194,7 +199,8 @@
         "texture": "K005-PW.jpg",
         "namePl": "Dąb Urban Oyster",
         "catalogCode": "K005 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -209,7 +215,8 @@
         "texture": "K012-SU.jpg",
         "namePl": "Buk Artisan Perłowy",
         "catalogCode": "K012 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -224,7 +231,8 @@
         "texture": "8921-BS.jpg",
         "namePl": "Dąb Ferrara",
         "catalogCode": "8921 BS",
-        "match": "code"
+        "match": "code",
+        "grain": "vertical"
        }
       },
       {
@@ -239,7 +247,8 @@
         "texture": "K013-SU.jpg",
         "namePl": "Buk Artisan Piaskowy",
         "catalogCode": "K013 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -259,11 +268,12 @@
        "frontValue": "K076 PW Sand Expressive Oak_11",
        "bodyValue": "K076 PW Sand Expressive Oak_11",
        "swatch": {
-        "hex": "#BEA082",
+        "hex": "#BD9F82",
         "texture": "K076-PW.jpg",
         "namePl": "Dąb Piaskowany",
         "catalogCode": "K076 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -278,7 +288,8 @@
         "texture": "5500-SU.jpg",
         "namePl": "Wiąz Szlachetny",
         "catalogCode": "5500 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -289,11 +300,12 @@
        "frontValue": "1715 BS Birch_13",
        "bodyValue": "1715 BS Birch_13",
        "swatch": {
-        "hex": "#E7CDAC",
+        "hex": "#E7CDAD",
         "texture": "1715-BS.jpg",
         "namePl": "Brzoza",
         "catalogCode": "1715 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -317,7 +329,8 @@
         "texture": "0375-BS.jpg",
         "namePl": "Klon",
         "catalogCode": "0375 BS",
-        "match": "code"
+        "match": "code",
+        "grain": "none"
        }
       },
       {
@@ -328,11 +341,12 @@
        "frontValue": "8431 SN Nagano Oak_16",
        "bodyValue": "8431 SN Nagano Oak_16",
        "swatch": {
-        "hex": "#D6B896",
+        "hex": "#D7B896",
         "texture": "8431-SN.jpg",
         "namePl": "Dąb Nagano",
         "catalogCode": "8431 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -356,7 +370,8 @@
         "texture": "K003-PW.jpg",
         "namePl": "Dąb Craft Złoty",
         "catalogCode": "K003 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -371,7 +386,8 @@
         "texture": "8995-SN.jpg",
         "namePl": "Coco Bolo",
         "catalogCode": "8995 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -382,11 +398,12 @@
        "frontValue": "K006 PW Amber Urban Oak_20",
        "bodyValue": "K006 PW Amber Urban Oak_20",
        "swatch": {
-        "hex": "#BC9B7F",
+        "hex": "#BB9A7F",
         "texture": "K006-PW.jpg",
         "namePl": "Dąb Urban Bursztynowy",
         "catalogCode": "K006 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -397,11 +414,12 @@
        "frontValue": "3025 SN Light Sonoma Oak_21",
        "bodyValue": "3025 SN Light Sonoma Oak_21",
        "swatch": {
-        "hex": "#C2A891",
+        "hex": "#C2A890",
         "texture": "3025-SN.jpg",
         "namePl": "Dąb Vintage Jasny",
         "catalogCode": "3025 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -425,7 +443,8 @@
         "texture": "K078-PW.jpg",
         "namePl": "Wiśnia Riverside Ciemna",
         "catalogCode": "K078 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -449,7 +468,8 @@
         "texture": "0381-BS.jpg",
         "namePl": "Buk Klasyczny",
         "catalogCode": "0381 BS",
-        "match": "code"
+        "match": "code",
+        "grain": "vertical"
        }
       },
       {
@@ -473,7 +493,8 @@
         "texture": "1912-BS.jpg",
         "namePl": "Olcha",
         "catalogCode": "1912 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -488,7 +509,8 @@
         "texture": "0344-BS.jpg",
         "namePl": "Wiśnia",
         "catalogCode": "0344 BS",
-        "match": "code"
+        "match": "code",
+        "grain": "vertical"
        }
       },
       {
@@ -499,11 +521,12 @@
        "frontValue": "9614 BS Light Lyon Walnut_29",
        "bodyValue": "9614 BS Light Lyon Walnut_29",
        "swatch": {
-        "hex": "#AB8159",
+        "hex": "#AB8059",
         "texture": "9614-BS.jpg",
         "namePl": "Orzech Alpejski",
         "catalogCode": "9614 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -527,7 +550,8 @@
         "texture": "K008-PW.jpg",
         "namePl": "Orzech Select Jasny",
         "catalogCode": "K008 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -538,11 +562,12 @@
        "frontValue": "K004 PW Tobacco Craft Oak_32",
        "bodyValue": "K004 PW Tobacco Craft Oak_32",
        "swatch": {
-        "hex": "#99765D",
+        "hex": "#9A765D",
         "texture": "K004-PW.jpg",
         "namePl": "Dąb Craft Tobacco",
         "catalogCode": "K004 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -557,7 +582,8 @@
         "texture": "K009-PW.jpg",
         "namePl": "Orzech Select Ciemny",
         "catalogCode": "K009 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -572,7 +598,8 @@
         "texture": "K020-PW.jpg",
         "namePl": "Orzech Select Ciepły",
         "catalogCode": "K020 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -583,11 +610,12 @@
        "frontValue": "0729 PR Walnut_35",
        "bodyValue": "0729 PR Walnut_35",
        "swatch": {
-        "hex": "#674026",
+        "hex": "#674027",
         "texture": "0729-BS.jpg",
         "namePl": "Orzech",
         "catalogCode": "0729 BS",
-        "match": "code"
+        "match": "code",
+        "grain": "vertical"
        }
       },
       {
@@ -607,11 +635,12 @@
        "frontValue": "5194 SN Oxide Vintage Oak_37",
        "bodyValue": "5194 SN Oxide Vintage Oak_37",
        "swatch": {
-        "hex": "#998474",
+        "hex": "#998373",
         "texture": "5194-SN.jpg",
         "namePl": "Dąb Truflowy",
         "catalogCode": "5194 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -626,7 +655,8 @@
         "texture": "K007-PW.jpg",
         "namePl": "Dąb Urban Kawowy",
         "catalogCode": "K007 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -641,7 +671,8 @@
         "texture": "8953-SU.jpg",
         "namePl": "Orzech Tiepolo",
         "catalogCode": "8953 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -656,7 +687,8 @@
         "texture": "K018-PW.jpg",
         "namePl": "Wiąz Liberty Dymiony",
         "catalogCode": "K018 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -685,11 +717,12 @@
        "frontValue": "K015 PW Vintage Marine Wood_43",
        "bodyValue": "K015 PW Vintage Marine Wood_43",
        "swatch": {
-        "hex": "#6B4D3D",
+        "hex": "#6B4E3D",
         "texture": "K015-PW.jpg",
         "namePl": "Vintage Marine Wood",
         "catalogCode": "K015 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -700,11 +733,12 @@
        "frontValue": "K090 PW Bronze Expressive Oak_44",
        "bodyValue": "K090 PW Bronze Expressive Oak_44",
        "swatch": {
-        "hex": "#5E4433",
+        "hex": "#5F4433",
         "texture": "K090-PW.jpg",
         "namePl": "Dąb Brązowy",
         "catalogCode": "K090 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -719,7 +753,8 @@
         "texture": "K016-PW.jpg",
         "namePl": "Carbon Marine Wood",
         "catalogCode": "K016 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -730,11 +765,12 @@
        "frontValue": "0854 BS Wenge_46",
        "bodyValue": "0854 BS Wenge_46",
        "swatch": {
-        "hex": "#412419",
+        "hex": "#402419",
         "texture": "0854-BS.jpg",
         "namePl": "Wenge",
         "catalogCode": "0854 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -749,7 +785,8 @@
         "texture": "9763-BS.jpg",
         "namePl": "Wenge Luiziana",
         "catalogCode": "9763 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       }
      ]
@@ -773,7 +810,8 @@
         "texture": "8681-SM.jpg",
         "namePl": "Biały Brylantowy",
         "catalogCode": "8681 SM",
-        "match": "code"
+        "match": "code",
+        "grain": "none"
        }
       },
       {
@@ -788,7 +826,8 @@
         "texture": "8100-SM.jpg",
         "namePl": "Perłowy Biały",
         "catalogCode": "8100 SM",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -803,7 +842,8 @@
         "texture": "0110-SM.jpg",
         "namePl": "Biały Korpusowy",
         "catalogCode": "0110 SM",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -818,7 +858,8 @@
         "texture": "0101-PE.jpg",
         "namePl": "Biały Frontowy",
         "catalogCode": "0101 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -833,7 +874,8 @@
         "texture": "0191-SU.jpg",
         "namePl": "Szary",
         "catalogCode": "0191 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -848,7 +890,8 @@
         "texture": "0112-PE.jpg",
         "namePl": "Jasny Szary",
         "catalogCode": "0112 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -863,7 +906,8 @@
         "texture": "0540-PE.jpg",
         "namePl": "Manhattan Szary",
         "catalogCode": "0540 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -878,7 +922,8 @@
         "texture": "1700-PE.jpg",
         "namePl": "Stalowo Szary",
         "catalogCode": "1700 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -911,7 +956,8 @@
         "texture": "0197-SU.jpg",
         "namePl": "Szary Chinchilla",
         "catalogCode": "0197 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -926,7 +972,8 @@
         "texture": "0171-PE.jpg",
         "namePl": "Jasny Grafit",
         "catalogCode": "0171 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -941,7 +988,8 @@
         "texture": "6299-BS.jpg",
         "namePl": "Kobalt Szary",
         "catalogCode": "6299 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -956,7 +1004,8 @@
         "texture": "0162-PE.jpg",
         "namePl": "Grafit Szary",
         "catalogCode": "0162 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -971,7 +1020,8 @@
         "texture": "0164-PE.jpg",
         "namePl": "Antracyt",
         "catalogCode": "0164 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -986,7 +1036,8 @@
         "texture": "0190-PE.jpg",
         "namePl": "Czarny",
         "catalogCode": "0190 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1001,7 +1052,8 @@
         "texture": "0564-PE.jpg",
         "namePl": "Migdałowy",
         "catalogCode": "0564 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1016,7 +1068,8 @@
         "texture": "7031-BS.jpg",
         "namePl": "Krem",
         "catalogCode": "7031 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1031,7 +1084,8 @@
         "texture": "0514-PE.jpg",
         "namePl": "Kość Słoniowa",
         "catalogCode": "0514 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1046,7 +1100,8 @@
         "texture": "5982-BS.jpg",
         "namePl": "Muszla",
         "catalogCode": "5982 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1061,7 +1116,8 @@
         "texture": "0522-PE.jpg",
         "namePl": "Beżowy",
         "catalogCode": "0522 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1076,7 +1132,8 @@
         "texture": "0515-PE.jpg",
         "namePl": "Piaskowy",
         "catalogCode": "0515 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1091,7 +1148,8 @@
         "texture": "7045-SU.jpg",
         "namePl": "Szampański",
         "catalogCode": "7045 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1106,7 +1164,8 @@
         "texture": "5981-BS.jpg",
         "namePl": "Kaszmir",
         "catalogCode": "5981 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1121,7 +1180,8 @@
         "texture": "8533-BS.jpg",
         "namePl": "Macchiato",
         "catalogCode": "8533 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1136,7 +1196,8 @@
         "texture": "0301-SU.jpg",
         "namePl": "Cappuccino",
         "catalogCode": "0301 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1151,7 +1212,8 @@
         "texture": "K096-SU.jpg",
         "namePl": "Glina Szara",
         "catalogCode": "K096 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1166,7 +1228,8 @@
         "texture": "7166-BS.jpg",
         "namePl": "Latte",
         "catalogCode": "7166 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1217,7 +1280,8 @@
         "texture": "0134-BS.jpg",
         "namePl": "Żółty",
         "catalogCode": "0134 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1241,7 +1305,8 @@
         "texture": "0132-BS.jpg",
         "namePl": "Pomarańczowy",
         "catalogCode": "0132 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1265,7 +1330,8 @@
         "texture": "7113-BS.jpg",
         "namePl": "Czerwień Chilli",
         "catalogCode": "7113 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1289,7 +1355,8 @@
         "texture": "K098-SU.jpg",
         "namePl": "Ceramiczny",
         "catalogCode": "K098 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1304,7 +1371,8 @@
         "texture": "9551-BS.jpg",
         "namePl": "Czerwony Oxid",
         "catalogCode": "9551 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1328,7 +1396,8 @@
         "texture": "7063-SU.jpg",
         "namePl": "Pastelowy Zielony",
         "catalogCode": "7063 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1343,7 +1412,8 @@
         "texture": "K097-SU.jpg",
         "namePl": "Błękitny Zmierzch",
         "catalogCode": "K097 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1376,7 +1446,8 @@
         "texture": "7190-BS.jpg",
         "namePl": "Zieleń Mamba",
         "catalogCode": "7190 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1391,7 +1462,8 @@
         "texture": "9561-BS.jpg",
         "namePl": "Zielony Oxid",
         "catalogCode": "9561 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1442,7 +1514,8 @@
         "texture": "0244-SU.jpg",
         "namePl": "Petrol",
         "catalogCode": "0244 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1466,7 +1539,8 @@
         "texture": "0125-BS.jpg",
         "namePl": "Niebieski",
         "catalogCode": "0125 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1481,7 +1555,8 @@
         "texture": "8984-BS.jpg",
         "namePl": "Granatowy",
         "catalogCode": "8984 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1541,7 +1616,8 @@
         "texture": "K349-RT.jpg",
         "namePl": "Beton Jasny",
         "catalogCode": "K349 RT",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -1556,7 +1632,8 @@
         "texture": "K350-RT.jpg",
         "namePl": "Beton",
         "catalogCode": "K350 RT",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -1571,7 +1648,8 @@
         "texture": "K355-PW.jpg",
         "namePl": "Dąb Grange Platynowy",
         "catalogCode": "K355 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1586,7 +1664,8 @@
         "texture": "K357-PW.jpg",
         "namePl": "Dąb Castello Ristretto",
         "catalogCode": "K357 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -1601,7 +1680,8 @@
         "texture": "K360-PW.jpg",
         "namePl": "Dąb Harbor Vintage",
         "catalogCode": "K360 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -1616,7 +1696,8 @@
         "texture": "K358-PW.jpg",
         "namePl": "Dąb Castello Miodowy",
         "catalogCode": "K358 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -1627,11 +1708,12 @@
        "frontValue": "K365 PW Coast Evoke Oak_6",
        "bodyValue": "K365 PW Coast Evoke Oak_6",
        "swatch": {
-        "hex": "#B3916A",
+        "hex": "#B29069",
         "texture": "K365-PW.jpg",
         "namePl": "Dąb Evoke Przybrzeżny",
         "catalogCode": "K365 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -1646,7 +1728,8 @@
         "texture": "K361-PW.jpg",
         "namePl": "Dąb Harbor Złoty",
         "catalogCode": "K361 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -1666,11 +1749,12 @@
        "frontValue": "K356 PW Sand Grange Oak_9",
        "bodyValue": "K356 PW Sand Grange Oak_9",
        "swatch": {
-        "hex": "#7D715D",
+        "hex": "#7D725D",
         "texture": "K356-PW.jpg",
         "namePl": "Dąb Grange Piaskowy",
         "catalogCode": "K356 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1681,11 +1765,12 @@
        "frontValue": "K354 PW Colonial Grange Oak_10",
        "bodyValue": "K354 PW Colonial Grange Oak_10",
        "swatch": {
-        "hex": "#7B6C5F",
+        "hex": "#7B6C60",
         "texture": "K354-PW.jpg",
         "namePl": "Dąb Grange Kolonialny",
         "catalogCode": "K354 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1700,7 +1785,8 @@
         "texture": "K359-PW.jpg",
         "namePl": "Dąb Castello Koniakowy",
         "catalogCode": "K359 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -1715,7 +1801,8 @@
         "texture": "K351-RT.jpg",
         "namePl": "Beton Rdzawy",
         "catalogCode": "K351 RT",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -1726,11 +1813,12 @@
        "frontValue": "K366 PW Fossil Evoke Oak_13",
        "bodyValue": "K366 PW Fossil Evoke Oak_13",
        "swatch": {
-        "hex": "#897A6F",
+        "hex": "#88796E",
         "texture": "K366-PW.jpg",
         "namePl": "Dąb Evoke Kamienny",
         "catalogCode": "K366 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -1763,7 +1851,8 @@
         "texture": "K352-RT.jpg",
         "namePl": "Beton Ciemny",
         "catalogCode": "K352 RT",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -1778,7 +1867,8 @@
         "texture": "K353-RT.jpg",
         "namePl": "Beton Czarny",
         "catalogCode": "K353 RT",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -1802,7 +1892,8 @@
         "texture": "K088-PW.jpg",
         "namePl": "Drewno Nordyckie Białe",
         "catalogCode": "K088 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -1817,7 +1908,8 @@
         "texture": "K083-SN.jpg",
         "namePl": "Jasny Artwood",
         "catalogCode": "K083 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -1828,11 +1920,12 @@
        "frontValue": "K010 SN White Loft Pine_21",
        "bodyValue": "K010 SN White Loft Pine_21",
        "swatch": {
-        "hex": "#E8E4DF",
+        "hex": "#E7E4DF",
         "texture": "K010-SN.jpg",
         "namePl": "Sosna Loft Biała",
         "catalogCode": "K010 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -1843,11 +1936,12 @@
        "frontValue": "K080 PW White Coastland Oak_22",
        "bodyValue": "K080 PW White Coastland Oak_22",
        "swatch": {
-        "hex": "#E4DAC9",
+        "hex": "#E4D9C9",
         "texture": "K080-PW.jpg",
         "namePl": "Dąb Coastland Biały",
         "catalogCode": "K080 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -1871,7 +1965,8 @@
         "texture": "K085-PW.jpg",
         "namePl": "Orzech Rockford Jasny",
         "catalogCode": "K085 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -1886,7 +1981,8 @@
         "texture": "K107-PW.jpg",
         "namePl": "Dąb Elegance",
         "catalogCode": "K107 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -1906,11 +2002,12 @@
        "frontValue": "5529 SN Oregon_27",
        "bodyValue": "5529 SN Oregon_27",
        "swatch": {
-        "hex": "#CCBDAF",
+        "hex": "#CBBDAF",
         "texture": "5529-SN.jpg",
         "namePl": "Dąb Skalny Oregon",
         "catalogCode": "5529 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -1921,11 +2018,12 @@
        "frontValue": "K022 SN Satin Blackwood_28",
        "bodyValue": "K022 SN Satin Blackwood_28",
        "swatch": {
-        "hex": "#CDC1AF",
+        "hex": "#CDC1B0",
         "texture": "K022-SN.jpg",
         "namePl": "Blackwood Satynowy",
         "catalogCode": "K022 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -1940,7 +2038,8 @@
         "texture": "K081-PW.jpg",
         "namePl": "Dąb Coastland Szampański",
         "catalogCode": "K081 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -1955,7 +2054,8 @@
         "texture": "K105-PW.jpg",
         "namePl": "Dąb Surowy",
         "catalogCode": "K105 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -1970,7 +2070,8 @@
         "texture": "5501-SN.jpg",
         "namePl": "Dąb Sławonia",
         "catalogCode": "5501 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -1981,11 +2082,12 @@
        "frontValue": "K021 SN Barley Blackwood_32",
        "bodyValue": "K021 SN Barley Blackwood_32",
        "swatch": {
-        "hex": "#B29777",
+        "hex": "#B39777",
         "texture": "K021-SN.jpg",
         "namePl": "Blackwood Jęczmienny",
         "catalogCode": "K021 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -2000,7 +2102,8 @@
         "texture": "5527-SN.jpg",
         "namePl": "Dąb Kamienny",
         "catalogCode": "5527 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -2011,11 +2114,12 @@
        "frontValue": "K086 PW Natural Rockford Hickory_34",
        "bodyValue": "K086 PW Natural Rockford Hickory_34",
        "swatch": {
-        "hex": "#B09779",
+        "hex": "#B19779",
         "texture": "K086-PW.jpg",
         "namePl": "Orzech Rockford Naturalny",
         "catalogCode": "K086 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -2026,11 +2130,12 @@
        "frontValue": "K082 PW Bourbon Oak_35",
        "bodyValue": "K082 PW Bourbon Oak_35",
        "swatch": {
-        "hex": "#58412A",
+        "hex": "#57402A",
         "texture": "K082-PW.jpg",
         "namePl": "Dąb Burbon",
         "catalogCode": "K082 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -2045,7 +2150,8 @@
         "texture": "K087-PW.jpg",
         "namePl": "Orzech Rockford Ciemny",
         "catalogCode": "K087 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -2060,7 +2166,8 @@
         "texture": "4298-SU.jpg",
         "namePl": "Jasny Atelier",
         "catalogCode": "4298 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -2075,7 +2182,8 @@
         "texture": "K084-SN.jpg",
         "namePl": "Ciemny Artwood",
         "catalogCode": "K084 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -2086,11 +2194,12 @@
        "frontValue": "K089 PW Grey Nordic Wood_39",
        "bodyValue": "K089 PW Grey Nordic Wood_39",
        "swatch": {
-        "hex": "#968C82",
+        "hex": "#968D82",
         "texture": "K089-PW.jpg",
         "namePl": "Drewno Nordyckie Szare",
         "catalogCode": "K089 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -2105,7 +2214,8 @@
         "texture": "K079-PW.jpg",
         "namePl": "Dąb Clubhouse Szary",
         "catalogCode": "K079 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -2129,7 +2239,8 @@
         "texture": "4299-SU.jpg",
         "namePl": "Ciemny Atelier",
         "catalogCode": "4299 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -2144,7 +2255,8 @@
         "texture": "7648-SN.jpg",
         "namePl": "Arusha Wenge",
         "catalogCode": "7648 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -2159,7 +2271,8 @@
         "texture": "8548-SN.jpg",
         "namePl": "Fineline Mocca",
         "catalogCode": "8548 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -2192,7 +2305,8 @@
         "texture": "K349-RT.jpg",
         "namePl": "Beton Jasny",
         "catalogCode": "K349 RT",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -2207,7 +2321,8 @@
         "texture": "K350-RT.jpg",
         "namePl": "Beton",
         "catalogCode": "K350 RT",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -2222,7 +2337,8 @@
         "texture": "K355-PW.jpg",
         "namePl": "Dąb Grange Platynowy",
         "catalogCode": "K355 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -2237,7 +2353,8 @@
         "texture": "K357-PW.jpg",
         "namePl": "Dąb Castello Ristretto",
         "catalogCode": "K357 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -2252,7 +2369,8 @@
         "texture": "K360-PW.jpg",
         "namePl": "Dąb Harbor Vintage",
         "catalogCode": "K360 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -2267,7 +2385,8 @@
         "texture": "K358-PW.jpg",
         "namePl": "Dąb Castello Miodowy",
         "catalogCode": "K358 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -2278,11 +2397,12 @@
        "frontValue": "K365 PW Coast Evoke Oak_6",
        "bodyValue": "K365 PW Coast Evoke Oak_6",
        "swatch": {
-        "hex": "#B3916A",
+        "hex": "#B29069",
         "texture": "K365-PW.jpg",
         "namePl": "Dąb Evoke Przybrzeżny",
         "catalogCode": "K365 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -2297,7 +2417,8 @@
         "texture": "K361-PW.jpg",
         "namePl": "Dąb Harbor Złoty",
         "catalogCode": "K361 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -2317,11 +2438,12 @@
        "frontValue": "K356 PW Sand Grange Oak_9",
        "bodyValue": "K356 PW Sand Grange Oak_9",
        "swatch": {
-        "hex": "#7D715D",
+        "hex": "#7D725D",
         "texture": "K356-PW.jpg",
         "namePl": "Dąb Grange Piaskowy",
         "catalogCode": "K356 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -2332,11 +2454,12 @@
        "frontValue": "K354 PW Colonial Grange Oak_10",
        "bodyValue": "K354 PW Colonial Grange Oak_10",
        "swatch": {
-        "hex": "#7B6C5F",
+        "hex": "#7B6C60",
         "texture": "K354-PW.jpg",
         "namePl": "Dąb Grange Kolonialny",
         "catalogCode": "K354 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -2351,7 +2474,8 @@
         "texture": "K359-PW.jpg",
         "namePl": "Dąb Castello Koniakowy",
         "catalogCode": "K359 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -2366,7 +2490,8 @@
         "texture": "K351-RT.jpg",
         "namePl": "Beton Rdzawy",
         "catalogCode": "K351 RT",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -2377,11 +2502,12 @@
        "frontValue": "K366 PW Fossil Evoke Oak_13",
        "bodyValue": "K366 PW Fossil Evoke Oak_13",
        "swatch": {
-        "hex": "#897A6F",
+        "hex": "#88796E",
         "texture": "K366-PW.jpg",
         "namePl": "Dąb Evoke Kamienny",
         "catalogCode": "K366 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -2414,7 +2540,8 @@
         "texture": "K352-RT.jpg",
         "namePl": "Beton Ciemny",
         "catalogCode": "K352 RT",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -2429,7 +2556,8 @@
         "texture": "K353-RT.jpg",
         "namePl": "Beton Czarny",
         "catalogCode": "K353 RT",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       }
      ]
@@ -2453,7 +2581,8 @@
         "texture": "8685-MG.jpg",
         "namePl": "Biel Alpejska",
         "catalogCode": "8685 MG",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -2468,7 +2597,8 @@
         "texture": "0191-MG.jpg",
         "namePl": "Szary",
         "catalogCode": "0191 MG",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -2483,7 +2613,8 @@
         "texture": "0171-MG.jpg",
         "namePl": "Jasny Grafit",
         "catalogCode": "0171 MG",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -2498,7 +2629,8 @@
         "texture": "6299-BS.jpg",
         "namePl": "Kobalt Szary",
         "catalogCode": "6299 BS",
-        "match": "code"
+        "match": "code",
+        "grain": "none"
        }
       },
       {
@@ -2513,7 +2645,8 @@
         "texture": "0190-MG.jpg",
         "namePl": "Czarny",
         "catalogCode": "0190 MG",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -2528,7 +2661,8 @@
         "texture": "0514-PE.jpg",
         "namePl": "Kość Słoniowa",
         "catalogCode": "0514 PE",
-        "match": "code"
+        "match": "code",
+        "grain": "none"
        }
       },
       {
@@ -2543,7 +2677,8 @@
         "texture": "7045-MG.jpg",
         "namePl": "Szampański",
         "catalogCode": "7045 MG",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -2558,7 +2693,8 @@
         "texture": "5981-MG.jpg",
         "namePl": "Kaszmir",
         "catalogCode": "5981 MG",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -2573,7 +2709,8 @@
         "texture": "8533-BS.jpg",
         "namePl": "Macchiato",
         "catalogCode": "8533 BS",
-        "match": "code"
+        "match": "code",
+        "grain": "none"
        }
       },
       {
@@ -2588,7 +2725,8 @@
         "texture": "7166-BS.jpg",
         "namePl": "Latte",
         "catalogCode": "7166 BS",
-        "match": "code"
+        "match": "code",
+        "grain": "none"
        }
       },
       {
@@ -2603,7 +2741,8 @@
         "texture": "8685-AG.jpg",
         "namePl": "Biel Alpejska",
         "catalogCode": "8685 AG",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -2618,7 +2757,8 @@
         "texture": "6299-BS.jpg",
         "namePl": "Kobalt Szary",
         "catalogCode": "6299 BS",
-        "match": "code"
+        "match": "code",
+        "grain": "none"
        }
       },
       {
@@ -2633,7 +2773,8 @@
         "texture": "0190-AG.jpg",
         "namePl": "Czarny",
         "catalogCode": "0190 AG",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -2648,7 +2789,8 @@
         "texture": "0514-AG.jpg",
         "namePl": "Kość Słoniowa",
         "catalogCode": "0514 AG",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -2663,7 +2805,8 @@
         "texture": "7045-AG.jpg",
         "namePl": "Szampański",
         "catalogCode": "7045 AG",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -2678,7 +2821,8 @@
         "texture": "7166-BS.jpg",
         "namePl": "Latte",
         "catalogCode": "7166 BS",
-        "match": "code"
+        "match": "code",
+        "grain": "none"
        }
       },
       {
@@ -2693,7 +2837,8 @@
         "texture": "8685-AM.jpg",
         "namePl": "Biel Alpejska",
         "catalogCode": "8685 AM",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -2708,7 +2853,8 @@
         "texture": "6299-AM.jpg",
         "namePl": "Kobalt Szary",
         "catalogCode": "6299 AM",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -2723,7 +2869,8 @@
         "texture": "0190-AM.jpg",
         "namePl": "Czarny",
         "catalogCode": "0190 AM",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -2738,7 +2885,8 @@
         "texture": "0514-PE.jpg",
         "namePl": "Kość Słoniowa",
         "catalogCode": "0514 PE",
-        "match": "code"
+        "match": "code",
+        "grain": "none"
        }
       },
       {
@@ -2753,7 +2901,8 @@
         "texture": "7045-AM.jpg",
         "namePl": "Szampański",
         "catalogCode": "7045 AM",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -2768,7 +2917,8 @@
         "texture": "7166-BS.jpg",
         "namePl": "Latte",
         "catalogCode": "7166 BS",
-        "match": "code"
+        "match": "code",
+        "grain": "none"
        }
       }
      ]
@@ -2927,7 +3077,8 @@
         "texture": "8685-SM.jpg",
         "namePl": "Biel Alpejska",
         "catalogCode": "8685 SM",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -2942,7 +3093,8 @@
         "texture": "K001-PW.jpg",
         "namePl": "Dąb Craft Biały",
         "catalogCode": "K001 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -2966,7 +3118,8 @@
         "texture": "K019-PW.jpg",
         "namePl": "Wiąz Liberty Srebrny",
         "catalogCode": "K019 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -2981,7 +3134,8 @@
         "texture": "K017-PW.jpg",
         "namePl": "Wiąz Liberty Jasny",
         "catalogCode": "K017 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -2992,11 +3146,12 @@
        "frontValue": "K002 PW Grey Craft Oak_5",
        "bodyValue": "K002 PW Grey Craft Oak_5",
        "swatch": {
-        "hex": "#AD9C85",
+        "hex": "#AD9D85",
         "texture": "K002-PW.jpg",
         "namePl": "Dąb Craft Szary",
         "catalogCode": "K002 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -3011,7 +3166,8 @@
         "texture": "K005-PW.jpg",
         "namePl": "Dąb Urban Oyster",
         "catalogCode": "K005 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -3026,7 +3182,8 @@
         "texture": "K012-SU.jpg",
         "namePl": "Buk Artisan Perłowy",
         "catalogCode": "K012 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -3041,7 +3198,8 @@
         "texture": "8921-BS.jpg",
         "namePl": "Dąb Ferrara",
         "catalogCode": "8921 BS",
-        "match": "code"
+        "match": "code",
+        "grain": "vertical"
        }
       },
       {
@@ -3056,7 +3214,8 @@
         "texture": "K013-SU.jpg",
         "namePl": "Buk Artisan Piaskowy",
         "catalogCode": "K013 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -3076,11 +3235,12 @@
        "frontValue": "K076 PW Sand Expressive Oak_11",
        "bodyValue": "K076 PW Sand Expressive Oak_11",
        "swatch": {
-        "hex": "#BEA082",
+        "hex": "#BD9F82",
         "texture": "K076-PW.jpg",
         "namePl": "Dąb Piaskowany",
         "catalogCode": "K076 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -3095,7 +3255,8 @@
         "texture": "5500-SU.jpg",
         "namePl": "Wiąz Szlachetny",
         "catalogCode": "5500 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -3106,11 +3267,12 @@
        "frontValue": "1715 BS Birch_13",
        "bodyValue": "1715 BS Birch_13",
        "swatch": {
-        "hex": "#E7CDAC",
+        "hex": "#E7CDAD",
         "texture": "1715-BS.jpg",
         "namePl": "Brzoza",
         "catalogCode": "1715 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -3134,7 +3296,8 @@
         "texture": "0375-BS.jpg",
         "namePl": "Klon",
         "catalogCode": "0375 BS",
-        "match": "code"
+        "match": "code",
+        "grain": "none"
        }
       },
       {
@@ -3145,11 +3308,12 @@
        "frontValue": "8431 SN Nagano Oak_16",
        "bodyValue": "8431 SN Nagano Oak_16",
        "swatch": {
-        "hex": "#D6B896",
+        "hex": "#D7B896",
         "texture": "8431-SN.jpg",
         "namePl": "Dąb Nagano",
         "catalogCode": "8431 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -3173,7 +3337,8 @@
         "texture": "K003-PW.jpg",
         "namePl": "Dąb Craft Złoty",
         "catalogCode": "K003 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -3188,7 +3353,8 @@
         "texture": "8995-SN.jpg",
         "namePl": "Coco Bolo",
         "catalogCode": "8995 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -3199,11 +3365,12 @@
        "frontValue": "K006 PW Amber Urban Oak_20",
        "bodyValue": "K006 PW Amber Urban Oak_20",
        "swatch": {
-        "hex": "#BC9B7F",
+        "hex": "#BB9A7F",
         "texture": "K006-PW.jpg",
         "namePl": "Dąb Urban Bursztynowy",
         "catalogCode": "K006 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -3214,11 +3381,12 @@
        "frontValue": "3025 SN Light Sonoma Oak_21",
        "bodyValue": "3025 SN Light Sonoma Oak_21",
        "swatch": {
-        "hex": "#C2A891",
+        "hex": "#C2A890",
         "texture": "3025-SN.jpg",
         "namePl": "Dąb Vintage Jasny",
         "catalogCode": "3025 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -3242,7 +3410,8 @@
         "texture": "K078-PW.jpg",
         "namePl": "Wiśnia Riverside Ciemna",
         "catalogCode": "K078 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -3266,7 +3435,8 @@
         "texture": "0381-BS.jpg",
         "namePl": "Buk Klasyczny",
         "catalogCode": "0381 BS",
-        "match": "code"
+        "match": "code",
+        "grain": "vertical"
        }
       },
       {
@@ -3290,7 +3460,8 @@
         "texture": "1912-BS.jpg",
         "namePl": "Olcha",
         "catalogCode": "1912 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -3305,7 +3476,8 @@
         "texture": "0344-BS.jpg",
         "namePl": "Wiśnia",
         "catalogCode": "0344 BS",
-        "match": "code"
+        "match": "code",
+        "grain": "vertical"
        }
       },
       {
@@ -3316,11 +3488,12 @@
        "frontValue": "9614 BS Light Lyon Walnut_29",
        "bodyValue": "9614 BS Light Lyon Walnut_29",
        "swatch": {
-        "hex": "#AB8159",
+        "hex": "#AB8059",
         "texture": "9614-BS.jpg",
         "namePl": "Orzech Alpejski",
         "catalogCode": "9614 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -3344,7 +3517,8 @@
         "texture": "K008-PW.jpg",
         "namePl": "Orzech Select Jasny",
         "catalogCode": "K008 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -3355,11 +3529,12 @@
        "frontValue": "K004 PW Tobacco Craft Oak_32",
        "bodyValue": "K004 PW Tobacco Craft Oak_32",
        "swatch": {
-        "hex": "#99765D",
+        "hex": "#9A765D",
         "texture": "K004-PW.jpg",
         "namePl": "Dąb Craft Tobacco",
         "catalogCode": "K004 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -3374,7 +3549,8 @@
         "texture": "K009-PW.jpg",
         "namePl": "Orzech Select Ciemny",
         "catalogCode": "K009 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -3389,7 +3565,8 @@
         "texture": "K020-PW.jpg",
         "namePl": "Orzech Select Ciepły",
         "catalogCode": "K020 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -3400,11 +3577,12 @@
        "frontValue": "0729 PR Walnut_35",
        "bodyValue": "0729 PR Walnut_35",
        "swatch": {
-        "hex": "#674026",
+        "hex": "#674027",
         "texture": "0729-BS.jpg",
         "namePl": "Orzech",
         "catalogCode": "0729 BS",
-        "match": "code"
+        "match": "code",
+        "grain": "vertical"
        }
       },
       {
@@ -3424,11 +3602,12 @@
        "frontValue": "5194 SN Oxide Vintage Oak_37",
        "bodyValue": "5194 SN Oxide Vintage Oak_37",
        "swatch": {
-        "hex": "#998474",
+        "hex": "#998373",
         "texture": "5194-SN.jpg",
         "namePl": "Dąb Truflowy",
         "catalogCode": "5194 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -3443,7 +3622,8 @@
         "texture": "K007-PW.jpg",
         "namePl": "Dąb Urban Kawowy",
         "catalogCode": "K007 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -3458,7 +3638,8 @@
         "texture": "8953-SU.jpg",
         "namePl": "Orzech Tiepolo",
         "catalogCode": "8953 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -3473,7 +3654,8 @@
         "texture": "K018-PW.jpg",
         "namePl": "Wiąz Liberty Dymiony",
         "catalogCode": "K018 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -3502,11 +3684,12 @@
        "frontValue": "K015 PW Vintage Marine Wood_43",
        "bodyValue": "K015 PW Vintage Marine Wood_43",
        "swatch": {
-        "hex": "#6B4D3D",
+        "hex": "#6B4E3D",
         "texture": "K015-PW.jpg",
         "namePl": "Vintage Marine Wood",
         "catalogCode": "K015 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -3517,11 +3700,12 @@
        "frontValue": "K090 PW Bronze Expressive Oak_44",
        "bodyValue": "K090 PW Bronze Expressive Oak_44",
        "swatch": {
-        "hex": "#5E4433",
+        "hex": "#5F4433",
         "texture": "K090-PW.jpg",
         "namePl": "Dąb Brązowy",
         "catalogCode": "K090 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -3536,7 +3720,8 @@
         "texture": "K016-PW.jpg",
         "namePl": "Carbon Marine Wood",
         "catalogCode": "K016 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -3547,11 +3732,12 @@
        "frontValue": "0854 BS Wenge_46",
        "bodyValue": "0854 BS Wenge_46",
        "swatch": {
-        "hex": "#412419",
+        "hex": "#402419",
         "texture": "0854-BS.jpg",
         "namePl": "Wenge",
         "catalogCode": "0854 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -3566,7 +3752,8 @@
         "texture": "9763-BS.jpg",
         "namePl": "Wenge Luiziana",
         "catalogCode": "9763 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       }
      ]
@@ -3590,7 +3777,8 @@
         "texture": "8681-SM.jpg",
         "namePl": "Biały Brylantowy",
         "catalogCode": "8681 SM",
-        "match": "code"
+        "match": "code",
+        "grain": "none"
        }
       },
       {
@@ -3605,7 +3793,8 @@
         "texture": "8100-SM.jpg",
         "namePl": "Perłowy Biały",
         "catalogCode": "8100 SM",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -3620,7 +3809,8 @@
         "texture": "0110-SM.jpg",
         "namePl": "Biały Korpusowy",
         "catalogCode": "0110 SM",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -3635,7 +3825,8 @@
         "texture": "0101-PE.jpg",
         "namePl": "Biały Frontowy",
         "catalogCode": "0101 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -3650,7 +3841,8 @@
         "texture": "0191-SU.jpg",
         "namePl": "Szary",
         "catalogCode": "0191 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -3665,7 +3857,8 @@
         "texture": "0112-PE.jpg",
         "namePl": "Jasny Szary",
         "catalogCode": "0112 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -3680,7 +3873,8 @@
         "texture": "0540-PE.jpg",
         "namePl": "Manhattan Szary",
         "catalogCode": "0540 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -3695,7 +3889,8 @@
         "texture": "1700-PE.jpg",
         "namePl": "Stalowo Szary",
         "catalogCode": "1700 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -3728,7 +3923,8 @@
         "texture": "0197-SU.jpg",
         "namePl": "Szary Chinchilla",
         "catalogCode": "0197 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -3743,7 +3939,8 @@
         "texture": "0171-PE.jpg",
         "namePl": "Jasny Grafit",
         "catalogCode": "0171 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -3758,7 +3955,8 @@
         "texture": "6299-BS.jpg",
         "namePl": "Kobalt Szary",
         "catalogCode": "6299 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -3773,7 +3971,8 @@
         "texture": "0162-PE.jpg",
         "namePl": "Grafit Szary",
         "catalogCode": "0162 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -3788,7 +3987,8 @@
         "texture": "0164-PE.jpg",
         "namePl": "Antracyt",
         "catalogCode": "0164 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -3803,7 +4003,8 @@
         "texture": "0190-PE.jpg",
         "namePl": "Czarny",
         "catalogCode": "0190 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -3818,7 +4019,8 @@
         "texture": "0564-PE.jpg",
         "namePl": "Migdałowy",
         "catalogCode": "0564 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -3833,7 +4035,8 @@
         "texture": "7031-BS.jpg",
         "namePl": "Krem",
         "catalogCode": "7031 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -3848,7 +4051,8 @@
         "texture": "0514-PE.jpg",
         "namePl": "Kość Słoniowa",
         "catalogCode": "0514 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -3863,7 +4067,8 @@
         "texture": "5982-BS.jpg",
         "namePl": "Muszla",
         "catalogCode": "5982 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -3878,7 +4083,8 @@
         "texture": "0522-PE.jpg",
         "namePl": "Beżowy",
         "catalogCode": "0522 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -3893,7 +4099,8 @@
         "texture": "0515-PE.jpg",
         "namePl": "Piaskowy",
         "catalogCode": "0515 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -3908,7 +4115,8 @@
         "texture": "7045-SU.jpg",
         "namePl": "Szampański",
         "catalogCode": "7045 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -3923,7 +4131,8 @@
         "texture": "5981-BS.jpg",
         "namePl": "Kaszmir",
         "catalogCode": "5981 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -3938,7 +4147,8 @@
         "texture": "8533-BS.jpg",
         "namePl": "Macchiato",
         "catalogCode": "8533 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -3953,7 +4163,8 @@
         "texture": "0301-SU.jpg",
         "namePl": "Cappuccino",
         "catalogCode": "0301 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -3968,7 +4179,8 @@
         "texture": "K096-SU.jpg",
         "namePl": "Glina Szara",
         "catalogCode": "K096 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -3983,7 +4195,8 @@
         "texture": "7166-BS.jpg",
         "namePl": "Latte",
         "catalogCode": "7166 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -4034,7 +4247,8 @@
         "texture": "0134-BS.jpg",
         "namePl": "Żółty",
         "catalogCode": "0134 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -4058,7 +4272,8 @@
         "texture": "0132-BS.jpg",
         "namePl": "Pomarańczowy",
         "catalogCode": "0132 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -4082,7 +4297,8 @@
         "texture": "7113-BS.jpg",
         "namePl": "Czerwień Chilli",
         "catalogCode": "7113 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -4106,7 +4322,8 @@
         "texture": "K098-SU.jpg",
         "namePl": "Ceramiczny",
         "catalogCode": "K098 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -4121,7 +4338,8 @@
         "texture": "9551-BS.jpg",
         "namePl": "Czerwony Oxid",
         "catalogCode": "9551 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -4145,7 +4363,8 @@
         "texture": "7063-SU.jpg",
         "namePl": "Pastelowy Zielony",
         "catalogCode": "7063 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -4160,7 +4379,8 @@
         "texture": "K097-SU.jpg",
         "namePl": "Błękitny Zmierzch",
         "catalogCode": "K097 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -4193,7 +4413,8 @@
         "texture": "7190-BS.jpg",
         "namePl": "Zieleń Mamba",
         "catalogCode": "7190 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -4208,7 +4429,8 @@
         "texture": "9561-BS.jpg",
         "namePl": "Zielony Oxid",
         "catalogCode": "9561 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -4259,7 +4481,8 @@
         "texture": "0244-SU.jpg",
         "namePl": "Petrol",
         "catalogCode": "0244 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -4283,7 +4506,8 @@
         "texture": "0125-BS.jpg",
         "namePl": "Niebieski",
         "catalogCode": "0125 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -4298,7 +4522,8 @@
         "texture": "8984-BS.jpg",
         "namePl": "Granatowy",
         "catalogCode": "8984 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -4358,7 +4583,8 @@
         "texture": "K349-RT.jpg",
         "namePl": "Beton Jasny",
         "catalogCode": "K349 RT",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4373,7 +4599,8 @@
         "texture": "K350-RT.jpg",
         "namePl": "Beton",
         "catalogCode": "K350 RT",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4388,7 +4615,8 @@
         "texture": "K355-PW.jpg",
         "namePl": "Dąb Grange Platynowy",
         "catalogCode": "K355 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -4403,7 +4631,8 @@
         "texture": "K357-PW.jpg",
         "namePl": "Dąb Castello Ristretto",
         "catalogCode": "K357 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4418,7 +4647,8 @@
         "texture": "K360-PW.jpg",
         "namePl": "Dąb Harbor Vintage",
         "catalogCode": "K360 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4433,7 +4663,8 @@
         "texture": "K358-PW.jpg",
         "namePl": "Dąb Castello Miodowy",
         "catalogCode": "K358 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4444,11 +4675,12 @@
        "frontValue": "K365 PW Coast Evoke Oak_6",
        "bodyValue": "K365 PW Coast Evoke Oak_6",
        "swatch": {
-        "hex": "#B3916A",
+        "hex": "#B29069",
         "texture": "K365-PW.jpg",
         "namePl": "Dąb Evoke Przybrzeżny",
         "catalogCode": "K365 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4463,7 +4695,8 @@
         "texture": "K361-PW.jpg",
         "namePl": "Dąb Harbor Złoty",
         "catalogCode": "K361 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4483,11 +4716,12 @@
        "frontValue": "K356 PW Sand Grange Oak_9",
        "bodyValue": "K356 PW Sand Grange Oak_9",
        "swatch": {
-        "hex": "#7D715D",
+        "hex": "#7D725D",
         "texture": "K356-PW.jpg",
         "namePl": "Dąb Grange Piaskowy",
         "catalogCode": "K356 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -4498,11 +4732,12 @@
        "frontValue": "K354 PW Colonial Grange Oak_10",
        "bodyValue": "K354 PW Colonial Grange Oak_10",
        "swatch": {
-        "hex": "#7B6C5F",
+        "hex": "#7B6C60",
         "texture": "K354-PW.jpg",
         "namePl": "Dąb Grange Kolonialny",
         "catalogCode": "K354 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -4517,7 +4752,8 @@
         "texture": "K359-PW.jpg",
         "namePl": "Dąb Castello Koniakowy",
         "catalogCode": "K359 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4532,7 +4768,8 @@
         "texture": "K351-RT.jpg",
         "namePl": "Beton Rdzawy",
         "catalogCode": "K351 RT",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4543,11 +4780,12 @@
        "frontValue": "K366 PW Fossil Evoke Oak_13",
        "bodyValue": "K366 PW Fossil Evoke Oak_13",
        "swatch": {
-        "hex": "#897A6F",
+        "hex": "#88796E",
         "texture": "K366-PW.jpg",
         "namePl": "Dąb Evoke Kamienny",
         "catalogCode": "K366 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4580,7 +4818,8 @@
         "texture": "K352-RT.jpg",
         "namePl": "Beton Ciemny",
         "catalogCode": "K352 RT",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4595,7 +4834,8 @@
         "texture": "K353-RT.jpg",
         "namePl": "Beton Czarny",
         "catalogCode": "K353 RT",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4619,7 +4859,8 @@
         "texture": "K088-PW.jpg",
         "namePl": "Drewno Nordyckie Białe",
         "catalogCode": "K088 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4634,7 +4875,8 @@
         "texture": "K083-SN.jpg",
         "namePl": "Jasny Artwood",
         "catalogCode": "K083 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4645,11 +4887,12 @@
        "frontValue": "K010 SN White Loft Pine_21",
        "bodyValue": "K010 SN White Loft Pine_21",
        "swatch": {
-        "hex": "#E8E4DF",
+        "hex": "#E7E4DF",
         "texture": "K010-SN.jpg",
         "namePl": "Sosna Loft Biała",
         "catalogCode": "K010 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4660,11 +4903,12 @@
        "frontValue": "K080 PW White Coastland Oak_22",
        "bodyValue": "K080 PW White Coastland Oak_22",
        "swatch": {
-        "hex": "#E4DAC9",
+        "hex": "#E4D9C9",
         "texture": "K080-PW.jpg",
         "namePl": "Dąb Coastland Biały",
         "catalogCode": "K080 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4688,7 +4932,8 @@
         "texture": "K085-PW.jpg",
         "namePl": "Orzech Rockford Jasny",
         "catalogCode": "K085 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4703,7 +4948,8 @@
         "texture": "K107-PW.jpg",
         "namePl": "Dąb Elegance",
         "catalogCode": "K107 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4723,11 +4969,12 @@
        "frontValue": "5529 SN Oregon_27",
        "bodyValue": "5529 SN Oregon_27",
        "swatch": {
-        "hex": "#CCBDAF",
+        "hex": "#CBBDAF",
         "texture": "5529-SN.jpg",
         "namePl": "Dąb Skalny Oregon",
         "catalogCode": "5529 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4738,11 +4985,12 @@
        "frontValue": "K022 SN Satin Blackwood_28",
        "bodyValue": "K022 SN Satin Blackwood_28",
        "swatch": {
-        "hex": "#CDC1AF",
+        "hex": "#CDC1B0",
         "texture": "K022-SN.jpg",
         "namePl": "Blackwood Satynowy",
         "catalogCode": "K022 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4757,7 +5005,8 @@
         "texture": "K081-PW.jpg",
         "namePl": "Dąb Coastland Szampański",
         "catalogCode": "K081 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4772,7 +5021,8 @@
         "texture": "K105-PW.jpg",
         "namePl": "Dąb Surowy",
         "catalogCode": "K105 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -4787,7 +5037,8 @@
         "texture": "5501-SN.jpg",
         "namePl": "Dąb Sławonia",
         "catalogCode": "5501 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4798,11 +5049,12 @@
        "frontValue": "K021 SN Barley Blackwood_32",
        "bodyValue": "K021 SN Barley Blackwood_32",
        "swatch": {
-        "hex": "#B29777",
+        "hex": "#B39777",
         "texture": "K021-SN.jpg",
         "namePl": "Blackwood Jęczmienny",
         "catalogCode": "K021 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4817,7 +5069,8 @@
         "texture": "5527-SN.jpg",
         "namePl": "Dąb Kamienny",
         "catalogCode": "5527 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4828,11 +5081,12 @@
        "frontValue": "K086 PW Natural Rockford Hickory_34",
        "bodyValue": "K086 PW Natural Rockford Hickory_34",
        "swatch": {
-        "hex": "#B09779",
+        "hex": "#B19779",
         "texture": "K086-PW.jpg",
         "namePl": "Orzech Rockford Naturalny",
         "catalogCode": "K086 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4843,11 +5097,12 @@
        "frontValue": "K082 PW Bourbon Oak_35",
        "bodyValue": "K082 PW Bourbon Oak_35",
        "swatch": {
-        "hex": "#58412A",
+        "hex": "#57402A",
         "texture": "K082-PW.jpg",
         "namePl": "Dąb Burbon",
         "catalogCode": "K082 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4862,7 +5117,8 @@
         "texture": "K087-PW.jpg",
         "namePl": "Orzech Rockford Ciemny",
         "catalogCode": "K087 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4877,7 +5133,8 @@
         "texture": "4298-SU.jpg",
         "namePl": "Jasny Atelier",
         "catalogCode": "4298 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -4892,7 +5149,8 @@
         "texture": "K084-SN.jpg",
         "namePl": "Ciemny Artwood",
         "catalogCode": "K084 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4903,11 +5161,12 @@
        "frontValue": "K089 PW Grey Nordic Wood_39",
        "bodyValue": "K089 PW Grey Nordic Wood_39",
        "swatch": {
-        "hex": "#968C82",
+        "hex": "#968D82",
         "texture": "K089-PW.jpg",
         "namePl": "Drewno Nordyckie Szare",
         "catalogCode": "K089 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4922,7 +5181,8 @@
         "texture": "K079-PW.jpg",
         "namePl": "Dąb Clubhouse Szary",
         "catalogCode": "K079 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4946,7 +5206,8 @@
         "texture": "4299-SU.jpg",
         "namePl": "Ciemny Atelier",
         "catalogCode": "4299 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -4961,7 +5222,8 @@
         "texture": "7648-SN.jpg",
         "namePl": "Arusha Wenge",
         "catalogCode": "7648 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -4976,7 +5238,8 @@
         "texture": "8548-SN.jpg",
         "namePl": "Fineline Mocca",
         "catalogCode": "8548 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5090,7 +5353,8 @@
         "texture": "8685-SM.jpg",
         "namePl": "Biel Alpejska",
         "catalogCode": "8685 SM",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -5105,7 +5369,8 @@
         "texture": "K001-PW.jpg",
         "namePl": "Dąb Craft Biały",
         "catalogCode": "K001 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5129,7 +5394,8 @@
         "texture": "K019-PW.jpg",
         "namePl": "Wiąz Liberty Srebrny",
         "catalogCode": "K019 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5144,7 +5410,8 @@
         "texture": "K017-PW.jpg",
         "namePl": "Wiąz Liberty Jasny",
         "catalogCode": "K017 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5155,11 +5422,12 @@
        "frontValue": "K002 PW Grey Craft Oak_5",
        "bodyValue": "K002 PW Grey Craft Oak_5",
        "swatch": {
-        "hex": "#AD9C85",
+        "hex": "#AD9D85",
         "texture": "K002-PW.jpg",
         "namePl": "Dąb Craft Szary",
         "catalogCode": "K002 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5174,7 +5442,8 @@
         "texture": "K005-PW.jpg",
         "namePl": "Dąb Urban Oyster",
         "catalogCode": "K005 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5189,7 +5458,8 @@
         "texture": "K012-SU.jpg",
         "namePl": "Buk Artisan Perłowy",
         "catalogCode": "K012 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5204,7 +5474,8 @@
         "texture": "8921-BS.jpg",
         "namePl": "Dąb Ferrara",
         "catalogCode": "8921 BS",
-        "match": "code"
+        "match": "code",
+        "grain": "vertical"
        }
       },
       {
@@ -5219,7 +5490,8 @@
         "texture": "K013-SU.jpg",
         "namePl": "Buk Artisan Piaskowy",
         "catalogCode": "K013 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5239,11 +5511,12 @@
        "frontValue": "K076 PW Sand Expressive Oak_11",
        "bodyValue": "K076 PW Sand Expressive Oak_11",
        "swatch": {
-        "hex": "#BEA082",
+        "hex": "#BD9F82",
         "texture": "K076-PW.jpg",
         "namePl": "Dąb Piaskowany",
         "catalogCode": "K076 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5258,7 +5531,8 @@
         "texture": "5500-SU.jpg",
         "namePl": "Wiąz Szlachetny",
         "catalogCode": "5500 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5269,11 +5543,12 @@
        "frontValue": "1715 BS Birch_13",
        "bodyValue": "1715 BS Birch_13",
        "swatch": {
-        "hex": "#E7CDAC",
+        "hex": "#E7CDAD",
         "texture": "1715-BS.jpg",
         "namePl": "Brzoza",
         "catalogCode": "1715 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5297,7 +5572,8 @@
         "texture": "0375-BS.jpg",
         "namePl": "Klon",
         "catalogCode": "0375 BS",
-        "match": "code"
+        "match": "code",
+        "grain": "none"
        }
       },
       {
@@ -5308,11 +5584,12 @@
        "frontValue": "8431 SN Nagano Oak_16",
        "bodyValue": "8431 SN Nagano Oak_16",
        "swatch": {
-        "hex": "#D6B896",
+        "hex": "#D7B896",
         "texture": "8431-SN.jpg",
         "namePl": "Dąb Nagano",
         "catalogCode": "8431 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5336,7 +5613,8 @@
         "texture": "K003-PW.jpg",
         "namePl": "Dąb Craft Złoty",
         "catalogCode": "K003 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5351,7 +5629,8 @@
         "texture": "8995-SN.jpg",
         "namePl": "Coco Bolo",
         "catalogCode": "8995 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5362,11 +5641,12 @@
        "frontValue": "K006 PW Amber Urban Oak_20",
        "bodyValue": "K006 PW Amber Urban Oak_20",
        "swatch": {
-        "hex": "#BC9B7F",
+        "hex": "#BB9A7F",
         "texture": "K006-PW.jpg",
         "namePl": "Dąb Urban Bursztynowy",
         "catalogCode": "K006 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5377,11 +5657,12 @@
        "frontValue": "3025 SN Light Sonoma Oak_21",
        "bodyValue": "3025 SN Light Sonoma Oak_21",
        "swatch": {
-        "hex": "#C2A891",
+        "hex": "#C2A890",
         "texture": "3025-SN.jpg",
         "namePl": "Dąb Vintage Jasny",
         "catalogCode": "3025 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5405,7 +5686,8 @@
         "texture": "K078-PW.jpg",
         "namePl": "Wiśnia Riverside Ciemna",
         "catalogCode": "K078 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5429,7 +5711,8 @@
         "texture": "0381-BS.jpg",
         "namePl": "Buk Klasyczny",
         "catalogCode": "0381 BS",
-        "match": "code"
+        "match": "code",
+        "grain": "vertical"
        }
       },
       {
@@ -5453,7 +5736,8 @@
         "texture": "1912-BS.jpg",
         "namePl": "Olcha",
         "catalogCode": "1912 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5468,7 +5752,8 @@
         "texture": "0344-BS.jpg",
         "namePl": "Wiśnia",
         "catalogCode": "0344 BS",
-        "match": "code"
+        "match": "code",
+        "grain": "vertical"
        }
       },
       {
@@ -5479,11 +5764,12 @@
        "frontValue": "9614 BS Light Lyon Walnut_29",
        "bodyValue": "9614 BS Light Lyon Walnut_29",
        "swatch": {
-        "hex": "#AB8159",
+        "hex": "#AB8059",
         "texture": "9614-BS.jpg",
         "namePl": "Orzech Alpejski",
         "catalogCode": "9614 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5507,7 +5793,8 @@
         "texture": "K008-PW.jpg",
         "namePl": "Orzech Select Jasny",
         "catalogCode": "K008 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5518,11 +5805,12 @@
        "frontValue": "K004 PW Tobacco Craft Oak_32",
        "bodyValue": "K004 PW Tobacco Craft Oak_32",
        "swatch": {
-        "hex": "#99765D",
+        "hex": "#9A765D",
         "texture": "K004-PW.jpg",
         "namePl": "Dąb Craft Tobacco",
         "catalogCode": "K004 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5537,7 +5825,8 @@
         "texture": "K009-PW.jpg",
         "namePl": "Orzech Select Ciemny",
         "catalogCode": "K009 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5552,7 +5841,8 @@
         "texture": "K020-PW.jpg",
         "namePl": "Orzech Select Ciepły",
         "catalogCode": "K020 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5563,11 +5853,12 @@
        "frontValue": "0729 PR Walnut_35",
        "bodyValue": "0729 PR Walnut_35",
        "swatch": {
-        "hex": "#674026",
+        "hex": "#674027",
         "texture": "0729-BS.jpg",
         "namePl": "Orzech",
         "catalogCode": "0729 BS",
-        "match": "code"
+        "match": "code",
+        "grain": "vertical"
        }
       },
       {
@@ -5587,11 +5878,12 @@
        "frontValue": "5194 SN Oxide Vintage Oak_37",
        "bodyValue": "5194 SN Oxide Vintage Oak_37",
        "swatch": {
-        "hex": "#998474",
+        "hex": "#998373",
         "texture": "5194-SN.jpg",
         "namePl": "Dąb Truflowy",
         "catalogCode": "5194 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5606,7 +5898,8 @@
         "texture": "K007-PW.jpg",
         "namePl": "Dąb Urban Kawowy",
         "catalogCode": "K007 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5621,7 +5914,8 @@
         "texture": "8953-SU.jpg",
         "namePl": "Orzech Tiepolo",
         "catalogCode": "8953 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5636,7 +5930,8 @@
         "texture": "K018-PW.jpg",
         "namePl": "Wiąz Liberty Dymiony",
         "catalogCode": "K018 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5665,11 +5960,12 @@
        "frontValue": "K015 PW Vintage Marine Wood_43",
        "bodyValue": "K015 PW Vintage Marine Wood_43",
        "swatch": {
-        "hex": "#6B4D3D",
+        "hex": "#6B4E3D",
         "texture": "K015-PW.jpg",
         "namePl": "Vintage Marine Wood",
         "catalogCode": "K015 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5680,11 +5976,12 @@
        "frontValue": "K090 PW Bronze Expressive Oak_44",
        "bodyValue": "K090 PW Bronze Expressive Oak_44",
        "swatch": {
-        "hex": "#5E4433",
+        "hex": "#5F4433",
         "texture": "K090-PW.jpg",
         "namePl": "Dąb Brązowy",
         "catalogCode": "K090 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5699,7 +5996,8 @@
         "texture": "K016-PW.jpg",
         "namePl": "Carbon Marine Wood",
         "catalogCode": "K016 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5710,11 +6008,12 @@
        "frontValue": "0854 BS Wenge_46",
        "bodyValue": "0854 BS Wenge_46",
        "swatch": {
-        "hex": "#412419",
+        "hex": "#402419",
         "texture": "0854-BS.jpg",
         "namePl": "Wenge",
         "catalogCode": "0854 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -5729,7 +6028,8 @@
         "texture": "9763-BS.jpg",
         "namePl": "Wenge Luiziana",
         "catalogCode": "9763 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       }
      ]
@@ -5753,7 +6053,8 @@
         "texture": "8681-SM.jpg",
         "namePl": "Biały Brylantowy",
         "catalogCode": "8681 SM",
-        "match": "code"
+        "match": "code",
+        "grain": "none"
        }
       },
       {
@@ -5768,7 +6069,8 @@
         "texture": "8100-SM.jpg",
         "namePl": "Perłowy Biały",
         "catalogCode": "8100 SM",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -5783,7 +6085,8 @@
         "texture": "0110-SM.jpg",
         "namePl": "Biały Korpusowy",
         "catalogCode": "0110 SM",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -5798,7 +6101,8 @@
         "texture": "0101-PE.jpg",
         "namePl": "Biały Frontowy",
         "catalogCode": "0101 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -5813,7 +6117,8 @@
         "texture": "0191-SU.jpg",
         "namePl": "Szary",
         "catalogCode": "0191 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -5828,7 +6133,8 @@
         "texture": "0112-PE.jpg",
         "namePl": "Jasny Szary",
         "catalogCode": "0112 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -5843,7 +6149,8 @@
         "texture": "0540-PE.jpg",
         "namePl": "Manhattan Szary",
         "catalogCode": "0540 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -5858,7 +6165,8 @@
         "texture": "1700-PE.jpg",
         "namePl": "Stalowo Szary",
         "catalogCode": "1700 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -5891,7 +6199,8 @@
         "texture": "0197-SU.jpg",
         "namePl": "Szary Chinchilla",
         "catalogCode": "0197 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -5906,7 +6215,8 @@
         "texture": "0171-PE.jpg",
         "namePl": "Jasny Grafit",
         "catalogCode": "0171 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -5921,7 +6231,8 @@
         "texture": "6299-BS.jpg",
         "namePl": "Kobalt Szary",
         "catalogCode": "6299 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -5936,7 +6247,8 @@
         "texture": "0162-PE.jpg",
         "namePl": "Grafit Szary",
         "catalogCode": "0162 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -5951,7 +6263,8 @@
         "texture": "0164-PE.jpg",
         "namePl": "Antracyt",
         "catalogCode": "0164 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -5966,7 +6279,8 @@
         "texture": "0190-PE.jpg",
         "namePl": "Czarny",
         "catalogCode": "0190 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -5981,7 +6295,8 @@
         "texture": "0564-PE.jpg",
         "namePl": "Migdałowy",
         "catalogCode": "0564 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -5996,7 +6311,8 @@
         "texture": "7031-BS.jpg",
         "namePl": "Krem",
         "catalogCode": "7031 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -6011,7 +6327,8 @@
         "texture": "0514-PE.jpg",
         "namePl": "Kość Słoniowa",
         "catalogCode": "0514 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -6026,7 +6343,8 @@
         "texture": "5982-BS.jpg",
         "namePl": "Muszla",
         "catalogCode": "5982 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -6041,7 +6359,8 @@
         "texture": "0522-PE.jpg",
         "namePl": "Beżowy",
         "catalogCode": "0522 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -6056,7 +6375,8 @@
         "texture": "0515-PE.jpg",
         "namePl": "Piaskowy",
         "catalogCode": "0515 PE",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -6071,7 +6391,8 @@
         "texture": "7045-SU.jpg",
         "namePl": "Szampański",
         "catalogCode": "7045 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -6086,7 +6407,8 @@
         "texture": "5981-BS.jpg",
         "namePl": "Kaszmir",
         "catalogCode": "5981 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -6101,7 +6423,8 @@
         "texture": "8533-BS.jpg",
         "namePl": "Macchiato",
         "catalogCode": "8533 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -6116,7 +6439,8 @@
         "texture": "0301-SU.jpg",
         "namePl": "Cappuccino",
         "catalogCode": "0301 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -6131,7 +6455,8 @@
         "texture": "K096-SU.jpg",
         "namePl": "Glina Szara",
         "catalogCode": "K096 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -6146,7 +6471,8 @@
         "texture": "7166-BS.jpg",
         "namePl": "Latte",
         "catalogCode": "7166 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -6197,7 +6523,8 @@
         "texture": "0134-BS.jpg",
         "namePl": "Żółty",
         "catalogCode": "0134 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -6221,7 +6548,8 @@
         "texture": "0132-BS.jpg",
         "namePl": "Pomarańczowy",
         "catalogCode": "0132 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -6245,7 +6573,8 @@
         "texture": "7113-BS.jpg",
         "namePl": "Czerwień Chilli",
         "catalogCode": "7113 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -6269,7 +6598,8 @@
         "texture": "K098-SU.jpg",
         "namePl": "Ceramiczny",
         "catalogCode": "K098 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -6284,7 +6614,8 @@
         "texture": "9551-BS.jpg",
         "namePl": "Czerwony Oxid",
         "catalogCode": "9551 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -6308,7 +6639,8 @@
         "texture": "7063-SU.jpg",
         "namePl": "Pastelowy Zielony",
         "catalogCode": "7063 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -6323,7 +6655,8 @@
         "texture": "K097-SU.jpg",
         "namePl": "Błękitny Zmierzch",
         "catalogCode": "K097 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -6356,7 +6689,8 @@
         "texture": "7190-BS.jpg",
         "namePl": "Zieleń Mamba",
         "catalogCode": "7190 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -6371,7 +6705,8 @@
         "texture": "9561-BS.jpg",
         "namePl": "Zielony Oxid",
         "catalogCode": "9561 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -6422,7 +6757,8 @@
         "texture": "0244-SU.jpg",
         "namePl": "Petrol",
         "catalogCode": "0244 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -6446,7 +6782,8 @@
         "texture": "0125-BS.jpg",
         "namePl": "Niebieski",
         "catalogCode": "0125 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -6461,7 +6798,8 @@
         "texture": "8984-BS.jpg",
         "namePl": "Granatowy",
         "catalogCode": "8984 BS",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -6521,7 +6859,8 @@
         "texture": "K349-RT.jpg",
         "namePl": "Beton Jasny",
         "catalogCode": "K349 RT",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -6536,7 +6875,8 @@
         "texture": "K350-RT.jpg",
         "namePl": "Beton",
         "catalogCode": "K350 RT",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -6551,7 +6891,8 @@
         "texture": "K355-PW.jpg",
         "namePl": "Dąb Grange Platynowy",
         "catalogCode": "K355 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -6566,7 +6907,8 @@
         "texture": "K357-PW.jpg",
         "namePl": "Dąb Castello Ristretto",
         "catalogCode": "K357 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -6581,7 +6923,8 @@
         "texture": "K360-PW.jpg",
         "namePl": "Dąb Harbor Vintage",
         "catalogCode": "K360 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -6596,7 +6939,8 @@
         "texture": "K358-PW.jpg",
         "namePl": "Dąb Castello Miodowy",
         "catalogCode": "K358 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -6607,11 +6951,12 @@
        "frontValue": "K365 PW Coast Evoke Oak_6",
        "bodyValue": "K365 PW Coast Evoke Oak_6",
        "swatch": {
-        "hex": "#B3916A",
+        "hex": "#B29069",
         "texture": "K365-PW.jpg",
         "namePl": "Dąb Evoke Przybrzeżny",
         "catalogCode": "K365 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -6626,7 +6971,8 @@
         "texture": "K361-PW.jpg",
         "namePl": "Dąb Harbor Złoty",
         "catalogCode": "K361 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -6646,11 +6992,12 @@
        "frontValue": "K356 PW Sand Grange Oak_9",
        "bodyValue": "K356 PW Sand Grange Oak_9",
        "swatch": {
-        "hex": "#7D715D",
+        "hex": "#7D725D",
         "texture": "K356-PW.jpg",
         "namePl": "Dąb Grange Piaskowy",
         "catalogCode": "K356 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -6661,11 +7008,12 @@
        "frontValue": "K354 PW Colonial Grange Oak_10",
        "bodyValue": "K354 PW Colonial Grange Oak_10",
        "swatch": {
-        "hex": "#7B6C5F",
+        "hex": "#7B6C60",
         "texture": "K354-PW.jpg",
         "namePl": "Dąb Grange Kolonialny",
         "catalogCode": "K354 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -6680,7 +7028,8 @@
         "texture": "K359-PW.jpg",
         "namePl": "Dąb Castello Koniakowy",
         "catalogCode": "K359 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -6695,7 +7044,8 @@
         "texture": "K351-RT.jpg",
         "namePl": "Beton Rdzawy",
         "catalogCode": "K351 RT",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -6706,11 +7056,12 @@
        "frontValue": "K366 PW Fossil Evoke Oak_13",
        "bodyValue": "K366 PW Fossil Evoke Oak_13",
        "swatch": {
-        "hex": "#897A6F",
+        "hex": "#88796E",
         "texture": "K366-PW.jpg",
         "namePl": "Dąb Evoke Kamienny",
         "catalogCode": "K366 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -6743,7 +7094,8 @@
         "texture": "K352-RT.jpg",
         "namePl": "Beton Ciemny",
         "catalogCode": "K352 RT",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -6758,7 +7110,8 @@
         "texture": "K353-RT.jpg",
         "namePl": "Beton Czarny",
         "catalogCode": "K353 RT",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -6782,7 +7135,8 @@
         "texture": "K088-PW.jpg",
         "namePl": "Drewno Nordyckie Białe",
         "catalogCode": "K088 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -6797,7 +7151,8 @@
         "texture": "K083-SN.jpg",
         "namePl": "Jasny Artwood",
         "catalogCode": "K083 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -6808,11 +7163,12 @@
        "frontValue": "K010 SN White Loft Pine_21",
        "bodyValue": "K010 SN White Loft Pine_21",
        "swatch": {
-        "hex": "#E8E4DF",
+        "hex": "#E7E4DF",
         "texture": "K010-SN.jpg",
         "namePl": "Sosna Loft Biała",
         "catalogCode": "K010 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -6823,11 +7179,12 @@
        "frontValue": "K080 PW White Coastland Oak_22",
        "bodyValue": "K080 PW White Coastland Oak_22",
        "swatch": {
-        "hex": "#E4DAC9",
+        "hex": "#E4D9C9",
         "texture": "K080-PW.jpg",
         "namePl": "Dąb Coastland Biały",
         "catalogCode": "K080 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -6851,7 +7208,8 @@
         "texture": "K085-PW.jpg",
         "namePl": "Orzech Rockford Jasny",
         "catalogCode": "K085 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -6866,7 +7224,8 @@
         "texture": "K107-PW.jpg",
         "namePl": "Dąb Elegance",
         "catalogCode": "K107 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -6886,11 +7245,12 @@
        "frontValue": "5529 SN Oregon_27",
        "bodyValue": "5529 SN Oregon_27",
        "swatch": {
-        "hex": "#CCBDAF",
+        "hex": "#CBBDAF",
         "texture": "5529-SN.jpg",
         "namePl": "Dąb Skalny Oregon",
         "catalogCode": "5529 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -6901,11 +7261,12 @@
        "frontValue": "K022 SN Satin Blackwood_28",
        "bodyValue": "K022 SN Satin Blackwood_28",
        "swatch": {
-        "hex": "#CDC1AF",
+        "hex": "#CDC1B0",
         "texture": "K022-SN.jpg",
         "namePl": "Blackwood Satynowy",
         "catalogCode": "K022 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -6920,7 +7281,8 @@
         "texture": "K081-PW.jpg",
         "namePl": "Dąb Coastland Szampański",
         "catalogCode": "K081 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -6935,7 +7297,8 @@
         "texture": "K105-PW.jpg",
         "namePl": "Dąb Surowy",
         "catalogCode": "K105 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -6950,7 +7313,8 @@
         "texture": "5501-SN.jpg",
         "namePl": "Dąb Sławonia",
         "catalogCode": "5501 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -6961,11 +7325,12 @@
        "frontValue": "K021 SN Barley Blackwood_32",
        "bodyValue": "K021 SN Barley Blackwood_32",
        "swatch": {
-        "hex": "#B29777",
+        "hex": "#B39777",
         "texture": "K021-SN.jpg",
         "namePl": "Blackwood Jęczmienny",
         "catalogCode": "K021 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -6980,7 +7345,8 @@
         "texture": "5527-SN.jpg",
         "namePl": "Dąb Kamienny",
         "catalogCode": "5527 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -6991,11 +7357,12 @@
        "frontValue": "K086 PW Natural Rockford Hickory_34",
        "bodyValue": "K086 PW Natural Rockford Hickory_34",
        "swatch": {
-        "hex": "#B09779",
+        "hex": "#B19779",
         "texture": "K086-PW.jpg",
         "namePl": "Orzech Rockford Naturalny",
         "catalogCode": "K086 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -7006,11 +7373,12 @@
        "frontValue": "K082 PW Bourbon Oak_35",
        "bodyValue": "K082 PW Bourbon Oak_35",
        "swatch": {
-        "hex": "#58412A",
+        "hex": "#57402A",
         "texture": "K082-PW.jpg",
         "namePl": "Dąb Burbon",
         "catalogCode": "K082 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -7025,7 +7393,8 @@
         "texture": "K087-PW.jpg",
         "namePl": "Orzech Rockford Ciemny",
         "catalogCode": "K087 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -7040,7 +7409,8 @@
         "texture": "4298-SU.jpg",
         "namePl": "Jasny Atelier",
         "catalogCode": "4298 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -7055,7 +7425,8 @@
         "texture": "K084-SN.jpg",
         "namePl": "Ciemny Artwood",
         "catalogCode": "K084 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -7066,11 +7437,12 @@
        "frontValue": "K089 PW Grey Nordic Wood_39",
        "bodyValue": "K089 PW Grey Nordic Wood_39",
        "swatch": {
-        "hex": "#968C82",
+        "hex": "#968D82",
         "texture": "K089-PW.jpg",
         "namePl": "Drewno Nordyckie Szare",
         "catalogCode": "K089 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -7085,7 +7457,8 @@
         "texture": "K079-PW.jpg",
         "namePl": "Dąb Clubhouse Szary",
         "catalogCode": "K079 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -7109,7 +7482,8 @@
         "texture": "4299-SU.jpg",
         "namePl": "Ciemny Atelier",
         "catalogCode": "4299 SU",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -7124,7 +7498,8 @@
         "texture": "7648-SN.jpg",
         "namePl": "Arusha Wenge",
         "catalogCode": "7648 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -7139,7 +7514,8 @@
         "texture": "8548-SN.jpg",
         "namePl": "Fineline Mocca",
         "catalogCode": "8548 SN",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -7172,7 +7548,8 @@
         "texture": "K349-RT.jpg",
         "namePl": "Beton Jasny",
         "catalogCode": "K349 RT",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -7187,7 +7564,8 @@
         "texture": "K350-RT.jpg",
         "namePl": "Beton",
         "catalogCode": "K350 RT",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -7202,7 +7580,8 @@
         "texture": "K355-PW.jpg",
         "namePl": "Dąb Grange Platynowy",
         "catalogCode": "K355 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -7217,7 +7596,8 @@
         "texture": "K357-PW.jpg",
         "namePl": "Dąb Castello Ristretto",
         "catalogCode": "K357 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -7232,7 +7612,8 @@
         "texture": "K360-PW.jpg",
         "namePl": "Dąb Harbor Vintage",
         "catalogCode": "K360 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -7247,7 +7628,8 @@
         "texture": "K358-PW.jpg",
         "namePl": "Dąb Castello Miodowy",
         "catalogCode": "K358 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -7258,11 +7640,12 @@
        "frontValue": "K365 PW Coast Evoke Oak_6",
        "bodyValue": "K365 PW Coast Evoke Oak_6",
        "swatch": {
-        "hex": "#B3916A",
+        "hex": "#B29069",
         "texture": "K365-PW.jpg",
         "namePl": "Dąb Evoke Przybrzeżny",
         "catalogCode": "K365 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -7277,7 +7660,8 @@
         "texture": "K361-PW.jpg",
         "namePl": "Dąb Harbor Złoty",
         "catalogCode": "K361 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -7297,11 +7681,12 @@
        "frontValue": "K356 PW Sand Grange Oak_9",
        "bodyValue": "K356 PW Sand Grange Oak_9",
        "swatch": {
-        "hex": "#7D715D",
+        "hex": "#7D725D",
         "texture": "K356-PW.jpg",
         "namePl": "Dąb Grange Piaskowy",
         "catalogCode": "K356 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -7312,11 +7697,12 @@
        "frontValue": "K354 PW Colonial Grange Oak_10",
        "bodyValue": "K354 PW Colonial Grange Oak_10",
        "swatch": {
-        "hex": "#7B6C5F",
+        "hex": "#7B6C60",
         "texture": "K354-PW.jpg",
         "namePl": "Dąb Grange Kolonialny",
         "catalogCode": "K354 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -7331,7 +7717,8 @@
         "texture": "K359-PW.jpg",
         "namePl": "Dąb Castello Koniakowy",
         "catalogCode": "K359 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -7346,7 +7733,8 @@
         "texture": "K351-RT.jpg",
         "namePl": "Beton Rdzawy",
         "catalogCode": "K351 RT",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -7357,11 +7745,12 @@
        "frontValue": "K366 PW Fossil Evoke Oak_13",
        "bodyValue": "K366 PW Fossil Evoke Oak_13",
        "swatch": {
-        "hex": "#897A6F",
+        "hex": "#88796E",
         "texture": "K366-PW.jpg",
         "namePl": "Dąb Evoke Kamienny",
         "catalogCode": "K366 PW",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -7394,7 +7783,8 @@
         "texture": "K352-RT.jpg",
         "namePl": "Beton Ciemny",
         "catalogCode": "K352 RT",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       },
       {
@@ -7409,7 +7799,8 @@
         "texture": "K353-RT.jpg",
         "namePl": "Beton Czarny",
         "catalogCode": "K353 RT",
-        "match": "exact"
+        "match": "exact",
+        "grain": "vertical"
        }
       }
      ]
@@ -7433,7 +7824,8 @@
         "texture": "8685-MG.jpg",
         "namePl": "Biel Alpejska",
         "catalogCode": "8685 MG",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -7448,7 +7840,8 @@
         "texture": "0191-MG.jpg",
         "namePl": "Szary",
         "catalogCode": "0191 MG",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -7463,7 +7856,8 @@
         "texture": "0171-MG.jpg",
         "namePl": "Jasny Grafit",
         "catalogCode": "0171 MG",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -7478,7 +7872,8 @@
         "texture": "6299-BS.jpg",
         "namePl": "Kobalt Szary",
         "catalogCode": "6299 BS",
-        "match": "code"
+        "match": "code",
+        "grain": "none"
        }
       },
       {
@@ -7493,7 +7888,8 @@
         "texture": "0190-MG.jpg",
         "namePl": "Czarny",
         "catalogCode": "0190 MG",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -7508,7 +7904,8 @@
         "texture": "0514-PE.jpg",
         "namePl": "Kość Słoniowa",
         "catalogCode": "0514 PE",
-        "match": "code"
+        "match": "code",
+        "grain": "none"
        }
       },
       {
@@ -7523,7 +7920,8 @@
         "texture": "7045-MG.jpg",
         "namePl": "Szampański",
         "catalogCode": "7045 MG",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -7538,7 +7936,8 @@
         "texture": "5981-MG.jpg",
         "namePl": "Kaszmir",
         "catalogCode": "5981 MG",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -7553,7 +7952,8 @@
         "texture": "8533-BS.jpg",
         "namePl": "Macchiato",
         "catalogCode": "8533 BS",
-        "match": "code"
+        "match": "code",
+        "grain": "none"
        }
       },
       {
@@ -7568,7 +7968,8 @@
         "texture": "7166-BS.jpg",
         "namePl": "Latte",
         "catalogCode": "7166 BS",
-        "match": "code"
+        "match": "code",
+        "grain": "none"
        }
       },
       {
@@ -7583,7 +7984,8 @@
         "texture": "8685-AG.jpg",
         "namePl": "Biel Alpejska",
         "catalogCode": "8685 AG",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -7598,7 +8000,8 @@
         "texture": "6299-BS.jpg",
         "namePl": "Kobalt Szary",
         "catalogCode": "6299 BS",
-        "match": "code"
+        "match": "code",
+        "grain": "none"
        }
       },
       {
@@ -7613,7 +8016,8 @@
         "texture": "0190-AG.jpg",
         "namePl": "Czarny",
         "catalogCode": "0190 AG",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -7628,7 +8032,8 @@
         "texture": "0514-AG.jpg",
         "namePl": "Kość Słoniowa",
         "catalogCode": "0514 AG",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -7643,7 +8048,8 @@
         "texture": "7045-AG.jpg",
         "namePl": "Szampański",
         "catalogCode": "7045 AG",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -7658,7 +8064,8 @@
         "texture": "7166-BS.jpg",
         "namePl": "Latte",
         "catalogCode": "7166 BS",
-        "match": "code"
+        "match": "code",
+        "grain": "none"
        }
       },
       {
@@ -7673,7 +8080,8 @@
         "texture": "8685-AM.jpg",
         "namePl": "Biel Alpejska",
         "catalogCode": "8685 AM",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -7688,7 +8096,8 @@
         "texture": "6299-AM.jpg",
         "namePl": "Kobalt Szary",
         "catalogCode": "6299 AM",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -7703,7 +8112,8 @@
         "texture": "0190-AM.jpg",
         "namePl": "Czarny",
         "catalogCode": "0190 AM",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -7718,7 +8128,8 @@
         "texture": "0514-PE.jpg",
         "namePl": "Kość Słoniowa",
         "catalogCode": "0514 PE",
-        "match": "code"
+        "match": "code",
+        "grain": "none"
        }
       },
       {
@@ -7733,7 +8144,8 @@
         "texture": "7045-AM.jpg",
         "namePl": "Szampański",
         "catalogCode": "7045 AM",
-        "match": "exact"
+        "match": "exact",
+        "grain": "none"
        }
       },
       {
@@ -7748,7 +8160,8 @@
         "texture": "7166-BS.jpg",
         "namePl": "Latte",
         "catalogCode": "7166 BS",
-        "match": "code"
+        "match": "code",
+        "grain": "none"
        }
       }
      ]

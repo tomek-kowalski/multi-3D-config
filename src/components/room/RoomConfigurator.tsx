@@ -10,6 +10,7 @@ import { primaryButtonClass } from "@/components/ui/fields";
 import { WallLabelOverlay } from "@/components/three/room/WallLabels";
 import { ArrangementPanel, typeName } from "./ArrangementPanel";
 import { ModulePanel } from "./ModulePanel";
+import { FurnitureContextMenu } from "./FurnitureContextMenu";
 import { OrderDialog } from "./OrderDialog";
 import { DockingPrompt, ViewOverlay } from "./ViewOverlay";
 
@@ -108,6 +109,7 @@ export function RoomConfigurator() {
         <WallLabelOverlay />
         <ViewOverlay />
         <DockingPrompt />
+        <FurnitureContextMenu />
         <p className="pointer-events-none absolute bottom-3 left-1/2 max-w-[calc(100%-2rem)] -translate-x-1/2 truncate rounded-full bg-white/80 px-3 py-1 text-xs text-stone-600 shadow-sm backdrop-blur">
           {t("app.sceneHint")}
         </p>

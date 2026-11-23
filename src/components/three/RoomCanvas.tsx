@@ -13,6 +13,7 @@ import { frameBox } from "./cameraFraming";
 import { DockingPreview, ModuleObject } from "./modules/ModuleObject";
 import { RoomModel } from "./room/RoomModel";
 import { WallLabelProjector } from "./room/WallLabels";
+import { PhotoRenderer } from "./photo/PhotoRenderer";
 import { mmToM } from "./units";
 
 type OrbitControlsImpl = ComponentRef<typeof OrbitControls>;
@@ -117,6 +118,7 @@ export function RoomCanvas() {
       <directionalLight position={[-4, 5, -3]} intensity={0.6} />
       <RoomModel />
       <WallLabelProjector />
+      <PhotoRenderer />
       <ModulesLayer />
       <RoomCameraRig />
     </Canvas>

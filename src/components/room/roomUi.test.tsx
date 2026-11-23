@@ -150,9 +150,9 @@ describe("room panel (Wymiary pomieszczenia)", () => {
     render(<ViewOverlay />);
     const controls = document.querySelector("[data-view-controls]")!;
     const names = [...controls.querySelectorAll("button")].map((b) => b.textContent);
-    expect(names).toEqual(["Całe pomieszczenie", "Wybrany moduł", "Wymiary pomieszczenia"]);
+    expect(names).toEqual(["Całe pomieszczenie", "Wybrany moduł", "Wymiary pomieszczenia", "Renderuj obraz"]);
     expect(controls.firstElementChild!.querySelectorAll("button")).toHaveLength(2);
-    expect(controls.lastElementChild!.textContent).toBe("Wymiary pomieszczenia");
+    expect(controls.children[1].textContent).toBe("Wymiary pomieszczenia");
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 

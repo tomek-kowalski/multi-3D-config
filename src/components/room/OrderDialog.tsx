@@ -3,10 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { detectCollisions } from "@/domain/arrangement/collisions";
 import { buildOrder, type OrderPayload } from "@/domain/commerce/order";
-import { isMessageKey, useLocaleStore, useT } from "@/i18n";
+import { isMessageKey, summaryValue, useLocaleStore, useT } from "@/i18n";
 import { downloadJson, fetchShopPrices, shopUrl, submitOrderToShop, type ShopPrice } from "@/services/woocommerce";
 import { useArrangementStore } from "@/store/useArrangementStore";
-import { buttonClass, IssueList, primaryButtonClass, Segmented } from "@/components/ui/fields";
+import { buttonClass, IssueList, primaryButtonClass } from "@/components/ui/fields";
+import { savedQuoteNumberFor } from "@/services/quotation";
+import { QuotePanel } from "./QuotePanel";
 import { describeCollision, typeName } from "./ArrangementPanel";
 
 type PriceState =
@@ -51,17 +53,13 @@ function usePrices(order: OrderPayload | null): PriceState {
 export function OrderDialog({ onClose }: { onClose: () => void }) {
   const t = useT();
   const arrangement = useArrangementStore((s) => s.arrangement);
-  const selectedId = useArrangementStore((s) => s.selectedModuleId);
-  const [scope, setScope] = useState<"all" | "selected">(selectedId ? "selected" : "all");
+  const [tab, setTab] = useState<"arrangement" | "quote">("arrangement");
   const [accepted, setAccepted] = useState<Record<string, string>>({});
-  const ids = useMemo(() => (scope === "selected" && selectedId ? [selectedId] : undefined), [scope, selectedId]);
-  const result = useMemo(() => buildOrder(arrangement, ids), [arrangement, ids]);
+  // Ordering and quotations always cover the complete arrangement.
+  const result = useMemo(() => buildOrder(arrangement), [arrangement]);
   const order = result.ok ? result.value : null;
   const prices = usePrices(order);
-  const collisions = useMemo(
-    () => detectCollisions(arrangement).filter((c) => !ids || ids.includes(c.moduleId) || (c.kind === "module" && ids.includes(c.otherId))),
-    [arrangement, ids],
-  );
+  const collisions = useMemo(() => detectCollisions(arrangement), [arrangement]);
   const termsRequired = useMemo(() => {
     const map = new Map<string, { field: string; value: string; label: string }>();
     for (const m of order?.modules ?? [])
@@ -98,16 +96,35 @@ export function OrderDialog({ onClose }: { onClose: () => void }) {
           </button>
         </header>
 
-        <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
-          <Segmented
-            label={t("order.scope")}
-            value={scope}
-            options={[
-              { value: "all", label: t("order.scopeAll", { count: arrangement.modules.length }) },
-              ...(selectedId ? [{ value: "selected" as const, label: t("order.scopeSelected", { id: selectedId }) }] : []),
-            ]}
-            onChange={setScope}
-          />
+        <div role="tablist" aria-label={t("order.title")} className="grid grid-cols-2 border-b border-stone-200 text-sm font-semibold">
+          {(
+            [
+              ["arrangement", t("order.scopeAll", { count: arrangement.modules.length })],
+              ["quote", t("quote.tab")],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              id={`order-tab-${id}`}
+              aria-selected={tab === id}
+              aria-controls={`order-panel-${id}`}
+              onClick={() => setTab(id)}
+              className={`border-b-2 px-3 py-3 transition-colors ${tab === id ? "border-stone-900 text-stone-900" : "border-transparent text-stone-500 hover:text-stone-900"}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {tab === "quote" ? (
+          <div role="tabpanel" id="order-panel-quote" aria-labelledby="order-tab-quote" className="flex-1 overflow-y-auto px-6 py-5">
+            <QuotePanel />
+          </div>
+        ) : (
+        <>
+        <div role="tabpanel" id="order-panel-arrangement" aria-labelledby="order-tab-arrangement" className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
 
           {!result.ok && <IssueList issues={result.issues} />}
 
@@ -136,7 +153,7 @@ export function OrderDialog({ onClose }: { onClose: () => void }) {
                 {m.summary.map((row) => (
                   <div key={row.labelKey} className="contents">
                     <dt className="text-stone-500">{isMessageKey(row.labelKey) ? t(row.labelKey) : row.labelKey}</dt>
-                    <dd className="text-stone-800">{row.value}</dd>
+                    <dd className="text-stone-800">{summaryValue((key, params) => (isMessageKey(key) ? t(key, params) : key), row)}</dd>
                   </div>
                 ))}
               </dl>
@@ -182,11 +199,13 @@ export function OrderDialog({ onClose }: { onClose: () => void }) {
             type="button"
             className={primaryButtonClass}
             disabled={!order || !shop || !allAccepted}
-            onClick={() => order && submitOrderToShop(order, accepted)}
+            onClick={() => order && submitOrderToShop(order, accepted, savedQuoteNumberFor(arrangement))}
           >
             {t("order.toCart")}
           </button>
         </footer>
+        </>
+        )}
       </div>
     </div>
   );

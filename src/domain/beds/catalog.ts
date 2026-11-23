@@ -15,6 +15,12 @@ export interface DecorSwatch {
   readonly catalogCode: string;
   /** `exact`: same decor code and structure; `code`: same decor code, other surface structure. */
   readonly match: "exact" | "code";
+  /**
+   * Pattern direction measured on the catalog image. Directional patterns (wood grain) are stored
+   * rotated so the grain always runs along the image's horizontal axis, which the models map along each
+   * panel's longer side; "vertical" means the catalog photo was rotated to get there.
+   */
+  readonly grain?: "none" | "horizontal" | "vertical";
 }
 
 export interface BedDecor {

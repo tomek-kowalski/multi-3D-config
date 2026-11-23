@@ -9,6 +9,7 @@ import { WALL_IDS, type RoomConfiguration, type RoomOpening, type WallId } from 
 import { planBounds } from "@/domain/spatial/geometry";
 import { useArrangementStore } from "@/store/useArrangementStore";
 import { CLICK_TOLERANCE_PX } from "../PanelMesh";
+import { photoTag } from "../photo/tags";
 import { mmToM } from "../units";
 
 import {
@@ -66,7 +67,7 @@ function Wall({ room, wall, active }: { room: RoomConfiguration; wall: WallId; a
   const angle = wallAngle(room, wall);
   return (
     <group position={[mmToM(frame.origin.x), 0, mmToM(frame.origin.z)]} rotation={[0, angle, 0]}>
-      <mesh geometry={geometry} receiveShadow>
+      <mesh geometry={geometry} receiveShadow userData={photoTag("wall", wall)}>
         {/* The configured colour is never changed; selection is shown by the frame and the floor band. */}
         <meshStandardMaterial color={room.wallColors[wall]} roughness={0.95} side={FrontSide} />
       </mesh>
@@ -98,9 +99,15 @@ function ActiveWallBand({ room, wall }: { room: RoomConfiguration; wall: WallId 
   );
 }
 
-function PartMesh({ part }: { part: ScenePart }) {
+function PartMesh({ part, wall }: { part: ScenePart; wall: WallId }) {
   return (
-    <mesh position={part.center as [number, number, number]} scale={part.size as [number, number, number]} castShadow={part.castShadow} receiveShadow={part.receiveShadow}>
+    <mesh
+      position={part.center as [number, number, number]}
+      scale={part.size as [number, number, number]}
+      castShadow={part.castShadow}
+      receiveShadow={part.receiveShadow}
+      userData={photoTag(part.role, wall)}
+    >
       <boxGeometry />
       <meshStandardMaterial color={part.color} roughness={0.5} transparent={part.opacity < 1} opacity={part.opacity} depthWrite={part.opacity === 1} />
       {part.role !== "glass" && part.role !== "handle" && <Edges color={FRAME_EDGE_COLOR} />}
@@ -115,7 +122,7 @@ function Opening({ room, opening, selected }: { room: RoomConfiguration; opening
   const frame = wallFrame(room, opening.wall);
   const angle = wallAngle(room, opening.wall);
   const keepFree = planBounds(openingKeepFreeBox(room, opening));
-  const parts = openingParts(opening).map((p) => <PartMesh key={p.key} part={p} />);
+  const parts = openingParts(opening).map((p) => <PartMesh key={p.key} part={p} wall={opening.wall} />);
 
   return (
     <>
@@ -156,7 +163,7 @@ export function RoomModel() {
   const D = mmToM(room.depth);
   return (
     <group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[W / 2, 0, D / 2]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[W / 2, 0, D / 2]} receiveShadow userData={photoTag("floor")}>
         <planeGeometry args={[W, D]} />
         <meshStandardMaterial color={room.floorColor} roughness={0.9} />
       </mesh>

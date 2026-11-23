@@ -4,6 +4,7 @@ import { Edges } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
 import type { PanelPart, Vector3Mm } from "@/domain/geometry/types";
 import { getMaterialAppearance } from "./materialAppearance";
+import { photoTag } from "./photo/tags";
 import { mmToM } from "./units";
 
 /** Pixels the pointer may travel between down and up and still count as a click (not an orbit drag). */
@@ -41,6 +42,7 @@ export function PanelMesh({ panel, origin = ORIGIN, onSelect }: PanelMeshProps) 
       scale={[mmToM(size.width), mmToM(size.height), mmToM(size.depth)]}
       castShadow
       receiveShadow
+      userData={photoTag("board")}
       onClick={
         onSelect &&
         ((event: ThreeEvent<MouseEvent>) => {
