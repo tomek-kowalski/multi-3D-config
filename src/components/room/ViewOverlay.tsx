@@ -59,6 +59,8 @@ export function ViewOverlay() {
   const roomPanelOpen = useArrangementStore((s) => s.roomPanelOpen);
   const setRoomPanelOpen = useArrangementStore((s) => s.setRoomPanelOpen);
   const [photoOpen, setPhotoOpen] = useState(false);
+  // With the menu collapsed, its header card sits in the top-right corner (desktop): the controls go below it.
+  const menuCollapsed = useArrangementStore((s) => s.menuCollapsed);
   return (
     <>
       <div className="pointer-events-none absolute left-3 top-3 z-10">
@@ -71,7 +73,7 @@ export function ViewOverlay() {
           className="h-10 w-auto drop-shadow-sm sm:h-14 lg:h-16"
         />
       </div>
-      <div className="absolute right-3 top-3 z-10 flex flex-col items-end gap-2" data-view-controls>
+      <div className={`absolute right-3 z-10 flex flex-col items-end gap-2 ${menuCollapsed ? "top-3 lg:top-24" : "top-3"}`} data-view-controls>
         <div className="flex gap-2">
           <button type="button" className={overlayButton} onClick={() => requestView("room")}>
             {t("view.room")}

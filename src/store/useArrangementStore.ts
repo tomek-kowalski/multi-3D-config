@@ -39,6 +39,8 @@ export interface ArrangementState {
   readonly activeMenu: MenuId;
   /** Whether the room panel ("Wymiary pomieszczenia": dimensions, walls, openings) is open. */
   readonly roomPanelOpen: boolean;
+  /** Main menu collapsed to its header (display only: the 3D view gets the space; nothing else changes). */
+  readonly menuCollapsed: boolean;
   /** Right-click menu of a furniture module (screen position in CSS pixels). */
   readonly contextMenu: { readonly moduleId: ModuleId; readonly x: number; readonly y: number } | null;
   readonly viewRequest: ViewRequest | null;
@@ -75,6 +77,7 @@ export interface ArrangementState {
 
   setActiveMenu: (menu: MenuId) => void;
   setRoomPanelOpen: (open: boolean) => void;
+  setMenuCollapsed: (collapsed: boolean) => void;
   /** Selects the module and opens its context menu at the pointer. */
   openContextMenu: (moduleId: ModuleId, x: number, y: number) => void;
   closeContextMenu: () => void;
@@ -116,6 +119,7 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
     dockingProposal: null,
     activeMenu: "arrangement",
     roomPanelOpen: false,
+    menuCollapsed: false,
     contextMenu: null,
     viewRequest: null,
     hydrated: false,
@@ -196,6 +200,7 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
 
     setActiveMenu: (menu) => set({ activeMenu: menu }),
     setRoomPanelOpen: (open) => set({ roomPanelOpen: open }),
+    setMenuCollapsed: (collapsed) => set({ menuCollapsed: collapsed }),
     openContextMenu: (moduleId, x, y) => {
       if (!get().arrangement.modules.some((m) => m.id === moduleId)) return;
       set({ selectedModuleId: moduleId, contextMenu: { moduleId, x, y } });

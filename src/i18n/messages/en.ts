@@ -4,6 +4,8 @@ import type { MessageKey } from "./pl";
 export const en: Readonly<Record<MessageKey, string>> = {
   "app.kicker": "Configurator",
   "app.title": "Furniture in your room",
+  "app.collapseMenu": "Collapse menu",
+  "app.expandMenu": "Expand menu",
   "app.language": "Language",
   "app.loading3d": "Loading 3D preview…",
   "webgl.unavailableTitle": "The 3D preview cannot start",

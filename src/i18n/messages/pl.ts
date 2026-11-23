@@ -5,6 +5,8 @@
 export const pl = {
   "app.kicker": "Konfigurator",
   "app.title": "Meble w Twoim pomieszczeniu",
+  "app.collapseMenu": "Zwiń menu",
+  "app.expandMenu": "Rozwiń menu",
   "app.language": "Język",
   "app.loading3d": "Wczytywanie podglądu 3D…",
   "webgl.unavailableTitle": "Podgląd 3D nie może się uruchomić",
