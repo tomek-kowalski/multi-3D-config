@@ -20,6 +20,8 @@ function LoadingScene() {
 }
 
 // WebGL needs the browser, so the canvas is never prerendered on the server.
+import { WebGLErrorBoundary } from "@/components/three/WebGLErrorBoundary";
+
 const RoomCanvas = dynamic(() => import("@/components/three/RoomCanvas").then((mod) => mod.RoomCanvas), {
   ssr: false,
   loading: () => <LoadingScene />,
@@ -105,7 +107,9 @@ export function RoomConfigurator() {
         aria-label={t("app.preview")}
         className="sticky top-0 z-20 h-[45svh] min-h-64 w-full shrink-0 overflow-hidden shadow-md lg:relative lg:z-auto lg:h-full lg:min-h-0 lg:min-w-0 lg:flex-1 lg:shrink lg:shadow-none"
       >
-        <RoomCanvas />
+        <WebGLErrorBoundary>
+          <RoomCanvas />
+        </WebGLErrorBoundary>
         <WallLabelOverlay />
         <ViewOverlay />
         <DockingPrompt />

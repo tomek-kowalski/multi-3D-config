@@ -11,6 +11,8 @@ function LoadingPreview() {
 }
 
 // WebGL needs the browser, so the canvas is never prerendered on the server.
+import { WebGLErrorBoundary } from "@/components/three/WebGLErrorBoundary";
+
 const FurnitureCanvas = dynamic(
   () => import("@/components/three/FurnitureCanvas").then((mod) => mod.FurnitureCanvas),
   {
@@ -54,7 +56,9 @@ export function Configurator() {
         aria-label={t("app.preview")}
         className="sticky top-0 z-20 h-[45svh] min-h-64 w-full shrink-0 overflow-hidden shadow-md lg:relative lg:z-auto lg:h-full lg:min-h-0 lg:min-w-0 lg:flex-1 lg:shrink lg:shadow-none"
       >
-        <FurnitureCanvas />
+        <WebGLErrorBoundary>
+          <FurnitureCanvas />
+        </WebGLErrorBoundary>
         <ViewControls />
         <p className="pointer-events-none absolute bottom-3 left-1/2 max-w-[calc(100%-2rem)] -translate-x-1/2 truncate rounded-full bg-white/80 px-3 py-1 text-xs text-stone-600 shadow-sm backdrop-blur">
           {t("cab.sceneHint")}
