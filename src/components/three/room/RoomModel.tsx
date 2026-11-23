@@ -9,6 +9,7 @@ import { WALL_IDS, type RoomConfiguration, type RoomOpening, type WallId } from 
 import { planBounds } from "@/domain/spatial/geometry";
 import { useArrangementStore } from "@/store/useArrangementStore";
 import { CLICK_TOLERANCE_PX } from "../PanelMesh";
+import { showKeepFreeVolume } from "../debug";
 import { photoTag } from "../photo/tags";
 import { mmToM } from "../units";
 
@@ -138,8 +139,8 @@ function Opening({ room, opening, selected }: { room: RoomConfiguration; opening
       >
         {parts}
       </group>
-      {selected && (
-        // The keep-free volume of the selected opening (opening + clearance).
+      {showKeepFreeVolume(selected) && (
+        // The keep-free volume of the selected opening (opening + clearance): developer debugging only.
         <mesh
           position={[mmToM((keepFree.minX + keepFree.maxX) / 2), mmToM(opening.elevation + opening.height / 2), mmToM((keepFree.minZ + keepFree.maxZ) / 2)]}
           scale={[mmToM(keepFree.maxX - keepFree.minX), mmToM(opening.height), mmToM(keepFree.maxZ - keepFree.minZ)]}

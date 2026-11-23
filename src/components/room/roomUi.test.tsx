@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { sceneOpenings, wallHighlights } from "@/components/three/room/roomScene";
 import { WallLabelOverlay } from "@/components/three/room/WallLabels";
@@ -12,7 +12,7 @@ import { useLocaleStore } from "@/i18n";
 import { useArrangementStore } from "@/store/useArrangementStore";
 import { SpacePanel } from "./SpacePanel";
 import { MainMenu } from "./RoomConfigurator";
-import { DockingPrompt, ViewOverlay } from "./ViewOverlay";
+import { CollisionNotes, DockingPrompt, ViewOverlay } from "./ViewOverlay";
 
 function unwrap<T>(r: { ok: true; value: T } | { ok: false; issues: readonly unknown[] }): T {
   if (!r.ok) throw new Error(JSON.stringify(r.issues));
@@ -251,5 +251,74 @@ describe("docking confirmation", () => {
     render(<DockingPrompt />);
     fireEvent.click(button("Dosuń"));
     expect(position()).toMatchObject({ x: 2800, z: 250 });
+  });
+});
+
+describe("docking prompt", () => {
+  const cabinetsNear = (x: number) => {
+    store().reset();
+    store().setDockingEnabled(true);
+    store().addModule("cabinet");
+    store().addModule("cabinet");
+    store().setPlacement("module-1", { x: 2000 });
+    store().setPlacement("module-2", { x, z: 280 });
+  };
+
+  it("is not shown while dragging and asks once on drop", () => {
+    cabinetsNear(2850);
+    render(<DockingPrompt />);
+    act(() => {
+      store().setDragging("module-2");
+      store().proposeDockingFor("module-2");
+    });
+    expect(screen.queryByRole("alertdialog")).toBeNull(); // previewed in 3D only
+    act(() => {
+      store().setDragging(null);
+      store().proposeDockingFor("module-2");
+    });
+    const dialogs = screen.getAllByRole("alertdialog");
+    expect(dialogs).toHaveLength(1);
+    expect(dialogs[0].getAttribute("data-docking-verdict")).toBe("ok");
+    expect(within(dialogs[0]).getByRole("button", { name: "Dosuń" })).toBeTruthy();
+    fireEvent.click(within(dialogs[0]).getByRole("button", { name: "Zostaw tutaj" }));
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(store().arrangement.modules[1].placement.x).toBe(2850); // declined: the manual position stays
+  });
+
+  it("explains why a nearby position cannot be docked, without offering it", () => {
+    cabinetsNear(2850);
+    act(() => {
+      // Push the target against something: a third cabinet where the docked one would go.
+      store().addModule("cabinet");
+      store().setPlacement("module-3", { x: 2800, z: 1200 });
+      store().setPlacement("module-3", { x: 2800, z: 700 });
+    });
+    act(() => store().proposeDockingFor("module-2"));
+    render(<DockingPrompt />);
+    const dialog = screen.getByRole("alertdialog");
+    expect(dialog.getAttribute("data-docking-verdict")).toBe("invalid");
+    expect(dialog.textContent).toMatch(/Nie można dosunąć/);
+    expect(dialog.textContent).toMatch(/koliduje z: Szafka modułowa \(module-3\)/);
+    expect(within(dialog).queryByRole("button", { name: "Dosuń" })).toBeNull();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Zamknij" }));
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+  });
+});
+
+describe("collision note in the 3D view", () => {
+  it("names the conflicting module or obstacle while the conflict exists", () => {
+    store().reset();
+    store().addModule("cabinet");
+    store().addModule("clickbed-o");
+    act(() => {
+      store().setPlacement("module-2", { x: 900 }); // bed pushed onto the cabinet
+    });
+    render(<CollisionNotes />);
+    const note = screen.getByRole("status");
+    expect(note.textContent).toContain("Szafka modułowa (module-1) koliduje z: ClickBed O (module-2)");
+    act(() => {
+      store().setPlacement("module-2", { x: 2400 }); // beside the cabinet, inside the room
+    });
+    expect(document.querySelector("[data-collision-notes]")).toBeNull();
   });
 });

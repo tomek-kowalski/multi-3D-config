@@ -9,6 +9,7 @@ import { getFurnitureType } from "@/domain/modules/registry";
 import type { ModuleInstance } from "@/domain/modules/types";
 import { useArrangementStore } from "@/store/useArrangementStore";
 import { CLICK_TOLERANCE_PX } from "../PanelMesh";
+import { technicalOverlays } from "../debug";
 import { photoTag } from "../photo/tags";
 import { mmToM } from "../units";
 import { getModuleRenderer } from "./moduleRenderers";
@@ -57,7 +58,7 @@ export function DockingPreview() {
     >
       <group position={[-mmToM(footprint.width) / 2, 0, -mmToM(footprint.depth) / 2]}>
         {type.collisionBoxes(docked.configuration, docked.state).map((b, i) => (
-          <VolumeBox key={i} box={b} color={DOCKING_COLOR} opacity={0.22} />
+          <VolumeBox key={i} box={b} color={proposal.verdict === "invalid" ? COLLISION_COLOR : DOCKING_COLOR} opacity={0.18} />
         ))}
       </group>
     </group>
@@ -100,6 +101,7 @@ function useDrag(instance: ModuleInstance) {
     const onMove = (event: PointerEvent) => {
       if (drag.moduleId !== id) return;
       if (!drag.moved && Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < CLICK_TOLERANCE_PX) return;
+      if (!drag.moved) useArrangementStore.getState().setDragging(id);
       drag.moved = true;
       const rect = element.getBoundingClientRect();
       ndc.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
@@ -108,14 +110,18 @@ function useDrag(instance: ModuleInstance) {
       if (!point) return;
       const snap = (v: number) => Math.round(v / DRAG_SNAP_MM) * DRAG_SNAP_MM;
       setPlacement(id, { x: snap(point.x * 1000 + drag.offsetX), z: snap(point.z * 1000 + drag.offsetZ) });
+      // Live docking preview (the question is asked once, on drop).
+      useArrangementStore.getState().proposeDockingFor(id);
       get().invalidate();
     };
     const onUp = () => {
       if (drag.moduleId !== id) return;
       const moved = drag.moved;
       drag.moduleId = null;
-      // A moved cabinet may now be next to another one: offer docking (applied only on confirmation).
-      if (moved) useArrangementStore.getState().proposeDockingFor(id);
+      const store = useArrangementStore.getState();
+      store.setDragging(null);
+      // A moved module may now be next to another one: offer docking once (applied only on confirmation).
+      if (moved) store.proposeDockingFor(id);
       const controls = get().controls as unknown as ControlsLike;
       if (controls) controls.enabled = true;
       element.style.cursor = "";
@@ -149,9 +155,9 @@ function useDrag(instance: ModuleInstance) {
 }
 
 /**
- * One placed module: positioned and rotated by its placement, drawn by its type's renderer, with
- * selection, collision and operation-envelope overlays. Click selects; dragging the selected module
- * moves it on the floor.
+ * One placed module: positioned and rotated by its placement, drawn by its type's renderer (the
+ * technical volumes only in geometry debugging). Click selects; dragging the selected module moves it
+ * on the floor.
  */
 export function ModuleObject({ module, selected, colliding }: { module: ModuleInstance; selected: boolean; colliding: boolean }) {
   const select = useArrangementStore((s) => s.selectModule);
@@ -163,11 +169,14 @@ export function ModuleObject({ module, selected, colliding }: { module: ModuleIn
   const envelope = type.operationEnvelope(module.configuration);
   const renderModule = getModuleRenderer(module.typeId);
   const startDrag = useDrag(module);
+  const overlays = technicalOverlays(selected, colliding);
 
   return (
     <group
       position={[mmToM(module.placement.x), mmToM(module.placement.y), mmToM(module.placement.z)]}
       rotation={[0, (module.placement.rotationDeg * Math.PI) / 180, 0]}
+      // Identifies the module's meshes for the status outlines (FurnitureOutlines).
+      userData={{ moduleId: module.id }}
       onClick={(event: ThreeEvent<MouseEvent>) => {
         if (event.delta > CLICK_TOLERANCE_PX) return;
         if (!selected) {
@@ -188,9 +197,10 @@ export function ModuleObject({ module, selected, colliding }: { module: ModuleIn
         <Suspense fallback={<LoadingBox box={boxes[0]} />}>
           {renderModule({ module, editing: selected })}
         </Suspense>
-        {selected && boxes.map((b, i) => <VolumeBox key={`s${i}`} box={b} color={SELECT_COLOR} opacity={0.04} />)}
-        {colliding && boxes.map((b, i) => <VolumeBox key={`c${i}`} box={b} color={COLLISION_COLOR} opacity={0.12} />)}
-        {selected && envelope?.map((b, i) => <VolumeBox key={`e${i}`} box={b} color={ENVELOPE_COLOR} opacity={0.05} />)}
+        {/* Technical volumes: developer debugging only (see debug.ts); the calculations never use them. */}
+        {overlays.selection && boxes.map((b, i) => <VolumeBox key={`s${i}`} box={b} color={SELECT_COLOR} opacity={0.04} />)}
+        {overlays.collision && boxes.map((b, i) => <VolumeBox key={`c${i}`} box={b} color={COLLISION_COLOR} opacity={0.12} />)}
+        {overlays.envelope && envelope?.map((b, i) => <VolumeBox key={`e${i}`} box={b} color={ENVELOPE_COLOR} opacity={0.05} />)}
       </group>
     </group>
   );

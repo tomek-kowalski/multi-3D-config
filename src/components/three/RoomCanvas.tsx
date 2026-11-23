@@ -11,6 +11,8 @@ import { useArrangementStore } from "@/store/useArrangementStore";
 import { useConfiguratorStore } from "@/store/useConfiguratorStore";
 import { frameBox } from "./cameraFraming";
 import { DockingPreview, ModuleObject } from "./modules/ModuleObject";
+import { FurnitureOutlines } from "./modules/FurnitureOutlines";
+import { collidingModules, furnitureStatuses } from "./modules/furnitureStatus";
 import { RoomModel } from "./room/RoomModel";
 import { WallLabelProjector } from "./room/WallLabels";
 import { PhotoRenderer } from "./photo/PhotoRenderer";
@@ -25,21 +27,20 @@ const ROOM_VIEW_DIRECTION = new Vector3(0.45, 0.85, 1).normalize();
 function ModulesLayer() {
   const arrangement = useArrangementStore((s) => s.arrangement);
   const selectedId = useArrangementStore((s) => s.selectedModuleId);
-  const colliding = useMemo(() => {
-    const ids = new Set<string>();
-    for (const issue of detectCollisions(arrangement)) {
-      if (issue.phase !== "static") continue;
-      ids.add(issue.moduleId);
-      if (issue.kind === "module") ids.add(issue.otherId);
-    }
-    return ids;
-  }, [arrangement]);
+  const movingId = useArrangementStore((s) => s.draggingModuleId);
+  const issues = useMemo(() => detectCollisions(arrangement), [arrangement]);
+  const colliding = useMemo(() => collidingModules(issues), [issues]);
+  const statuses = useMemo(
+    () => furnitureStatuses(arrangement.modules.map((m) => m.id), issues, selectedId, movingId),
+    [arrangement.modules, issues, selectedId, movingId],
+  );
   return (
     <>
       {arrangement.modules.map((m) => (
         <ModuleObject key={m.id} module={m} selected={m.id === selectedId} colliding={colliding.has(m.id)} />
       ))}
       <DockingPreview />
+      <FurnitureOutlines statuses={statuses} />
     </>
   );
 }

@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { SectionHeading } from "@/components/configurator/SectionHeading";
 import { detectCollisions, issuesForModule, type CollisionIssue } from "@/domain/arrangement/collisions";
-import { DOCKING_DISTANCE_MM } from "@/domain/arrangement/docking";
+import { DOCKING_GAP_MM } from "@/domain/arrangement/docking";
 import { moduleFootprint } from "@/domain/arrangement/spatial";
 import { getFurnitureType, listFurnitureTypes } from "@/domain/modules/registry";
 import type { ModuleInstance } from "@/domain/modules/types";
@@ -33,21 +33,31 @@ export function stateName(t: Translate, state: string): string {
   return isMessageKey(key) ? t(key) : state;
 }
 
-/** Human-readable collision line for a module. */
-export function describeCollision(t: Translate, issue: CollisionIssue, modules: readonly ModuleInstance[], selfId?: string): string {
+/**
+ * Human-readable collision line for a module. `selfId`: the module the line is about (a module–module
+ * conflict then names the other one); `label`: how the module itself is named (default: its id).
+ */
+export function describeCollision(
+  t: Translate,
+  issue: CollisionIssue,
+  modules: readonly ModuleInstance[],
+  selfId?: string,
+  label: (id: string) => string = (id) => id,
+): string {
   const phase = issue.phase === "operation" ? ` ${t("collision.duringOperation")}` : "";
   switch (issue.kind) {
     case "outside-room":
-      return t("collision.outsideRoom", { module: issue.moduleId }) + phase;
+      return t("collision.outsideRoom", { module: label(issue.moduleId) }) + phase;
     case "opening":
-      return t("collision.opening", { module: issue.moduleId, opening: issue.openingId }) + phase;
+      return t("collision.opening", { module: label(issue.moduleId), opening: issue.openingId }) + phase;
     case "module": {
-      const other = issue.moduleId === selfId ? issue.otherId : issue.moduleId;
+      const self = selfId ?? issue.moduleId;
+      const other = issue.moduleId === self ? issue.otherId : issue.moduleId;
       const otherModule = modules.find((m) => m.id === other);
-      return t("collision.module", { module: selfId ?? issue.moduleId, other: otherModule ? `${typeName(t, otherModule.typeId)} (${other})` : other }) + phase;
+      return t("collision.module", { module: label(self), other: otherModule ? `${typeName(t, otherModule.typeId)} (${other})` : other }) + phase;
     }
     case "wall-mounting":
-      return t("collision.wallMounting", { module: issue.moduleId });
+      return t("collision.wallMounting", { module: label(issue.moduleId) });
   }
 }
 
@@ -292,7 +302,7 @@ function DockingSetting() {
         <input type="checkbox" className="size-4 accent-stone-900" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
         {t("docking.enabled")}
       </label>
-      <p className="text-xs text-stone-500">{t("docking.hint", { distance: DOCKING_DISTANCE_MM })}</p>
+      <p className="text-xs text-stone-500">{t("docking.hint", { distance: DOCKING_GAP_MM })}</p>
     </div>
   );
 }

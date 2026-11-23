@@ -726,3 +726,18 @@ describe("main view avoids hidden furniture", () => {
     expect(occlusionScore(camera, [[back], [{ min: [3, 0, 2], max: [4, 1, 2.5] }]])).toBe(0);
   });
 });
+
+describe("status outlines never reach the photos", () => {
+  it("ignores the outline layers of live meshes: photo meshes are plain copies on the default layer", () => {
+    const { scene, panel } = liveScene();
+    panel.layers.enable(20); // as FurnitureOutlines does for a selected module
+    panel.layers.enable(22);
+    const snapshot = takeSnapshot(scene);
+    const photo = buildPhotoScene(snapshot, [], null);
+    const meshes = photo.children.filter((c) => c instanceof Mesh);
+    expect(meshes.every((m) => m.layers.mask === 1)).toBe(true);
+    // Outlines are not scene objects at all: the photo has exactly the tagged furniture and room meshes.
+    expect(meshes).toHaveLength(5);
+    snapshot.dispose();
+  });
+});
