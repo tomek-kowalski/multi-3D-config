@@ -12,6 +12,9 @@ export interface PhotoDecor {
   readonly swatchSizeM: number;
 }
 
+/** Highest linear albedo of the supplied mattress fabric (real white ticking reflects about 70%). */
+export const FABRIC_MAX_ALBEDO = 0.72;
+
 /** Glass of windows and doors: clear, very slightly green-tinted float glass. */
 export const GLASS_TINT = "#F3F8F6";
 
@@ -66,13 +69,20 @@ export function photoMaterial(role: PhotoRole, source: Material, hdMap: Texture 
       }
       break;
     }
-    case "fabric":
+    case "fabric": {
+      // The mattress comes with the supplied model (not a customer colour); its 0.90 linear albedo is
+      // brighter than any real fabric and, with a full sheen on top, rendered as flat white. Real white
+      // cotton/polyester ticking reflects ~70%: the colour keeps its hue, capped at that albedo, and
+      // the sheen is a soft rim, not a second coat of light.
+      const max = Math.max(color.r, color.g, color.b);
+      if (max > FABRIC_MAX_ALBEDO) m.color.multiplyScalar(FABRIC_MAX_ALBEDO / max);
       m.roughness = 1;
       m.metalness = 0;
-      m.sheen = 0.7;
-      m.sheenRoughness = 0.75;
-      m.sheenColor = color.clone();
+      m.sheen = 0.35;
+      m.sheenRoughness = 0.8;
+      m.sheenColor = m.color.clone().multiplyScalar(0.6);
       break;
+    }
     case "metal":
     case "handle":
       m.metalness = Math.max(metalness, role === "handle" ? 0.9 : metalness);

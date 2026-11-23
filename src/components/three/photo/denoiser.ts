@@ -275,6 +275,11 @@ export class GuidedDenoiser {
     }
   }
 
+  /** Guide buffer whose alpha is 1 where a surface (room or furniture) was drawn, 0 on the backdrop. */
+  get surfaceMask(): Texture {
+    return this.normal.texture;
+  }
+
   /** Denoises the linear HDR radiance; returns the denoised linear HDR texture. */
   denoise(radiance: Texture, options: DenoiseOptions = DEFAULT_DENOISE): Texture {
     const renderer = this.renderer;

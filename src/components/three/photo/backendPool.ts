@@ -46,6 +46,11 @@ export function createBackendPool(
       get compiling() {
         return backend.compiling;
       },
+      get exposure() {
+        return backend.exposure;
+      },
+      // Optional capabilities are forwarded too (a missing one stays missing).
+      invalidFraction: backend.invalidFraction ? () => guard(() => backend.invalidFraction!()) : undefined,
       setScene: (scene, camera) => guard(() => backend.setScene(scene, camera)),
       step: (budget) => guard(() => backend.step(budget)),
       output: (format) => guard(() => backend.output(format)),

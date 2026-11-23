@@ -18,7 +18,7 @@ import {
 } from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { addModule, updateModuleConfiguration } from "@/domain/arrangement/operations";
+import { addModule, setModuleState, updateModuleConfiguration } from "@/domain/arrangement/operations";
 import type { Arrangement } from "@/domain/arrangement/types";
 import { getBedModel } from "@/domain/beds/catalog";
 import { DEFAULT_ROOM } from "@/domain/room/defaults";
@@ -33,6 +33,9 @@ import {
   arrangementFacingDeg,
   boxCorners,
   fitPhotoCamera,
+  moduleBoxes,
+  occlusionScore,
+  type BoxM,
   PHOTO_FOV_DEG,
   photoSubject,
   planPhotoViews,
@@ -41,10 +44,11 @@ import {
 } from "./photoCamera";
 import { PhotoRenderError, renderPhotoViews, type PhotoBackend, type PhotoEngineDeps } from "./photoEngine";
 import { isPhotoJobRunning, runPhotoJob, type PhotoJobDeps } from "./photoJob";
-import { GLASS_TINT, photoMaterial } from "./photoMaterials";
+import { FABRIC_MAX_ALBEDO, GLASS_TINT, photoMaterial } from "./photoMaterials";
 import { applyHdDecors, buildPhotoScene, takeSnapshot } from "./photoScene";
 import { clearPhotoCache, renderingMetadata } from "./photoService";
 import { DEFAULT_PHOTO_SETTINGS, QUALITY_PRESETS, resolvePhotoSettings } from "./photoSettings";
+import { HIGHLIGHT_PERCENTILE, HIGHLIGHT_TARGET, highlightExposure, MIN_EXPOSURE } from "./exposure";
 import { photoTag } from "./tags";
 
 const GPU: GpuChoice = { mode: "pathtraced", reason: null };
@@ -235,9 +239,14 @@ describe("photo materials", () => {
     source.userData.decor = { texture: null, code: "AL01", structure: "SM", swatchSizeM: SWATCH_SIZE_M };
     expect(photoMaterial("board", source).metalness).toBeGreaterThan(0.5); // metal decor
 
+    // The supplied mattress fabric: hue kept, albedo capped at real white fabric (not a customer colour).
+    const mattress = new Color("#E6E3DC");
     const fabric = photoMaterial("fabric", new MeshStandardMaterial({ color: "#E6E3DC" }));
     expect(fabric.sheen).toBeGreaterThan(0);
-    expect(fabric.color.getHexString()).toBe(new Color("#E6E3DC").getHexString());
+    expect(Math.max(fabric.color.r, fabric.color.g, fabric.color.b)).toBeCloseTo(FABRIC_MAX_ALBEDO, 5);
+    expect(fabric.color.r / fabric.color.b).toBeCloseTo(mattress.r / mattress.b, 5);
+    const grey = photoMaterial("fabric", new MeshStandardMaterial({ color: "#808080" }));
+    expect(grey.color.getHexString()).toBe("808080"); // darker fabrics are untouched
     const glass = photoMaterial("glass", new MeshStandardMaterial({ color: "#A9CBE0", transparent: true, opacity: 0.35 }));
     expect(glass).toMatchObject({ transmission: 1, transparent: false });
     expect(glass.color.getHexString()).toBe(new Color(GLASS_TINT).getHexString());
@@ -580,6 +589,14 @@ describe("backend pool", () => {
     expect(p.idle).toBe(false);
   });
 
+  it("forwards the output checks of the pooled backend (invalid pixels, exposure)", () => {
+    const p = createBackendPool(() => ({ ...fakeBackend("raster"), invalidFraction: () => 0.3, exposure: 0.7 }));
+    const leased = p.acquire("raster", DEFAULT_PHOTO_SETTINGS);
+    expect(leased.invalidFraction?.()).toBe(0.3);
+    expect(leased.exposure).toBe(0.7);
+    expect(createBackendPool(() => fakeBackend("raster")).acquire("raster", DEFAULT_PHOTO_SETTINGS).invalidFraction).toBeUndefined();
+  });
+
   it("never reuses a backend that failed, and replaces one of another size", async () => {
     const { p, created } = pool();
     const failing = p.acquire("pathtraced", DEFAULT_PHOTO_SETTINGS);
@@ -667,5 +684,45 @@ describe("automatic quality from measured performance", () => {
     expect(settingsSeen).toEqual(["raster:fast"]);
     expect(photo.settings.quality).toBe("fast");
     expect(photo.timings).toMatchObject({ snapshot: expect.any(Number), prepare: expect.any(Number), job: expect.any(Number), sampling: expect.any(Number) });
+  });
+});
+
+
+describe("highlight-protecting exposure", () => {
+  it("meters light rooms down so the brightest surfaces keep their shading, and leaves dark rooms alone", () => {
+    const room = (bright: number) => Float32Array.from({ length: 1000 }, (_, i) => (i / 1000) * bright);
+    expect(highlightExposure(room(0.6))).toBe(1); // dark room: highlights below the shoulder
+    const light = highlightExposure(room(1.15));
+    expect(light).toBeLessThan(1);
+    expect(light * 1.15 * HIGHLIGHT_PERCENTILE).toBeCloseTo(HIGHLIGHT_TARGET, 1);
+    expect(highlightExposure(room(40))).toBe(MIN_EXPOSURE); // never more than −0.4 stops
+    expect(highlightExposure(new Float32Array(0))).toBe(1);
+    // Background pixels (0 in the mask) do not count.
+    expect(highlightExposure(Float32Array.from([0, 0, 0, 0.5, 0.5]))).toBe(1);
+  });
+});
+
+describe("main view avoids hidden furniture", () => {
+  it("picks the side or height from which an unfolded bed does not hide the cabinet next to it", () => {
+    let a = arrangement(["cabinet", "clickbed-o", "cabinet"]);
+    const bed = a.modules[1];
+    const r = setModuleState(a, bed.id, "unfolded");
+    if (!r.ok) throw new Error();
+    a = r.value.arrangement;
+    const boxes = moduleBoxes(a.modules);
+    const [main, second] = planPhotoViews(a, 2, 16 / 9);
+    const defaultMain = fitPhotoCamera(photoSubject(a), viewDirection({ azimuthDeg: 34, elevationDeg: 18 }), 16 / 9);
+    expect(occlusionScore(main.camera, boxes)).toBeLessThanOrEqual(occlusionScore(defaultMain, boxes));
+    expect(main.id).not.toBe(second.id);
+    // Furniture side by side along the wall hides nothing: the default views stay.
+    expect(planPhotoViews(arrangement(), 3, 16 / 9).map((v) => v.id)).toEqual(["front-right", "front-left", "front"]);
+  });
+
+  it("scores a module hidden behind a nearer one", () => {
+    const camera = fitPhotoCamera({ min: [0, 0, 0], max: [2, 2, 3] }, viewDirection({ azimuthDeg: 0, elevationDeg: 0 }), 16 / 9);
+    const back: BoxM = { min: [0.5, 0, 0], max: [1.5, 1, 0.5] };
+    const front: BoxM = { min: [0.4, 0, 2], max: [1.6, 1.2, 2.5] };
+    expect(occlusionScore(camera, [[back], [front]])).toBeGreaterThan(0.9);
+    expect(occlusionScore(camera, [[back], [{ min: [3, 0, 2], max: [4, 1, 2.5] }]])).toBe(0);
   });
 });

@@ -34,7 +34,7 @@ describe("fast renderer lighting", () => {
     expect(environmentTint(new DataTexture(null, 0, 0)).getHexString()).toBe("ffffff");
   });
 
-  it("keeps the calibrated light balance (path-traced reference, see RASTER_LIGHTING)", () => {
-    expect(RASTER_LIGHTING).toEqual({ environmentIntensity: 0.45, bounceIntensity: 1.2, keyIntensity: 2.3, skyIntensity: 2.1 });
+  it("keeps the calibrated light balance (unshadowed fill well below the shadowed light, see RASTER_LIGHTING)", () => {
+    expect(RASTER_LIGHTING).toEqual({ environmentIntensity: 0.35, bounceIntensity: 0.6, keyIntensity: 2.3, skyIntensity: 2.1 });
   });
 });

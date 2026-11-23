@@ -19,6 +19,7 @@ import { HDRLoader } from "three/examples/jsm/loaders/HDRLoader.js";
 import { FullScreenQuad } from "three/examples/jsm/postprocessing/Pass.js";
 import type { PhotoMode } from "./capabilities";
 import { GuidedDenoiser } from "./denoiser";
+import { AutoExposure } from "./exposure";
 import { createFastRasterBackend } from "./rasterBackend";
 import type { PhotoBackend } from "./photoEngine";
 import { QUALITY_PRESETS, type PhotoSettings, type PhotoToneMapping } from "./photoSettings";
@@ -108,11 +109,16 @@ export function createPathTracedBackend(initial: PhotoSettings, environment: Tex
   // Present at runtime (parallel shader compilation), missing from the package's type declarations.
   const compiling = () => Boolean((tracer as unknown as { isCompiling?: boolean }).isCompiling);
   const denoiser = new GuidedDenoiser(renderer);
+  const metering = new AutoExposure(renderer);
+  let exposure = 1;
   const copy = copyMaterial(tracer.target.texture);
   const quad = new FullScreenQuad(copy);
 
   return {
     mode: "pathtraced" as PhotoMode,
+    get exposure() {
+      return exposure;
+    },
     get compiling() {
       return compiling();
     },
@@ -149,7 +155,11 @@ export function createPathTracedBackend(initial: PhotoSettings, environment: Tex
     async output(format = "png") {
       // The final accumulated image (the accumulation target is re-created on resize: read the current one).
       const radiance = tracer.target.texture;
-      copy.uniforms.map.value = settings.denoise ? denoiser.denoise(radiance) : radiance;
+      const image = settings.denoise ? denoiser.denoise(radiance) : radiance;
+      // Highlight protection, as in the fast renderer (same metering, same scene: same exposure).
+      exposure = metering.measure(image, denoiser.surfaceMask);
+      renderer.toneMappingExposure = settings.exposure * exposure;
+      copy.uniforms.map.value = image;
       renderer.setRenderTarget(null);
       renderer.clear();
       quad.render(renderer);
@@ -157,6 +167,7 @@ export function createPathTracedBackend(initial: PhotoSettings, environment: Tex
     },
     dispose() {
       denoiser.dispose();
+      metering.dispose();
       copy.dispose();
       quad.dispose();
       tracer.dispose();

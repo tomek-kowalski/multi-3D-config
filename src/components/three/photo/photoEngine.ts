@@ -16,6 +16,8 @@ export interface PhotoBackend {
   setScene(scene: Scene, camera: PerspectiveCamera): Promise<void>;
   /** Renders for about `budgetMs` and returns the samples accumulated for the current view. */
   step(budgetMs: number): number;
+  /** Exposure factor the last output used (highlight protection, ≤ 1), if the backend meters it. */
+  readonly exposure?: number;
   /** True while the GPU is still compiling the renderer's shaders (no samples yet). */
   readonly compiling?: boolean;
   /**
@@ -232,6 +234,7 @@ export async function renderPhotoViews(
         const outputStarted = deps.now();
         const blob = await backend.output("png");
         stage.output = Math.round(deps.now() - outputStarted);
+        if (backend.exposure !== undefined) stage.exposurePercent = Math.round(backend.exposure * 100);
         results.push({
           viewId: view.id,
           blob,

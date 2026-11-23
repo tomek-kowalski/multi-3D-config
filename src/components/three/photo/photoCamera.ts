@@ -1,5 +1,5 @@
-import { Matrix4, PerspectiveCamera, Vector3 } from "three";
-import { arrangementBounds } from "@/domain/arrangement/spatial";
+import { Box3, Matrix4, PerspectiveCamera, Ray, Vector3 } from "three";
+import { arrangementBounds, placedCollisionBoxes } from "@/domain/arrangement/spatial";
 import type { RoomConfiguration, WallId } from "@/domain/room/types";
 import { WALL_IDS } from "@/domain/room/types";
 import { wallHiddenForCamera } from "../room/roomScene";
@@ -170,6 +170,94 @@ export function arrangementFacingDeg(modules: readonly ModuleInstance[]): number
   return Math.round((Math.atan2(x, z) * 180) / Math.PI);
 }
 
+/**
+ * World-space boxes (metres) of each module's parts in its current state (e.g. an unfolded bed: its
+ * carcass and its bed platform), rotation and transforms included.
+ */
+export function moduleBoxes(modules: readonly ModuleInstance[]): BoxM[][] {
+  return modules.map((m) =>
+    placedCollisionBoxes(m).map((b) => {
+      const xs = b.corners.map((c) => c.x / 1000);
+      const zs = b.corners.map((c) => c.z / 1000);
+      return { min: [Math.min(...xs), b.yMin / 1000, Math.min(...zs)], max: [Math.max(...xs), b.yMax / 1000, Math.max(...zs)] } as BoxM;
+    }),
+  );
+}
+
+/** Sample points per face edge (a 6×6 grid on every face turned towards the camera). */
+const FACE_SAMPLES = 6;
+/** Occluders are shrunk by this much (metres), so furniture standing flush side by side never counts. */
+const OCCLUDER_INSET = 0.01;
+/** Surface points this close to another module are contact faces or face a gap too narrow to see into (metres). */
+const CONTACT_DISTANCE = 0.06;
+
+/**
+ * How much furniture the camera sees only partly because other furniture stands in front of it: for
+ * each module, the share of its visible surface (sample points on its camera-facing faces, weighted by
+ * the faces' projected size) whose line of sight to the camera passes through another module
+ * (0 = fully visible, 1 = hidden), summed over the modules. Contact faces between modules are ignored.
+ */
+export function occlusionScore(camera: PhotoCamera, modules: readonly (readonly BoxM[])[]): number {
+  const eye = new Vector3(...camera.position);
+  const toBox3 = (b: BoxM, grow: number) => new Box3(new Vector3(...b.min), new Vector3(...b.max)).expandByScalar(grow);
+  const occluders = modules.map((parts) => parts.map((b) => toBox3(b, -OCCLUDER_INSET)));
+  const contacts = modules.map((parts) => parts.map((b) => toBox3(b, CONTACT_DISTANCE)));
+  const ray = new Ray();
+  const hit = new Vector3();
+  let score = 0;
+  modules.forEach((parts, index) => {
+    let visible = 0;
+    let hidden = 0;
+    const others = (list: Box3[][]) => list.filter((_, k) => k !== index).flat();
+    const otherOccluders = others(occluders);
+    const otherContacts = others(contacts);
+    for (const box of parts)
+      for (let axis = 0; axis < 3; axis++)
+        for (const side of [0, 1] as const) {
+          const plane = side ? box.max[axis] : box.min[axis];
+          // Only faces turned towards the camera can be seen.
+          if (side ? eye.getComponent(axis) <= plane : eye.getComponent(axis) >= plane) continue;
+          const [u, v] = [0, 1, 2].filter((a) => a !== axis);
+          // Weight of one sample: the face's projected size (area × facing angle ÷ distance²) / samples.
+          const center = new Vector3();
+          center.setComponent(axis, plane);
+          center.setComponent(u, (box.min[u] + box.max[u]) / 2);
+          center.setComponent(v, (box.min[v] + box.max[v]) / 2);
+          const toEye = eye.clone().sub(center);
+          const area = (box.max[u] - box.min[u]) * (box.max[v] - box.min[v]);
+          const weight = (area * (Math.abs(toEye.getComponent(axis)) / toEye.length())) / toEye.lengthSq() / (FACE_SAMPLES * FACE_SAMPLES);
+          for (let i = 0; i < FACE_SAMPLES; i++)
+            for (let j = 0; j < FACE_SAMPLES; j++) {
+              const point = new Vector3();
+              point.setComponent(axis, plane);
+              point.setComponent(u, box.min[u] + ((i + 0.5) / FACE_SAMPLES) * (box.max[u] - box.min[u]));
+              point.setComponent(v, box.min[v] + ((j + 0.5) / FACE_SAMPLES) * (box.max[v] - box.min[v]));
+              // Contact faces (against another module) are never visible from anywhere: not counted.
+              if (otherContacts.some((c) => c.containsPoint(point))) continue;
+              const distance = point.distanceTo(eye);
+              ray.set(eye, point.clone().sub(eye).normalize());
+              const blocked = otherOccluders.some((o) => ray.intersectBox(o, hit) !== null && hit.distanceTo(eye) < distance - 1e-3);
+              if (blocked) hidden += weight;
+              else visible += weight;
+            }
+        }
+    if (visible + hidden > 0) score += hidden / (visible + hidden);
+  });
+  return score;
+}
+
+/** Each photo direction may also be taken from a little higher (sees over an unfolded bed). */
+const RAISED_ELEVATION_DEG = 28;
+/** A variant or an order must hide clearly less (in module shares) to replace the preferred default. */
+const OCCLUSION_TOLERANCE = 0.05;
+
+/**
+ * Plans the photo views. Each direction (front-right, front-left, front) is taken at its normal height
+ * or a little higher, whichever hides less furniture behind other furniture; the directions are then
+ * ordered so the first image shows the arrangement best (e.g. a cabinet on each side of an unfolded bed
+ * is only fully visible from the front). Without occlusion the default order and heights are kept. All
+ * views are fitted to the complete drawn geometry.
+ */
 export function planPhotoViews(
   arrangement: { room: RoomConfiguration; modules: readonly ModuleInstance[] },
   count: number,
@@ -179,12 +267,24 @@ export function planPhotoViews(
   if (!Number.isInteger(count) || count < 1 || count > PHOTO_VIEWS.length) throw new Error(`View count must be 1–3, got ${count}`);
   const subject = photoSubject(arrangement, options.drawn ?? null);
   const facing = arrangementFacingDeg(arrangement.modules);
-  return PHOTO_VIEWS.slice(0, count).map((view) => {
-    const camera = fitPhotoCamera(subject, viewDirection({ ...view, azimuthDeg: view.azimuthDeg + facing }), aspect, PHOTO_FOV_DEG, options.margin ?? FRAME_MARGIN);
-    return {
-      id: view.id,
-      camera,
-      hiddenWalls: WALL_IDS.filter((w) => wallHiddenForCamera(arrangement.room, w, camera.position)),
-    };
+  const margin = options.margin ?? FRAME_MARGIN;
+  const boxes = moduleBoxes(arrangement.modules);
+  const fit = (azimuthDeg: number, elevationDeg: number) =>
+    fitPhotoCamera(subject, viewDirection({ azimuthDeg: azimuthDeg + facing, elevationDeg }), aspect, PHOTO_FOV_DEG, margin);
+  const score = (camera: PhotoCamera) => (boxes.length > 1 ? occlusionScore(camera, boxes) : 0);
+  const directions = PHOTO_VIEWS.map((view, order) => {
+    const normal = fit(view.azimuthDeg, view.elevationDeg);
+    const raised = fit(view.azimuthDeg, Math.max(view.elevationDeg, RAISED_ELEVATION_DEG));
+    const [sNormal, sRaised] = [score(normal), score(raised)];
+    return sRaised < sNormal - OCCLUSION_TOLERANCE
+      ? { id: view.id, camera: raised, score: sRaised, order }
+      : { id: view.id, camera: normal, score: sNormal, order };
   });
+  // Least hidden first; within the tolerance, the default order (front-right, front-left, front).
+  const sorted = [...directions].sort((a, b) => (Math.abs(a.score - b.score) <= OCCLUSION_TOLERANCE ? a.order - b.order : a.score - b.score));
+  return sorted.slice(0, count).map(({ id, camera }) => ({
+    id,
+    camera,
+    hiddenWalls: WALL_IDS.filter((w) => wallHiddenForCamera(arrangement.room, w, camera.position)),
+  }));
 }

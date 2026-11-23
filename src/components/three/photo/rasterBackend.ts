@@ -27,6 +27,7 @@ import { GTAOPass } from "three/examples/jsm/postprocessing/GTAOPass.js";
 import { FullScreenQuad } from "three/examples/jsm/postprocessing/Pass.js";
 import type { PhotoMode } from "./capabilities";
 import { GuidedDenoiser } from "./denoiser";
+import { AutoExposure } from "./exposure";
 import type { PhotoBackend } from "./photoEngine";
 import { QUALITY_PRESETS, type PhotoSettings } from "./photoSettings";
 
@@ -64,7 +65,7 @@ export interface RasterLighting {
  * furniture): rasterization has no light bouncing between the room surfaces, so the direct light and
  * the unshadowed fill are stronger than the path tracer's.
  */
-export const RASTER_LIGHTING: RasterLighting = { environmentIntensity: 0.45, bounceIntensity: 1.2, keyIntensity: 2.3, skyIntensity: 2.1 };
+export const RASTER_LIGHTING: RasterLighting = { environmentIntensity: 0.35, bounceIntensity: 0.6, keyIntensity: 2.3, skyIntensity: 2.1 };
 
 /**
  * Average colour of the HDRI's upper hemisphere (solid-angle weighted), normalized to luminance 1: the
@@ -179,6 +180,8 @@ export function createFastRasterBackend(
   let aoReady = false;
   const quad = new FullScreenQuad(average);
   const denoiser = new GuidedDenoiser(renderer);
+  const metering = new AutoExposure(renderer);
+  let exposure = 1;
   const light = new DirectionalLight("#fffaf2", 1);
   const keyColor = new Color("#fffaf2");
   const skyColor = environmentTint(environment);
@@ -250,6 +253,9 @@ export function createFastRasterBackend(
   return {
     mode: "raster" as PhotoMode,
     compiling: false,
+    get exposure() {
+      return exposure;
+    },
     configure,
     async setScene(next: Scene, nextCamera: PerspectiveCamera) {
       scene = next;
@@ -329,6 +335,9 @@ export function createFastRasterBackend(
         lit = occluded.texture;
       }
       const image = settings.denoise ? denoiser.denoise(lit) : lit;
+      // Highlight protection: the camera exposure for this room (light rooms are metered down).
+      exposure = metering.measure(image, denoiser.surfaceMask);
+      renderer.toneMappingExposure = settings.exposure * exposure;
       output.uniforms.map.value = image;
       quad.material = output;
       renderer.setRenderTarget(null);
@@ -344,6 +353,7 @@ export function createFastRasterBackend(
       output.dispose();
       quad.dispose();
       denoiser.dispose();
+      metering.dispose();
       prefiltered.dispose();
       pmrem.dispose();
       renderer.dispose();
