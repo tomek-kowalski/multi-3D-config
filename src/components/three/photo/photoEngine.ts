@@ -18,6 +18,11 @@ export interface PhotoBackend {
   step(budgetMs: number): number;
   /** True while the GPU is still compiling the renderer's shaders (no samples yet). */
   readonly compiling?: boolean;
+  /**
+   * Fraction of pixels of the accumulated image that are invalid (NaN, infinite or exactly black), or
+   * undefined when the backend cannot tell. Checked before an image is accepted.
+   */
+  invalidFraction?(): number;
   /** The image of the current view, tone mapped (and denoised): PNG for the result, JPEG for previews. */
   output(format?: "png" | "jpeg"): Promise<Blob>;
   dispose(): void;
@@ -89,6 +94,8 @@ const STEP_BUDGET_MS = 40;
  */
 export const COMPILE_TIMEOUT_MS = 180_000;
 const PREVIEW_INTERVAL_MS = 6_000;
+/** More invalid pixels than this means the GPU computed garbage (e.g. driver bugs): never delivered. */
+export const MAX_INVALID_FRACTION = 0.01;
 
 /** The backend itself failed (GPU/driver), as opposed to a cancellation or too few samples. */
 class BackendFailure extends Error {
@@ -161,6 +168,8 @@ export async function renderPhotoViews(
       }
       await deps.nextFrame();
     }
+    const invalid = b.invalidFraction?.();
+    if (invalid !== undefined && invalid > MAX_INVALID_FRACTION) throw new BackendFailure(`invalid pixels: ${(invalid * 100).toFixed(1)}%`);
     return samples;
   };
 

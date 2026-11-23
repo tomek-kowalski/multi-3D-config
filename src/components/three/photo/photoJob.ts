@@ -54,7 +54,9 @@ export async function runPhotoJob(request: PhotoRequest, deps: PhotoJobDeps): Pr
     }
     snapshot = captured.snapshot;
     const { arrangement } = captured;
-    const views = planPhotoViews(arrangement, request.count, settings.width / settings.height);
+    const fb = snapshot.furnitureBounds;
+    const drawn = fb.isEmpty() ? null : { min: fb.min.toArray() as [number, number, number], max: fb.max.toArray() as [number, number, number] };
+    const views = planPhotoViews(arrangement, request.count, settings.width / settings.height, { drawn, margin: settings.frameMargin });
     const configuration = configurationKey(arrangement);
     const keys = views.map((v) => photoCacheKey(configuration, settings, v.id));
     const reused = keys.map((k) => (request.reuse === false ? undefined : cachedPhoto(k)));

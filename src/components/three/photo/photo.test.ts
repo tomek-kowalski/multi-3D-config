@@ -592,3 +592,21 @@ describe("backend pool", () => {
     expect(created[1].disposed).toBe(true);
   });
 });
+
+describe("output validity", () => {
+  const view = () => planPhotoViews(arrangement(), 1, 16 / 9);
+
+  it("never delivers an image with invalid (NaN / black) pixels; falls back to the labelled raster render", async () => {
+    const corrupt = { ...fakeBackend("pathtraced"), invalidFraction: () => 0.22 };
+    const [photo] = await renderPhotoViews(view(), DEFAULT_PHOTO_SETTINGS, engineDeps({ createBackend: (mode) => (mode === "pathtraced" ? corrupt : fakeBackend("raster")) }));
+    expect(photo).toMatchObject({ mode: "raster", fallbackReason: "pathtracer_failed" });
+    await expect(
+      renderPhotoViews(view(), { ...DEFAULT_PHOTO_SETTINGS, allowRasterFallback: false }, engineDeps({ createBackend: () => ({ ...fakeBackend("pathtraced"), invalidFraction: () => 0.22 }) })),
+    ).rejects.toMatchObject({ code: "failed" });
+  });
+
+  it("accepts a valid image (a few dark crevice pixels are fine)", async () => {
+    const [photo] = await renderPhotoViews(view(), DEFAULT_PHOTO_SETTINGS, engineDeps({ createBackend: () => ({ ...fakeBackend("pathtraced"), invalidFraction: () => 0.0002 }) }));
+    expect(photo.mode).toBe("pathtraced");
+  });
+});

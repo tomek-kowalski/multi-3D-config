@@ -1,6 +1,6 @@
 "use client";
 
-import { DenoiseMaterial, WebGLPathTracer } from "three-gpu-pathtracer";
+import { WebGLPathTracer } from "three-gpu-pathtracer";
 import {
   ACESFilmicToneMapping,
   AgXToneMapping,
@@ -24,6 +24,7 @@ import { HDRLoader } from "three/examples/jsm/loaders/HDRLoader.js";
 import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
 import { FullScreenQuad } from "three/examples/jsm/postprocessing/Pass.js";
 import type { PhotoMode } from "./capabilities";
+import { GuidedDenoiser } from "./denoiser";
 import type { PhotoBackend } from "./photoEngine";
 import { QUALITY_PRESETS, type PhotoSettings, type PhotoToneMapping } from "./photoSettings";
 
@@ -81,7 +82,8 @@ function copyMaterial(map: Texture): ShaderMaterial {
 /**
  * Path tracing with three-gpu-pathtracer on its own offscreen WebGL context: physically based light
  * transport (HDRI image-based lighting, area light, soft shadows, glossy reflections, glass
- * transmission), accumulated progressively, then denoised and tone mapped.
+ * transmission), accumulated progressively, then denoised (GuidedDenoiser: lighting only, textures
+ * and edges untouched) and tone mapped.
  */
 export function createPathTracedBackend(initial: PhotoSettings, environment: Texture): PhotoBackend & { configure(settings: PhotoSettings): void } {
   let settings = initial;
@@ -110,9 +112,9 @@ export function createPathTracedBackend(initial: PhotoSettings, environment: Tex
   const probe = new Float32Array(4);
   // Present at runtime (parallel shader compilation), missing from the package's type declarations.
   const compiling = () => Boolean((tracer as unknown as { isCompiling?: boolean }).isCompiling);
-  const denoise = new DenoiseMaterial({ map: tracer.target.texture, sigma: 2.5, kSigma: 1, threshold: 0.05 });
+  const denoiser = new GuidedDenoiser(renderer);
   const copy = copyMaterial(tracer.target.texture);
-  const quad = new FullScreenQuad(denoise);
+  const quad = new FullScreenQuad(copy);
 
   return {
     mode: "pathtraced" as PhotoMode,
@@ -124,6 +126,8 @@ export function createPathTracedBackend(initial: PhotoSettings, environment: Tex
       scene.environment = environment;
       tracer.setScene(scene, camera);
       tracer.reset();
+      // Guide buffers (albedo, normals, positions) of exactly this view, for the denoiser.
+      denoiser.prepare(scene, camera, settings.width, settings.height);
     },
     step(budgetMs: number) {
       const target = QUALITY_PRESETS[settings.quality].samples;
@@ -135,18 +139,29 @@ export function createPathTracedBackend(initial: PhotoSettings, environment: Tex
       } while (performance.now() - started < budgetMs && !compiling() && tracer.samples < target);
       return compiling() ? 0 : tracer.samples;
     },
+    invalidFraction() {
+      const target = tracer.target;
+      const { width, height } = target;
+      const pixels = new Float32Array(width * height * 4);
+      renderer.readRenderTargetPixels(target, 0, 0, width, height, pixels);
+      let invalid = 0;
+      for (let i = 0; i < pixels.length; i += 4) {
+        const sum = pixels[i] + pixels[i + 1] + pixels[i + 2];
+        if (!Number.isFinite(sum) || sum === 0) invalid++;
+      }
+      return invalid / (width * height);
+    },
     async output(format = "png") {
-      const material = settings.denoise ? denoise : copy;
-      // The accumulation target is re-created when the size changes: always read the current one.
-      (material.uniforms.map as { value: Texture }).value = tracer.target.texture;
-      quad.material = material;
+      // The final accumulated image (the accumulation target is re-created on resize: read the current one).
+      const radiance = tracer.target.texture;
+      copy.uniforms.map.value = settings.denoise ? denoiser.denoise(radiance) : radiance;
       renderer.setRenderTarget(null);
       renderer.clear();
       quad.render(renderer);
       return canvasToBlob(renderer.domElement, format);
     },
     dispose() {
-      denoise.dispose();
+      denoiser.dispose();
       copy.dispose();
       quad.dispose();
       tracer.dispose();

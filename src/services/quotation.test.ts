@@ -43,7 +43,7 @@ function rendering(index: number, mode: "pathtraced" | "raster" = "pathtraced"):
       durationMs: 1000,
       camera: { position: [4.5, 1.8, 3.3], target: [2, 0.9, 0.4], fov: 40 },
       hiddenWalls: [],
-      settings: { width: 1920, height: 1080, quality: "standard", toneMapping: "neutral", exposure: 1, denoise: true, allowRasterFallback: true },
+      settings: { width: 1920, height: 1080, quality: "standard", toneMapping: "neutral", exposure: 1, denoise: true, allowRasterFallback: true, frameMargin: 0.1 },
       fallbackReason: null,
     },
   };

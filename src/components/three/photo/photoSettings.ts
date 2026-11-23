@@ -41,6 +41,8 @@ export interface PhotoSettings {
   readonly denoise: boolean;
   /** Use the raster renderer when path tracing is not available (the result is labelled as such). */
   readonly allowRasterFallback: boolean;
+  /** Free space between the furniture and the image border (fraction of the half-frame, 0–0.3). */
+  readonly frameMargin: number;
 }
 
 export const DEFAULT_PHOTO_SETTINGS: PhotoSettings = {
@@ -51,6 +53,7 @@ export const DEFAULT_PHOTO_SETTINGS: PhotoSettings = {
   exposure: 1,
   denoise: true,
   allowRasterFallback: true,
+  frameMargin: 0.1,
 };
 
 export const MAX_PHOTO_SIZE = 4096;
@@ -64,10 +67,11 @@ export function resolvePhotoSettings(overrides: Partial<PhotoSettings> = {}): Ph
     height: size(s.height),
     quality: PHOTO_QUALITIES.includes(s.quality) ? s.quality : DEFAULT_PHOTO_SETTINGS.quality,
     exposure: Number.isFinite(s.exposure) && s.exposure > 0 ? s.exposure : 1,
+    frameMargin: Number.isFinite(s.frameMargin) ? Math.min(0.3, Math.max(0, s.frameMargin)) : DEFAULT_PHOTO_SETTINGS.frameMargin,
   };
 }
 
 /** Stable key of the settings (part of the reuse key of a rendering). */
 export function settingsKey(s: PhotoSettings): string {
-  return [s.width, s.height, s.quality, s.toneMapping, s.exposure, s.denoise ? 1 : 0, s.allowRasterFallback ? 1 : 0].join("|");
+  return [s.width, s.height, s.quality, s.toneMapping, s.exposure, s.denoise ? 1 : 0, s.allowRasterFallback ? 1 : 0, s.frameMargin].join("|");
 }

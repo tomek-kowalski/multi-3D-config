@@ -36,7 +36,20 @@ export interface SceneSnapshot {
   readonly loading: number;
   /** Bounds of everything in the snapshot, metres. */
   readonly bounds: Box3;
+  /** World-space bounds of the drawn furniture geometry only (empty when there is none). */
+  readonly furnitureBounds: Box3;
   dispose(): void;
+}
+
+const FURNITURE_ROLES = new Set(["board", "metal", "dark", "fabric"]);
+
+/** World-space bounding box of a geometry's vertices under a matrix (exact for rotated parts). */
+function worldBox(geometry: BufferGeometry, matrix: Matrix4): Box3 {
+  const position = geometry.getAttribute("position");
+  const box = new Box3();
+  const v = new Vector3();
+  for (let i = 0; i < position.count; i++) box.expandByPoint(v.fromBufferAttribute(position, i).applyMatrix4(matrix));
+  return box;
 }
 
 /**
@@ -49,6 +62,7 @@ export function takeSnapshot(root: Object3D): SceneSnapshot {
   const materials = new Map<Material, MeshPhysicalMaterial>();
   let loading = 0;
   const bounds = new Box3();
+  const furnitureBounds = new Box3();
   root.traverseVisible((object) => {
     if (!(object instanceof Mesh)) return;
     const tag = readPhotoTag(object.userData);
@@ -66,8 +80,10 @@ export function takeSnapshot(root: Object3D): SceneSnapshot {
     }
     const geometry = (object.geometry as BufferGeometry).clone();
     const matrix = object.matrixWorld.clone();
-    geometry.computeBoundingBox();
-    if (geometry.boundingBox) bounds.union(geometry.boundingBox.clone().applyMatrix4(matrix));
+    // Exact world bounds of the transformed vertices (a rotated part's local box would overestimate).
+    const box = worldBox(geometry, matrix);
+    bounds.union(box);
+    if (FURNITURE_ROLES.has(tag.role)) furnitureBounds.union(box);
     items.push({ name: object.name, tag, geometry, matrix, material });
   });
   const owned = new Set<Texture>();
@@ -75,6 +91,7 @@ export function takeSnapshot(root: Object3D): SceneSnapshot {
     items,
     loading,
     bounds,
+    furnitureBounds,
     dispose() {
       for (const item of items) item.geometry.dispose();
       for (const material of materials.values()) {

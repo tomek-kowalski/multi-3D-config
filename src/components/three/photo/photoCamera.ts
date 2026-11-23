@@ -9,8 +9,8 @@ export type Vec3 = readonly [number, number, number];
 
 /** Photographic lens: ~32 mm equivalent on full frame, natural perspective without wide-angle distortion. */
 export const PHOTO_FOV_DEG = 40;
-/** Free space around the furniture in the frame (fraction of the half-frame). */
-export const FRAME_MARGIN = 0.08;
+/** Default free space around the furniture in the frame (fraction of the half-frame); see PhotoSettings.frameMargin. */
+export const FRAME_MARGIN = 0.1;
 /** Floor and wall context around the furniture, in mm (clamped to the room). */
 const CONTEXT_MM = 250;
 const NEAR_M = 0.05;
@@ -64,16 +64,26 @@ export function boxCorners(box: BoxM): Vector3[] {
   return corners;
 }
 
-/** What the photo frames, in metres: the furniture plus some floor and wall around it, or the empty room. */
-export function photoSubject(arrangement: { room: RoomConfiguration; modules: readonly ModuleInstance[] }): BoxM {
+/**
+ * What the photo frames, in metres: the furniture plus some floor and wall around it, or the empty room.
+ * `drawn` is the world-space bounding box of the furniture geometry actually drawn (imported models,
+ * moving bed parts in their current state, a selected mattress, handles, rotations): the frame always
+ * contains it completely, also where a model reaches beyond its collision boxes.
+ */
+export function photoSubject(arrangement: { room: RoomConfiguration; modules: readonly ModuleInstance[] }, drawn: BoxM | null = null): BoxM {
   const b = arrangementBounds(arrangement);
   const { room } = arrangement;
   const empty = arrangement.modules.length === 0;
   const pad = empty ? 0 : CONTEXT_MM;
   const clamp = (v: number, max: number) => Math.min(max, Math.max(0, v));
-  return {
+  const planned: BoxM = {
     min: [clamp(b.min.x - pad, room.width) / 1000, 0, clamp(b.min.z - pad, room.depth) / 1000],
     max: [clamp(b.max.x + pad, room.width) / 1000, Math.max(b.max.y, empty ? room.height : 0) / 1000, clamp(b.max.z + pad, room.depth) / 1000],
+  };
+  if (!drawn) return planned;
+  return {
+    min: [0, 1, 2].map((i) => Math.min(planned.min[i], drawn.min[i])) as unknown as Vec3,
+    max: [0, 1, 2].map((i) => Math.max(planned.max[i], drawn.max[i])) as unknown as Vec3,
   };
 }
 
@@ -164,12 +174,13 @@ export function planPhotoViews(
   arrangement: { room: RoomConfiguration; modules: readonly ModuleInstance[] },
   count: number,
   aspect: number,
+  options: { drawn?: BoxM | null; margin?: number } = {},
 ): PlannedView[] {
   if (!Number.isInteger(count) || count < 1 || count > PHOTO_VIEWS.length) throw new Error(`View count must be 1–3, got ${count}`);
-  const subject = photoSubject(arrangement);
+  const subject = photoSubject(arrangement, options.drawn ?? null);
   const facing = arrangementFacingDeg(arrangement.modules);
   return PHOTO_VIEWS.slice(0, count).map((view) => {
-    const camera = fitPhotoCamera(subject, viewDirection({ ...view, azimuthDeg: view.azimuthDeg + facing }), aspect);
+    const camera = fitPhotoCamera(subject, viewDirection({ ...view, azimuthDeg: view.azimuthDeg + facing }), aspect, PHOTO_FOV_DEG, options.margin ?? FRAME_MARGIN);
     return {
       id: view.id,
       camera,
