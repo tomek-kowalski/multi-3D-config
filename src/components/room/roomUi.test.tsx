@@ -11,6 +11,7 @@ import type { RoomConfiguration } from "@/domain/room/types";
 import { useLocaleStore } from "@/i18n";
 import { useArrangementStore } from "@/store/useArrangementStore";
 import { SpacePanel } from "./SpacePanel";
+import { MainMenu } from "./RoomConfigurator";
 import { DockingPrompt, ViewOverlay } from "./ViewOverlay";
 
 function unwrap<T>(r: { ok: true; value: T } | { ok: false; issues: readonly unknown[] }): T {
@@ -22,7 +23,7 @@ afterEach(cleanup);
 beforeEach(() => {
   useLocaleStore.setState({ locale: "pl" });
   useArrangementStore.getState().reset();
-  useArrangementStore.setState({ showWallLabels: true, dockingEnabled: true });
+  useArrangementStore.setState({ showWallLabels: true, dockingEnabled: true, roomPanelOpen: false, activeMenu: "arrangement" });
 });
 
 const store = () => useArrangementStore.getState();
@@ -108,7 +109,6 @@ describe("wall labels", () => {
   });
 
   it("selects the clicked wall, moves the highlight and opens its settings", () => {
-    store().setActiveMenu("arrangement");
     render(
       <>
         <SpacePanel />
@@ -121,7 +121,7 @@ describe("wall labels", () => {
     expect(label().getAttribute("aria-label")).toBe("Zaznacz: Ściana C (przednia)");
     fireEvent.click(label());
     expect(store().activeWall).toBe("front");
-    expect(store().activeMenu).toBe("space");
+    expect(store().roomPanelOpen).toBe(true); // the wall's settings live in the room panel
     expect(wallHighlights(store().activeWall)).toEqual({ back: false, right: false, front: true, left: false });
     // The menu and the labels agree on the active wall.
     expect(document.querySelector('[data-wall-card="front"]')!.hasAttribute("data-active")).toBe(true);
@@ -131,39 +131,95 @@ describe("wall labels", () => {
   });
 });
 
-describe("room dimensions panel", () => {
+describe("main menu", () => {
+  it("starts with A Układ mebli and B Moduł (no space menu)", () => {
+    render(<MainMenu />);
+    const tabs = within(screen.getByRole("navigation")).getAllByRole("button").map((b) => b.textContent);
+    expect(tabs).toEqual(["AUkład mebli", "BModuł"]);
+  });
+
+  it("is translated to English", () => {
+    useLocaleStore.setState({ locale: "en" });
+    render(<MainMenu />);
+    expect(within(screen.getByRole("navigation")).getAllByRole("button").map((b) => b.textContent)).toEqual(["AArrangement", "BModule"]);
+  });
+});
+
+describe("room panel (Wymiary pomieszczenia)", () => {
   it("is opened from a button beneath the two view buttons", () => {
     render(<ViewOverlay />);
     const controls = document.querySelector("[data-view-controls]")!;
     const names = [...controls.querySelectorAll("button")].map((b) => b.textContent);
     expect(names).toEqual(["Całe pomieszczenie", "Wybrany moduł", "Wymiary pomieszczenia"]);
-    // The first two share a row; the dimensions button is the next row below them.
     expect(controls.firstElementChild!.querySelectorAll("button")).toHaveLength(2);
     expect(controls.lastElementChild!.textContent).toBe("Wymiary pomieszczenia");
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("opens at the top centre, edits the room through the existing validation, and keeps values when closed", () => {
+  it("contains every former space control and scrolls when needed", () => {
+    store().replaceArrangement({ room: roomWithOpenings(), modules: [] });
+    render(<ViewOverlay />);
+    fireEvent.click(button("Wymiary pomieszczenia"));
+    const panel = within(screen.getByRole("dialog", { name: "Wymiary pomieszczenia" }));
+    for (const label of ["Szerokość", "Głębokość", "Wysokość"]) expect(panel.getAllByLabelText(label).length).toBeGreaterThan(0);
+    expect(panel.getByRole("checkbox", { name: "Pokaż oznaczenia ścian" })).toBeTruthy();
+    for (const wall of ["back", "right", "front", "left"]) expect(document.querySelector(`[data-wall-card="${wall}"]`)).toBeTruthy();
+    expect(panel.getByRole("button", { name: "+ Okno" })).toBeTruthy();
+    expect(panel.getByRole("button", { name: "+ Drzwi" })).toBeTruthy();
+    expect(panel.getByText("Kolor ściany")).toBeTruthy();
+    expect(panel.getAllByLabelText("Strefa wolna przed otworem")).toHaveLength(2); // the two windows of wall A
+    fireEvent.click(document.querySelector('[data-wall-card="left"]')!);
+    expect(panel.getByText("Kolor drzwi")).toBeTruthy(); // door colour on wall D
+    expect(panel.getByText("Podłoga", { selector: "legend span" })).toBeTruthy();
+    expect(document.querySelector("[data-room-panel-body]")!.className).toContain("overflow-y-auto");
+  });
+
+  it("shows room dimensions in centimetres converted from the stored millimetres", () => {
+    store().replaceArrangement({ room: { ...DEFAULT_ROOM, width: 4009, depth: 3500, height: 2600 }, modules: [] });
+    render(<ViewOverlay />);
+    fireEvent.click(button("Wymiary pomieszczenia"));
+    const panel = within(screen.getByRole("dialog"));
+    const value = (label: string) => (panel.getByLabelText(label) as HTMLInputElement).value;
+    expect([value("Szerokość"), value("Głębokość"), value("Wysokość")]).toEqual(["400.9", "350", "260"]);
+    expect(panel.getAllByText("cm").length).toBeGreaterThanOrEqual(3);
+    expect(panel.getAllByText("100–2000", { exact: false })).toHaveLength(2); // width and depth
+    expect(panel.getByText("180–600", { exact: false })).toBeTruthy();
+  });
+
+  it("accepts 0.1 cm input and steps by 0.1 cm (1 mm), storing whole millimetres", () => {
+    render(<ViewOverlay />);
+    fireEvent.click(button("Wymiary pomieszczenia"));
+    const panel = within(screen.getByRole("dialog"));
+    fireEvent.click(panel.getByRole("button", { name: "Zwiększ: Szerokość" }));
+    expect(store().arrangement.room.width).toBe(4001);
+    expect((panel.getByLabelText("Szerokość") as HTMLInputElement).value).toBe("400.1");
+    const depth = panel.getByLabelText("Głębokość") as HTMLInputElement;
+    fireEvent.change(depth, { target: { value: "350.7" } });
+    fireEvent.keyDown(depth, { key: "Enter" });
+    expect(store().arrangement.room.depth).toBe(3507);
+    fireEvent.change(depth, { target: { value: "350.75" } });
+    fireEvent.keyDown(depth, { key: "Enter" });
+    expect(panel.getByRole("alert").textContent).toContain("0,1 cm");
+    expect(store().arrangement.room.depth).toBe(3507);
+    fireEvent.change(depth, { target: { value: "50" } });
+    fireEvent.keyDown(depth, { key: "Enter" });
+    expect(panel.getByRole("alert").textContent).toBe("Najmniejsza wartość to 100 cm.");
+    expect(store().arrangement.room.depth).toBe(3507);
+  });
+
+  it("opens at the top centre, closes and reopens with the applied values", () => {
     render(<ViewOverlay />);
     fireEvent.click(button("Wymiary pomieszczenia"));
     const panel = screen.getByRole("dialog", { name: "Wymiary pomieszczenia" });
     expect(panel.className).toContain("left-1/2");
     expect(panel.className).toContain("-translate-x-1/2");
     expect(panel.className).toContain("top-24");
-
     fireEvent.click(within(panel).getByRole("button", { name: "Zwiększ: Szerokość" }));
-    expect(store().arrangement.room.width).toBe(4001);
-    const depth = within(panel).getByLabelText("Głębokość") as HTMLInputElement;
-    fireEvent.change(depth, { target: { value: "500" } });
-    fireEvent.keyDown(depth, { key: "Enter" });
-    expect(within(panel).getByRole("alert").textContent).toContain("1000");
-    expect(store().arrangement.room.depth).toBe(3500);
-
     fireEvent.click(within(panel).getByRole("button", { name: /Zamknij/ }));
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(store().arrangement.room.width).toBe(4001);
     fireEvent.click(button("Wymiary pomieszczenia"));
-    expect((within(screen.getByRole("dialog")).getByLabelText("Szerokość") as HTMLInputElement).value).toBe("4001");
+    expect((within(screen.getByRole("dialog")).getByLabelText("Szerokość") as HTMLInputElement).value).toBe("400.1");
   });
 });
 
@@ -182,7 +238,9 @@ describe("docking confirmation", () => {
   it("asks before moving and keeps the manual position when rejected", () => {
     proposeNearby();
     render(<DockingPrompt />);
-    expect(screen.getByRole("alertdialog").textContent).toContain("do prawej strony szafki module-1");
+    expect(screen.getByRole("alertdialog").textContent).toContain(
+      "Dosunąć Szafka modułowa (module-2) do prawej strony: Szafka modułowa (module-1)?",
+    );
     fireEvent.click(button("Zostaw tutaj"));
     expect(screen.queryByRole("alertdialog")).toBeNull();
     expect(position()).toMatchObject({ x: 2860, z: 260 });

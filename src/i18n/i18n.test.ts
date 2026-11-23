@@ -22,8 +22,8 @@ describe("localization", () => {
   it("uses Polish by default and switches to English", () => {
     expect(DEFAULT_LOCALE).toBe("pl");
     expect(useLocaleStore.getState().locale).toBe("pl");
-    expect(translate("pl", "menu.space")).toBe("Przestrzeń");
-    expect(translate("en", "menu.space")).toBe("Room");
+    expect(translate("pl", "menu.arrangement")).toBe("Układ mebli");
+    expect(translate("en", "menu.arrangement")).toBe("Arrangement");
     expect(translate("en", "arrangement.placed", { count: 3 })).toBe("Furniture in the room (3)");
   });
 

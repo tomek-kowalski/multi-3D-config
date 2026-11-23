@@ -12,7 +12,6 @@ import { ArrangementPanel, typeName } from "./ArrangementPanel";
 import { ModulePanel } from "./ModulePanel";
 import { OrderDialog } from "./OrderDialog";
 import { DockingPrompt, ViewOverlay } from "./ViewOverlay";
-import { SpacePanel } from "./SpacePanel";
 
 function LoadingScene() {
   const t = useT();
@@ -46,19 +45,46 @@ function LanguageSwitch() {
   );
 }
 
-const MENUS: readonly MenuId[] = ["space", "arrangement", "module"];
+const MENUS: readonly MenuId[] = ["arrangement", "module"];
+
+/** The main menu: A — Układ mebli (arrangement), B — Moduł (selected module). */
+export function MainMenu() {
+  const t = useT();
+  const activeMenu = useArrangementStore((s) => s.activeMenu);
+  const setMenu = useArrangementStore((s) => s.setActiveMenu);
+  const selected = useArrangementStore((s) => s.arrangement.modules.find((m) => m.id === s.selectedModuleId));
+  const menuLabel = (menu: MenuId) =>
+    menu === "module" && selected ? `${t("menu.module")}: ${typeName(t, selected.typeId)}` : t(`menu.${menu}`);
+  return (
+    <nav aria-label={t("app.menus")} className="grid grid-cols-2 border-b border-stone-200 text-xs font-semibold">
+      {MENUS.map((menu, i) => (
+        <button
+          key={menu}
+          type="button"
+          aria-current={menu === activeMenu ? "page" : undefined}
+          onClick={() => setMenu(menu)}
+          className={`border-b-2 px-2 py-3 text-center transition-colors ${
+            menu === activeMenu ? "border-stone-900 text-stone-900" : "border-transparent text-stone-500 hover:text-stone-900"
+          }`}
+        >
+          <span className="mr-1 text-stone-400">{"AB"[i]}</span>
+          <span className="line-clamp-1">{menuLabel(menu)}</span>
+        </button>
+      ))}
+    </nav>
+  );
+}
 
 /**
- * The room-based configurator: 3D view plus three menus that keep the levels apart —
- * A the room (space), B the complete arrangement, C the selected module.
+ * The room-based configurator: 3D view plus two menus that keep the levels apart —
+ * A the complete furniture arrangement, B the selected module; the room settings open in their own
+ * panel from the 3D view ("Wymiary pomieszczenia").
  */
 export function RoomConfigurator() {
   const t = useT();
   useLocaleSync();
   const activeMenu = useArrangementStore((s) => s.activeMenu);
-  const setMenu = useArrangementStore((s) => s.setActiveMenu);
   const arrangement = useArrangementStore((s) => s.arrangement);
-  const selected = useArrangementStore((s) => s.arrangement.modules.find((m) => m.id === s.selectedModuleId));
   const [ordering, setOrdering] = useState(false);
   const conflicts = useMemo(() => detectCollisions(arrangement).length, [arrangement]);
 
@@ -71,9 +97,6 @@ export function RoomConfigurator() {
       unbind();
     };
   }, []);
-
-  const menuLabel = (menu: MenuId) =>
-    menu === "module" && selected ? `${t("menu.module")}: ${typeName(t, selected.typeId)}` : t(`menu.${menu}`);
 
   return (
     <div className="flex min-h-dvh flex-col bg-[#ecebe8] font-sans text-stone-900 lg:h-dvh lg:flex-row lg:overflow-hidden">
@@ -99,25 +122,9 @@ export function RoomConfigurator() {
           <LanguageSwitch />
         </header>
 
-        <nav aria-label={t("app.menus")} className="grid grid-cols-3 border-b border-stone-200 text-xs font-semibold">
-          {MENUS.map((menu, i) => (
-            <button
-              key={menu}
-              type="button"
-              aria-current={menu === activeMenu ? "page" : undefined}
-              onClick={() => setMenu(menu)}
-              className={`border-b-2 px-2 py-3 text-center transition-colors ${
-                menu === activeMenu ? "border-stone-900 text-stone-900" : "border-transparent text-stone-500 hover:text-stone-900"
-              }`}
-            >
-              <span className="mr-1 text-stone-400">{"ABC"[i]}</span>
-              <span className="line-clamp-1">{menuLabel(menu)}</span>
-            </button>
-          ))}
-        </nav>
+        <MainMenu />
 
         <div className="flex-1 px-6 py-6 lg:overflow-y-auto">
-          {activeMenu === "space" && <SpacePanel />}
           {activeMenu === "arrangement" && <ArrangementPanel />}
           {activeMenu === "module" && <ModulePanel />}
         </div>

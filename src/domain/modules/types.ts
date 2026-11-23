@@ -40,7 +40,7 @@ export interface FurnitureTypeDefinition<C = unknown> {
   readonly geometrySource: "parametric" | "imported";
   /** i18n key of the type name. */
   readonly nameKey: string;
-  /** Furniture category; cabinets ("cabinet") can be docked to each other (src/domain/arrangement/docking.ts). */
+  /** Furniture category (descriptive; docking and collisions treat every category alike). */
   readonly category: "cabinet" | "bed";
   createDefault(): C;
   footprint(configuration: C): ModuleFootprint;

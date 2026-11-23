@@ -218,7 +218,13 @@ for (const model of MODELS) {
   manifest.models[model.id] = { folder: model.dir, sizes: {} };
   for (const size of model.sizes) {
     const path = join(SOURCE, model.dir, model.file(size));
-    const group = new OBJLoader().parse(readFileSync(path, "utf8"));
+    // `l` records are bare polyline edges (no surface). The Desk files have four inside the mattress
+    // object, which makes OBJLoader turn the whole object into LineSegments and drop its faces.
+    const source = readFileSync(path, "utf8")
+      .split(/\r?\n/)
+      .filter((line) => !line.startsWith("l "))
+      .join("\n");
+    const group = new OBJLoader().parse(source);
     const objects = [];
     group.traverse((child) => {
       if (!child.isMesh) return;

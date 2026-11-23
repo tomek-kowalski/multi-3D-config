@@ -12,8 +12,11 @@ import type { Placement } from "@/domain/spatial/geometry";
 
 export type ActionResult = { readonly ok: true } | { readonly ok: false; readonly issues: readonly Issue[] };
 
-/** The three primary menus: the room, the arrangement, the selected module. */
-export type MenuId = "space" | "arrangement" | "module";
+/**
+ * The main menus: A the furniture arrangement, B the selected module. The room (space) settings live
+ * in the room panel opened from the 3D view (`roomPanelOpen`).
+ */
+export type MenuId = "arrangement" | "module";
 
 export interface ViewRequest {
   readonly kind: "room" | "selection";
@@ -34,6 +37,8 @@ export interface ArrangementState {
   /** A docking position waiting for the customer's confirmation (preview in 3D). */
   readonly dockingProposal: DockingProposal | null;
   readonly activeMenu: MenuId;
+  /** Whether the room panel ("Wymiary pomieszczenia": dimensions, walls, openings) is open. */
+  readonly roomPanelOpen: boolean;
   readonly viewRequest: ViewRequest | null;
   /** True once the saved arrangement (if any) was loaded on the client. */
   readonly hydrated: boolean;
@@ -67,6 +72,7 @@ export interface ArrangementState {
   selectModule: (id: ModuleId | null) => void;
 
   setActiveMenu: (menu: MenuId) => void;
+  setRoomPanelOpen: (open: boolean) => void;
   requestView: (kind: ViewRequest["kind"]) => void;
   replaceArrangement: (arrangement: Arrangement) => void;
   importJson: (json: string) => ActionResult;
@@ -103,7 +109,8 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
     showWallLabels: true,
     dockingEnabled: true,
     dockingProposal: null,
-    activeMenu: "space",
+    activeMenu: "arrangement",
+    roomPanelOpen: false,
     viewRequest: null,
     hydrated: false,
 
@@ -181,6 +188,7 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
     },
 
     setActiveMenu: (menu) => set({ activeMenu: menu }),
+    setRoomPanelOpen: (open) => set({ roomPanelOpen: open }),
     requestView: (kind) => set({ viewRequest: { kind, seq: (get().viewRequest?.seq ?? 0) + 1 } }),
     replaceArrangement: (arrangement) => set({ arrangement, selectedModuleId: null, selectedOpeningId: null, dockingProposal: null }),
     importJson: (json) => {

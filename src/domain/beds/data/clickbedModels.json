@@ -1378,6 +1378,10 @@
         "slot": "hardware"
        },
        {
+        "name": "Meridiani_Bed_STONE_UP__corona.002",
+        "slot": "mattress"
+       },
+       {
         "name": "Plane.009_Plane.005",
         "slot": "hardware"
        }
@@ -1476,15 +1480,15 @@
         "min": {
          "x": 31,
          "y": 0,
-         "z": 621
+         "z": 620
         },
         "size": {
          "width": 2110,
-         "height": 321,
-         "depth": 1249
+         "height": 467,
+         "depth": 1250
         }
        },
-       "triangles": 12322
+       "triangles": 18780
       }
      }
     },
@@ -1545,6 +1549,10 @@
        {
         "name": "Box885.001_Untitled.010",
         "slot": "hardware"
+       },
+       {
+        "name": "Meridiani_Bed_STONE_UP__corona.001",
+        "slot": "mattress"
        },
        {
         "name": "Plane.001",
@@ -1645,15 +1653,15 @@
         "min": {
          "x": 31,
          "y": 0,
-         "z": 627
+         "z": 619
         },
         "size": {
          "width": 2110,
-         "height": 321,
-         "depth": 1442
+         "height": 467,
+         "depth": 1450
         }
        },
-       "triangles": 12322
+       "triangles": 18780
       }
      }
     },
@@ -1714,6 +1722,10 @@
        {
         "name": "Box885.003_Untitled.036",
         "slot": "hardware"
+       },
+       {
+        "name": "Meridiani_Bed_STONE_UP__corona.003",
+        "slot": "mattress"
        },
        {
         "name": "Plane.005_Plane.006",
@@ -1814,15 +1826,15 @@
         "min": {
          "x": 31,
          "y": 0,
-         "z": 638
+         "z": 629
         },
         "size": {
          "width": 2110,
-         "height": 321,
-         "depth": 1632
+         "height": 467,
+         "depth": 1641
         }
        },
-       "triangles": 12322
+       "triangles": 18780
       }
      }
     }

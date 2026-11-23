@@ -5,7 +5,7 @@ import { WALL_IDS, type RoomConfiguration, type WallId } from "../room/types";
 import { fail, ok, type Result } from "../shared/issues";
 import { localAxes, localToRoom, normalizeRotation, type Placement } from "../spatial/geometry";
 import { fitsAt } from "./collisions";
-import { moduleFootprint, placedCollisionBoxes } from "./spatial";
+import { moduleFootprint, moduleLocalExtentX, placedCollisionBoxes } from "./spatial";
 import { GEOMETRY_EPSILON_MM, signedClearance } from "./wallContact";
 import type { Arrangement, Side } from "./types";
 
@@ -165,13 +165,24 @@ export function snapToWall(arrangement: Arrangement, id: ModuleId, wall: WallId)
 /**
  * Placement directly to the left or right of `reference`, relative to the reference's own
  * orientation (its right is +X of its local frame, i.e. the right-hand side seen from its front).
- * The new instance gets the same rotation and elevation and its back is aligned with the reference's back.
+ * The two modules touch by their real lateral outlines (every state and the operation envelope, see
+ * moduleLocalExtentX), not by their footprints or origins. The new module gets the same rotation and
+ * elevation and its back is aligned with the reference's back.
  */
-export function adjacentPlacement(reference: ModuleInstance, footprint: { width: number; depth: number }, side: Side): Placement {
+export function adjacentPlacement(
+  reference: ModuleInstance,
+  candidate: Pick<ModuleInstance, "typeId" | "configuration">,
+  side: Side,
+): Placement {
   const refFp = moduleFootprint(reference);
+  const footprint = getFurnitureType(candidate.typeId).footprint(candidate.configuration);
+  const refExtent = moduleLocalExtentX(reference);
+  const extent = moduleLocalExtentX(candidate);
   const { right, front } = localAxes(reference.placement.rotationDeg);
-  const sign = side === "right" ? 1 : -1;
-  const along = (sign * (refFp.width + footprint.width)) / 2;
+  // The candidate's local origin in the reference's frame so that the outlines touch, then its
+  // centre relative to the reference's centre.
+  const origin = side === "right" ? refExtent.max - extent.min : refExtent.min - extent.max;
+  const along = origin + footprint.width / 2 - refFp.width / 2;
   const forward = (footprint.depth - refFp.depth) / 2;
   return roundPlacement({
     x: reference.placement.x + right.x * along + front.x * forward,
@@ -187,8 +198,7 @@ function placeNextTo(
   candidate: Omit<ModuleInstance, "placement">,
   side: Side,
 ): ArrangementResult<{ id: ModuleId }> {
-  const footprint = getFurnitureType(candidate.typeId).footprint(candidate.configuration);
-  const instance: ModuleInstance = { ...candidate, placement: adjacentPlacement(reference, footprint, side) };
+  const instance: ModuleInstance = { ...candidate, placement: adjacentPlacement(reference, candidate, side) };
   if (!fitsAt(arrangement.room, arrangement.modules, instance)) return fail({ code: "no_space_beside", params: { side } });
   return ok({ arrangement: { ...arrangement, modules: [...arrangement.modules, instance] }, id: instance.id });
 }

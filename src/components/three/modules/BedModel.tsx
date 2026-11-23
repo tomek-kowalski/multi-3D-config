@@ -44,6 +44,20 @@ function applyDecor(material: MeshStandardMaterial, decor: BedDecor | null, inva
 }
 
 /**
+ * Visibility of a named node of a converted bed model (see scripts/assets/convert-clickbed.mjs), or
+ * null for nodes it does not control:
+ * - the state nodes "folded" / "unfolded": only the displayed state is visible;
+ * - "<state>:mattress": the mattress supplied in the model, shown only when the configuration includes
+ *   the mattress. It is part of the state's node, so it moves with the bed between states. The folded
+ *   models have no mattress geometry (it is enclosed behind the front), so nothing is drawn there.
+ */
+export function bedNodeVisible(name: string, state: string, mattress: boolean): boolean | null {
+  if (name === "folded" || name === "unfolded") return name === state;
+  if (name.endsWith(":mattress")) return mattress;
+  return null;
+}
+
+/**
  * One ClickBed, rendered from its converted asset (public/models/clickbed). The scene is cloned per
  * instance with its own materials, so beds never share decor or state. Origin: the carcass's
  * back-left-bottom corner, as in the domain.
@@ -82,10 +96,11 @@ export function BedModel({ typeId, productId, configuration, state }: { typeId: 
 
   useEffect(() => {
     root.traverse((child) => {
-      if (child.name === "folded" || child.name === "unfolded") child.visible = child.name === state;
+      const visible = bedNodeVisible(child.name, state, configuration.mattress);
+      if (visible !== null) child.visible = visible;
     });
     invalidate();
-  }, [root, state, invalidate]);
+  }, [root, state, configuration.mattress, invalidate]);
 
   useEffect(() => () => materials.forEach((m) => m.dispose()), [materials]);
 

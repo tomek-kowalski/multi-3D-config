@@ -1,11 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
 import { useT } from "@/i18n";
 import { useArrangementStore } from "@/store/useArrangementStore";
 import { buttonClass, primaryButtonClass } from "@/components/ui/fields";
-import { RoomDimensions } from "./SpacePanel";
+import { typeName } from "./ArrangementPanel";
+import { RoomDimensions, SpacePanel } from "./SpacePanel";
 
 /** Logo asset, used unmodified (270 × 300 px); displayed at a responsive height, width from its ratio. */
 export const LOGO_SRC = "/img/clickbed_logo_01.png";
@@ -16,8 +16,10 @@ const overlayButton =
   "rounded-lg bg-white/90 px-3 py-1.5 text-xs font-medium text-stone-800 shadow-sm backdrop-blur transition-colors hover:bg-white disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-800";
 
 /**
- * Room dimensions in their own panel at the top centre of the application. It shows the regular
- * dimension inputs (same store, same validation); closing it keeps every applied value.
+ * The room panel at the top centre of the application: room dimensions plus every space setting
+ * (walls and their colours, windows and doors, wall labels, floor). It renders the regular controls
+ * (same store, same validation); closing it keeps every applied value. It scrolls when its content is
+ * taller than the screen.
  */
 export function RoomDimensionsPanel({ onClose }: { onClose: () => void }) {
   const t = useT();
@@ -28,9 +30,9 @@ export function RoomDimensionsPanel({ onClose }: { onClose: () => void }) {
       aria-labelledby="room-panel-title"
       data-room-dimensions-panel
       // Top centre of the viewport, below the canvas buttons; never wider than the screen.
-      className="fixed left-1/2 top-24 z-40 w-[min(34rem,calc(100vw-2rem))] -translate-x-1/2 rounded-2xl border border-stone-200 bg-white p-5 shadow-xl"
+      className="fixed left-1/2 top-24 z-40 flex max-h-[calc(100dvh-7rem)] w-[min(36rem,calc(100vw-2rem))] -translate-x-1/2 flex-col rounded-2xl border border-stone-200 bg-white shadow-xl"
     >
-      <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-stone-200 px-5 py-3">
         <h2 id="room-panel-title" className="text-base font-semibold text-stone-900">
           {t("view.roomDimensions")}
         </h2>
@@ -38,7 +40,10 @@ export function RoomDimensionsPanel({ onClose }: { onClose: () => void }) {
           ✕ {t("roomPanel.close")}
         </button>
       </div>
-      <RoomDimensions />
+      <div className="space-y-6 overflow-y-auto px-5 py-4" data-room-panel-body>
+        <RoomDimensions />
+        <SpacePanel />
+      </div>
     </div>
   );
 }
@@ -48,7 +53,8 @@ export function ViewOverlay() {
   const t = useT();
   const requestView = useArrangementStore((s) => s.requestView);
   const hasSelection = useArrangementStore((s) => s.selectedModuleId !== null);
-  const [roomPanelOpen, setRoomPanelOpen] = useState(false);
+  const roomPanelOpen = useArrangementStore((s) => s.roomPanelOpen);
+  const setRoomPanelOpen = useArrangementStore((s) => s.setRoomPanelOpen);
   return (
     <>
       <div className="pointer-events-none absolute left-3 top-3 z-10">
@@ -75,7 +81,7 @@ export function ViewOverlay() {
           className={overlayButton}
           aria-expanded={roomPanelOpen}
           aria-haspopup="dialog"
-          onClick={() => setRoomPanelOpen((open) => !open)}
+          onClick={() => setRoomPanelOpen(!roomPanelOpen)}
         >
           {t("view.roomDimensions")}
         </button>
@@ -85,10 +91,15 @@ export function ViewOverlay() {
   );
 }
 
-/** Asks the customer to confirm a proposed cabinet docking position (previewed in 3D). */
+/** Asks the customer to confirm a proposed docking position (previewed in 3D). */
 export function DockingPrompt() {
   const t = useT();
   const proposal = useArrangementStore((s) => s.dockingProposal);
+  const modules = useArrangementStore((s) => s.arrangement.modules);
+  const describe = (id: string) => {
+    const module_ = modules.find((m) => m.id === id);
+    return module_ ? `${typeName(t, module_.typeId)} (${id})` : id;
+  };
   const confirm = useArrangementStore((s) => s.confirmDocking);
   const reject = useArrangementStore((s) => s.rejectDocking);
   if (!proposal) return null;
@@ -101,8 +112,8 @@ export function DockingPrompt() {
     >
       <p id="docking-prompt" className="text-sm text-stone-800">
         {t("docking.prompt", {
-          module: proposal.moduleId,
-          target: proposal.targetId,
+          module: describe(proposal.moduleId),
+          target: describe(proposal.targetId),
           side: t(proposal.side === "left" ? "docking.left" : "docking.right"),
         })}
       </p>

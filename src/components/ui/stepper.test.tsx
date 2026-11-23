@@ -108,6 +108,9 @@ describe("numeric controls drive the configuration the 3D scene renders", () => 
 
   it("cabinet dimension +/− goes through the cabinet validation and respects its range", () => {
     render(<NumericFieldControl field="width" label="Szerokość" sliderStep={10} />);
+    // Furniture stays in millimetres (only the room uses centimetres).
+    expect(screen.getAllByText("mm").length).toBeGreaterThan(0);
+    expect(screen.queryByText("cm")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Zwiększ: Szerokość" }));
     expect(useConfiguratorStore.getState().configuration.width).toBe(801);
     useConfiguratorStore.getState().setNumericField("width", 2400);

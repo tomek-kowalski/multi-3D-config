@@ -78,14 +78,71 @@ describe("docking proposals", () => {
     expect(detectCollisions(docked)).toEqual([]);
   });
 
-  it("does not dock beds or other non-cabinet furniture", () => {
+});
+
+describe("docking works across furniture types", () => {
+  /** Places module-1 (`first`) and module-2 (`second`) at the given positions. */
+  function pair(first: string, at1: Parameters<typeof setPlacement>[2], second: string, at2: Parameters<typeof setPlacement>[2]) {
     let a: Arrangement = { room: ROOM, modules: [] };
-    a = unwrap(addModule(a, "cabinet")).arrangement;
-    a = unwrap(setPlacement(a, "module-1", { x: 3000 })).arrangement;
-    a = unwrap(addModule(a, "clickbed-o")).arrangement;
-    a = unwrap(setPlacement(a, "module-2", { x: 3000 + 400 + 1081 + 40, z: 200 })).arrangement; // bed 40 mm right of the cabinet
-    expect(proposeDocking(a, "module-2")).toBeNull();
-    expect(proposeDocking(a, "module-1")).toBeNull();
+    a = unwrap(addModule(a, first)).arrangement;
+    a = unwrap(setPlacement(a, "module-1", at1)).arrangement;
+    a = unwrap(addModule(a, second)).arrangement;
+    return unwrap(setPlacement(a, "module-2", at2)).arrangement;
+  }
+
+  it("docks a bed next to a bed (left and right, by their real outlines)", () => {
+    // ClickBed O 140×200: footprint 2162 × 400, centred at x 2000 against the back wall.
+    expect(proposeDocking(pair("clickbed-o", { x: 2000 }, "clickbed-o", { x: 4222, z: 230 }), "module-2")).toMatchObject({
+      side: "right",
+      placement: { x: 4162, z: 200 },
+    });
+    expect(proposeDocking(pair("clickbed-o", { x: 3500 }, "clickbed-o", { x: 1300, z: 200 }), "module-2")).toMatchObject({
+      side: "left",
+      placement: { x: 1338, z: 200 },
+    });
+  });
+
+  it("docks a cabinet next to a bed and a bed next to a cabinet, backs aligned", () => {
+    // Cabinet (800 × 500) right of the bed: centre 2000 + 1081 + 400; back on the bed's back (z 250).
+    expect(proposeDocking(pair("clickbed-o", { x: 2000 }, "cabinet", { x: 3500, z: 260 }), "module-2")).toMatchObject({
+      targetId: "module-1",
+      side: "right",
+      placement: { x: 3481, z: 250 },
+    });
+    // Bed right of the cabinet: centre 2000 + 400 + 1081; back on the cabinet's back (z 200).
+    expect(proposeDocking(pair("cabinet", { x: 2000 }, "clickbed-o", { x: 3520, z: 210 }), "module-2")).toMatchObject({
+      side: "right",
+      placement: { x: 3481, z: 200 },
+    });
+  });
+
+  it("keeps the unfolding space of a transforming bed free", () => {
+    // module-2 (bed) near the right of module-1 (bed): valid while nothing stands where it unfolds…
+    const base = pair("clickbed-o", { x: 2000 }, "clickbed-o", { x: 4222, z: 230 });
+    expect(proposeDocking(base, "module-2")).not.toBeNull();
+    // …but a cabinet in front of the docking spot (clear of the folded bed, inside its unfolding
+    // envelope) makes the spot invalid.
+    let blocked = unwrap(addModule(base, "cabinet")).arrangement;
+    blocked = unwrap(setPlacement(blocked, "module-3", { x: 4162, z: 1200 })).arrangement;
+    expect(proposeDocking(blocked, "module-2")).toBeNull();
+  });
+
+  it("keeps wall-mounting requirements: a wall-mounted bed only docks where its back is on a wall", () => {
+    const atWall = pair("clickbed-o-classico", { x: 2000 }, "clickbed-o-classico", { x: 4240, z: 220 });
+    expect(proposeDocking(atWall, "module-2")).toMatchObject({ placement: { x: 4180, z: 200 } });
+    // Target 300 mm in front of the wall: the docked bed would not be fixed to a wall either.
+    const awayFromWall = pair("clickbed-o-classico", { x: 2000, z: 500 }, "clickbed-o-classico", { x: 4240, z: 520 });
+    expect(proposeDocking(awayFromWall, "module-2")).toBeNull();
+  });
+
+  it("leaves both configurations independent after docking", () => {
+    const a = pair("clickbed-o", { x: 2000 }, "clickbed-o", { x: 4222, z: 230 });
+    const proposal = proposeDocking(a, "module-2")!;
+    const docked = unwrap(setPlacement(a, "module-2", proposal.placement)).arrangement;
+    expect(docked.modules[0].configuration).toBe(a.modules[0].configuration);
+    expect(docked.modules[1].configuration).toBe(a.modules[1].configuration);
+    expect(docked.modules[0].configuration).not.toBe(docked.modules[1].configuration);
+    expect(detectCollisions(docked)).toEqual([]);
   });
 });
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { SectionHeading } from "@/components/configurator/SectionHeading";
 import { DOOR_COLOR_PRESETS, FLOOR_COLOR_PRESETS, ROOM_LIMITS, WALL_COLOR_PRESETS } from "@/domain/room/defaults";
 import { openingsOnWall, wallLength } from "@/domain/room/geometry";
+import { cmToMm, mmToCm, roomIssueInCm } from "@/domain/room/units";
 import { WALL_IDS, WALL_LETTERS, type OpeningKind, type RoomOpening, type WallId } from "@/domain/room/types";
 import type { Issue } from "@/domain/shared/issues";
 import { useT } from "@/i18n";
@@ -12,11 +13,19 @@ import { buttonClass, Card, ColorField, dangerButtonClass, IssueList, MmField, S
 
 const issuesOf = (r: ActionResult): readonly Issue[] => (r.ok ? [] : r.issues);
 
-/** The room dimension inputs, shown in the room-dimensions panel. */
+/**
+ * The room dimension inputs, in centimetres (0.1 cm = 1 mm steps). Values are converted at this
+ * boundary only: the room is stored and validated in whole millimetres by the unchanged room logic.
+ */
 export function RoomDimensions() {
   const t = useT();
   const room = useArrangementStore((s) => s.arrangement.room);
   const setDimension = useArrangementStore((s) => s.setRoomDimension);
+  const commit = (key: "width" | "depth" | "height", cm: number): readonly Issue[] => {
+    const mm = cmToMm(cm);
+    if (mm === null) return [{ code: "room_precision_cm" }];
+    return issuesOf(setDimension(key, mm)).map(roomIssueInCm);
+  };
   return (
     <section aria-label={t("space.dimensions")} className="space-y-3">
       <div className="grid grid-cols-3 gap-2">
@@ -24,11 +33,14 @@ export function RoomDimensions() {
           <MmField
             key={key}
             label={t(`space.${key}`)}
-            hint={`${ROOM_LIMITS[key].min}–${ROOM_LIMITS[key].max}`}
-            min={ROOM_LIMITS[key].min}
-            max={ROOM_LIMITS[key].max}
-            value={room[key]}
-            onCommit={(v) => issuesOf(setDimension(key, v))}
+            unit="cm"
+            step={0.1}
+            buttonStep={0.1}
+            hint={`${mmToCm(ROOM_LIMITS[key].min)}–${mmToCm(ROOM_LIMITS[key].max)}`}
+            min={mmToCm(ROOM_LIMITS[key].min)}
+            max={mmToCm(ROOM_LIMITS[key].max)}
+            value={mmToCm(room[key])}
+            onCommit={(v) => commit(key, v)}
           />
         ))}
       </div>

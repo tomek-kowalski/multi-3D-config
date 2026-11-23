@@ -33,7 +33,8 @@ src/domain/
   serialization/ versioned arrangement JSON (cabinet configs keep their own v5 format)
   …              the unchanged kitchen-config cabinet domain
 src/store/       arrangement store (source of truth) + cabinet editing session binding
-src/components/room/    the three menus (A room · B arrangement · C module) and the order dialog
+src/components/room/    main menus (A Układ mebli · B Moduł), room panel ("Wymiary pomieszczenia": dimensions,
+                        walls, windows, doors), docking prompt and the order dialog
 src/components/three/   room scene, module renderers (parametric cabinet, imported bed models)
 src/i18n/        pl (reference catalog) / en
 wordpress/multi3d-configurator/  WooCommerce bridge plugin
@@ -53,6 +54,15 @@ wordpress/multi3d-configurator/  WooCommerce bridge plugin
 - Modules are checked against the room boundaries, against openings together with their keep-free clearance, and against each other.
 - Furniture below a window sill does not collide with the window.
 - Transforming furniture is also checked with its operation envelope.
+
+**Units:** room dimensions are shown and typed in centimetres (0.1 cm steps) and converted at the UI
+boundary (`src/domain/room/units.ts`); the room, all geometry, saved files and every furniture dimension
+stay in whole millimetres.
+
+**Docking:** any module moved near the side of another module with the same orientation (cabinets,
+beds, mixed) gets a previewed side-by-side position that is applied only after confirmation
+(`src/domain/arrangement/docking.ts`). It is proposed only if the regular collision detection finds no
+issue, including bed operation envelopes and wall-mounting requirements.
 
 ## WooCommerce
 

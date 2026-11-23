@@ -23,7 +23,7 @@ export function WallLabelOverlay() {
   const activeWall = useArrangementStore((s) => s.activeWall);
   const visible = useArrangementStore((s) => s.showWallLabels);
   const setActiveWall = useArrangementStore((s) => s.setActiveWall);
-  const setMenu = useArrangementStore((s) => s.setActiveMenu);
+  const openRoomPanel = useArrangementStore((s) => s.setRoomPanelOpen);
   if (!visible) return null;
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" data-wall-labels>
@@ -35,7 +35,7 @@ export function WallLabelOverlay() {
           aria-label={t("wallLabel.select", { wall: t(`wall.${label.wall}`) })}
           onClick={() => {
             setActiveWall(label.wall);
-            setMenu("space");
+            openRoomPanel(true);
           }}
           ref={(el) => {
             if (el) elements.set(label.wall, el);

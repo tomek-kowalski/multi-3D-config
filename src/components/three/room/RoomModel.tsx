@@ -111,7 +111,7 @@ function PartMesh({ part }: { part: ScenePart }) {
 /** Window (frame + glass) or door (frame + leaf in the door colour), placed in its wall opening. */
 function Opening({ room, opening, selected }: { room: RoomConfiguration; opening: RoomOpening; selected: boolean }) {
   const select = useArrangementStore((s) => s.selectOpening);
-  const setMenu = useArrangementStore((s) => s.setActiveMenu);
+  const openRoomPanel = useArrangementStore((s) => s.setRoomPanelOpen);
   const frame = wallFrame(room, opening.wall);
   const angle = wallAngle(room, opening.wall);
   const keepFree = planBounds(openingKeepFreeBox(room, opening));
@@ -126,7 +126,7 @@ function Opening({ room, opening, selected }: { room: RoomConfiguration; opening
           if (event.delta > CLICK_TOLERANCE_PX) return;
           event.stopPropagation();
           select(opening.id);
-          setMenu("space");
+          openRoomPanel(true);
         }}
       >
         {parts}
