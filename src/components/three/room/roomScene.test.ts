@@ -3,7 +3,8 @@ import { DEFAULT_ROOM } from "@/domain/room/defaults";
 import { openingKeepFreeBox, wallFrame } from "@/domain/room/geometry";
 import { WALL_IDS, WALL_LETTERS, type RoomOpening } from "@/domain/room/types";
 import { translate } from "@/i18n";
-import { contrastColor, openingOutline, openingParts, wallAngle, wallHighlights, wallLabels } from "./roomScene";
+import { Euler, Vector3 } from "three";
+import { contrastColor, leafRotation, openingOutline, openingParts, openingScene, wallAngle, wallHighlights, wallLabels } from "./roomScene";
 
 const room = { ...DEFAULT_ROOM, width: 4000, depth: 3000, height: 2600 };
 const window_: RoomOpening = { id: "window-1", kind: "window", wall: "left", offset: 500, elevation: 900, width: 1200, height: 1400, clearanceDepth: 0 };
@@ -85,6 +86,49 @@ describe("active wall and wall labels", () => {
     for (const wall of WALL_IDS) {
       expect(translate("pl", `wall.${wall}`)).toContain(`Ściana ${WALL_LETTERS[wall]}`);
       expect(translate("en", `wall.${wall}`)).toContain(`Wall ${WALL_LETTERS[wall]}`);
+    }
+  });
+});
+
+describe("opening windows and doors", () => {
+  /** Far end of a leaf (its free edge) after turning by `progress`, relative to the opening's frame. */
+  const freeEdge = (opening: RoomOpening, index: number, progress: number) => {
+    const leaf = openingScene(opening).leaves[index];
+    const reach = Math.max(...leaf.parts.map((p) => Math.abs(p.center[0]) + p.size[0] / 2));
+    const v = new Vector3(leaf.direction * reach, 0, 0).applyEuler(new Euler(0, leafRotation(leaf.direction, progress), 0));
+    return { x: v.x + leaf.pivot[0], z: v.z + leaf.pivot[2] };
+  };
+
+  it("a door has a stationary frame and one leaf hinged on its left, with the handle", () => {
+    const scene = openingScene(door);
+    expect(scene.fixed.map((p) => p.key)).toEqual(["left", "right", "top"]);
+    expect(scene.leaves.map((l) => l.id)).toEqual(["leaf"]);
+    expect(scene.leaves[0].pivot[0]).toBeCloseTo(0.06);
+    expect(scene.leaves[0].parts.map((p) => p.role)).toEqual(["leaf", "handle"]);
+  });
+
+  it("a window has two sashes hinged at its outer edges and no fixed mullion", () => {
+    const scene = openingScene(window_);
+    expect(scene.fixed.some((p) => p.key === "mullion")).toBe(false);
+    expect(scene.leaves.map((l) => [l.id, l.direction, Math.round(l.pivot[0] * 1000)])).toEqual([
+      ["left-sash", 1, 60],
+      ["right-sash", -1, 1140],
+    ]);
+    expect(scene.leaves.every((l) => l.parts.some((p) => p.role === "glass"))).toBe(true);
+  });
+
+  it("leaves open inward, into the room (+z), by 90°, and are flat in the wall when closed", () => {
+    for (const [opening, index] of [
+      [door, 0],
+      [window_, 0],
+      [window_, 1],
+    ] as const) {
+      const closed = freeEdge(opening, index, 0);
+      const open = freeEdge(opening, index, 1);
+      const leaf = openingScene(opening).leaves[index];
+      expect(closed.z).toBeCloseTo(leaf.pivot[2]);
+      expect(open.z - leaf.pivot[2]).toBeGreaterThan(0.4);
+      expect(open.x).toBeCloseTo(leaf.pivot[0], 5);
     }
   });
 });

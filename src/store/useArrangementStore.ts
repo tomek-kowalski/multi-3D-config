@@ -1,5 +1,21 @@
 import { create } from "zustand";
 import { proposeDocking, type DockingProposal } from "@/domain/arrangement/docking";
+import { detectCollisions, openingMotionObstacles } from "@/domain/arrangement/collisions";
+import { checkFrontMotion, movableFronts } from "@/domain/arrangement/frontMotion";
+import { assistOpeningPosition, type OpeningPositioning } from "@/domain/room/openingMotion";
+import { usePreviewStore } from "./usePreviewStore";
+
+/** The right-click menu: of a furniture module or of a window/door (screen position in CSS pixels). */
+export type ContextMenuState =
+  | { readonly kind: "module"; readonly moduleId: ModuleId; readonly x: number; readonly y: number }
+  | { readonly kind: "opening"; readonly openingId: string; readonly x: number; readonly y: number };
+
+export interface OpeningDrag {
+  readonly id: string;
+  /** The requested position was valid (green); otherwise the nearest valid one is used (red, with the reason). */
+  readonly valid: boolean;
+  readonly reason: OpeningPositioning["reason"];
+}
 import { proposeWallDocking, requiresWallMounting, type WallDockingProposal } from "@/domain/arrangement/wallDocking";
 
 export type AnyDockingProposal = DockingProposal | WallDockingProposal;
@@ -49,8 +65,14 @@ export interface ArrangementState {
   readonly arrangement: Arrangement;
   readonly selectedModuleId: ModuleId | null;
   readonly selectedOpeningId: string | null;
-  /** The wall the customer is working on; highlighted in the 3D view. */
+  /** The wall the customer is working on (the room menu's wall; its windows and doors are editable). */
   readonly activeWall: WallId;
+  /**
+   * Whether the active wall is the current selection (highlighted in 3D). One item is selected at a
+   * time: selecting furniture deselects the wall (and its window/door) until a wall is selected again;
+   * selecting a wall or one of its windows/doors deselects the furniture.
+   */
+  readonly wallSelected: boolean;
   /** Whether the wall identifiers are shown in the 3D view (display only). */
   readonly showWallLabels: boolean;
   /** Whether cabinets moved next to another cabinet get a docking proposal. */
@@ -69,7 +91,11 @@ export interface ArrangementState {
   /** Main menu collapsed to its header (display only: the 3D view gets the space; nothing else changes). */
   readonly menuCollapsed: boolean;
   /** Right-click menu of a furniture module (screen position in CSS pixels). */
-  readonly contextMenu: { readonly moduleId: ModuleId; readonly x: number; readonly y: number } | null;
+  readonly contextMenu: ContextMenuState | null;
+  /** A window or door being dragged in the 3D view, and whether the requested position is valid. */
+  readonly draggingOpening: OpeningDrag | null;
+  /** Result of an action that could not be carried out (shown briefly in the 3D view). */
+  readonly notice: readonly Issue[] | null;
   readonly viewRequest: ViewRequest | null;
   /** True once the saved arrangement (if any) was loaded on the client. */
   readonly hydrated: boolean;
@@ -111,6 +137,16 @@ export interface ArrangementState {
   setMenuCollapsed: (collapsed: boolean) => void;
   /** Selects the module and opens its context menu at the pointer. */
   openContextMenu: (moduleId: ModuleId, x: number, y: number) => void;
+  /** Selects the window/door (on the active wall only) and opens its context menu at the pointer. */
+  openOpeningMenu: (openingId: string, x: number, y: number) => void;
+  /** Opens or closes a window/door; opening is refused (with the obstacles) when its leaves cannot swing. */
+  setOpeningOpen: (id: string, open: boolean) => ActionResult;
+  /** Opens or closes every door and drawer of a cabinet (the same session state as its menu); blocked fronts stay closed. */
+  setFrontsOpen: (id: ModuleId, open: boolean) => ActionResult;
+  /** Moves a window/door within its wall with positioning assistance (see assistOpeningPosition). */
+  moveOpening: (id: string, offset: number, elevation: number) => OpeningPositioning | null;
+  setDraggingOpening: (drag: OpeningDrag | null) => void;
+  setNotice: (issues: readonly Issue[] | null) => void;
   closeContextMenu: () => void;
   requestView: (kind: ViewRequest["kind"]) => void;
   replaceArrangement: (arrangement: Arrangement) => void;
@@ -138,13 +174,23 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
   const applyRoom = (result: Result<RoomConfiguration>): ActionResult =>
     result.ok ? apply({ ok: true, value: { arrangement: ops.setRoom(get().arrangement, result.value) } }) : { ok: false, issues: result.issues };
 
-  const selectAdded = ({ id }: { id: ModuleId }): Partial<ArrangementState> => ({ selectedModuleId: id });
+  /** Furniture becomes the one selected item: the wall and its window/door are deselected. */
+  const furnitureSelection = (id: ModuleId): Partial<ArrangementState> => ({ selectedModuleId: id, selectedOpeningId: null, wallSelected: false });
+  /** A wall (optionally with one of its windows/doors) becomes the selection: furniture is deselected. */
+  const wallSelection = (wall: WallId, openingId: string | null): Partial<ArrangementState> => ({
+    activeWall: wall,
+    wallSelected: true,
+    selectedOpeningId: openingId,
+    selectedModuleId: null,
+  });
+  const selectAdded = ({ id }: { id: ModuleId }): Partial<ArrangementState> => furnitureSelection(id);
 
   return {
     arrangement: INITIAL_ARRANGEMENT,
     selectedModuleId: null,
     selectedOpeningId: null,
     activeWall: "back",
+    wallSelected: true,
     showWallLabels: true,
     dockingEnabled: true,
     dockingProposal: null,
@@ -153,6 +199,8 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
     roomPanelOpen: false,
     menuCollapsed: false,
     contextMenu: null,
+    draggingOpening: null,
+    notice: null,
     viewRequest: null,
     hydrated: false,
 
@@ -162,12 +210,12 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
     addOpening: (kind, wall) => {
       const result = roomOps.addOpening(get().arrangement.room, kind, wall);
       if (!result.ok) return { ok: false, issues: result.issues };
-      set({ arrangement: ops.setRoom(get().arrangement, result.value.room), selectedOpeningId: result.value.id, activeWall: wall });
+      set({ arrangement: ops.setRoom(get().arrangement, result.value.room), ...wallSelection(wall, result.value.id) });
       return OK;
     },
     updateOpening: (id, patch) => {
       const result = applyRoom(roomOps.updateOpening(get().arrangement.room, id, patch));
-      if (result.ok && patch.wall) set({ activeWall: patch.wall });
+      if (result.ok && patch.wall) set(wallSelection(patch.wall, get().selectedOpeningId));
       return result;
     },
     removeOpening: (id) => {
@@ -177,10 +225,14 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
     },
     selectOpening: (id) => {
       const opening = id === null ? undefined : get().arrangement.room.openings.find((o) => o.id === id);
-      set({ selectedOpeningId: id, ...(opening ? { activeWall: opening.wall } : {}) });
+      set(opening ? wallSelection(opening.wall, opening.id) : { selectedOpeningId: null });
     },
     setActiveWall: (wall) => {
-      if (get().activeWall !== wall) set({ activeWall: wall });
+      const { activeWall, wallSelected, selectedModuleId, selectedOpeningId } = get();
+      if (activeWall === wall && wallSelected && selectedModuleId === null) return;
+      // Windows and doors are selectable on the active wall only: another wall clears that selection.
+      const selected = get().arrangement.room.openings.find((o) => o.id === selectedOpeningId);
+      set(wallSelection(wall, selected && selected.wall === wall ? selected.id : null));
     },
     setShowWallLabels: (show) => set({ showWallLabels: show }),
     setDockingEnabled: (enabled) => set({ dockingEnabled: enabled, ...(enabled ? {} : { dockingProposal: null }) }),
@@ -242,19 +294,83 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
       apply(ops.setPlacement(get().arrangement, id, patch), () => (get().draggingModuleId === id ? {} : { dockingProposal: null })),
     rotateModule: (id, delta) => apply(ops.rotateModule(get().arrangement, id, delta)),
     snapToWall: (id, wall) => apply(ops.snapToWall(get().arrangement, id, wall), () => ({ activeWall: wall })),
-    setModuleState: (id, state) => apply(ops.setModuleState(get().arrangement, id, state)),
+    // Changing the state (e.g. unfolding a bed) must not create a physical collision: refused, with the obstacles.
+    setModuleState: (id, state) => {
+      const result = ops.setModuleState(get().arrangement, id, state);
+      if (!result.ok) return { ok: false, issues: result.issues };
+      const blockers = (a: Arrangement) =>
+        new Set(
+          detectCollisions(a)
+            .filter((i) => i.phase === "static" && i.kind !== "wall-mounting" && (i.moduleId === id || (i.kind === "module" && i.otherId === id)))
+            .map((i) => (i.kind === "module" ? (i.moduleId === id ? i.otherId : i.moduleId) : i.kind === "opening" ? i.openingId : "wall")),
+        );
+      const before = blockers(get().arrangement);
+      const added = [...blockers(result.value.arrangement)].filter((b) => !before.has(b));
+      if (added.length > 0) return { ok: false, issues: [{ code: "transform_blocked", params: { module: id, state, obstacles: added.join(",") } }] };
+      return apply(result);
+    },
     updateModuleConfiguration: (id, configuration) => apply(ops.updateModuleConfiguration(get().arrangement, id, configuration)),
     selectModule: (id) => {
       if (id !== null && !get().arrangement.modules.some((m) => m.id === id)) return;
-      if (get().selectedModuleId !== id) set({ selectedModuleId: id });
+      if (id === null) {
+        if (get().selectedModuleId !== null) set({ selectedModuleId: null });
+        return;
+      }
+      if (get().selectedModuleId !== id || get().wallSelected || get().selectedOpeningId !== null) set(furnitureSelection(id));
     },
 
     setActiveMenu: (menu) => set({ activeMenu: menu }),
     setRoomPanelOpen: (open) => set({ roomPanelOpen: open }),
     setMenuCollapsed: (collapsed) => set({ menuCollapsed: collapsed }),
+    openOpeningMenu: (openingId, x, y) => {
+      const opening = get().arrangement.room.openings.find((o) => o.id === openingId);
+      if (!opening || opening.wall !== get().activeWall || !get().wallSelected) return;
+      set({ ...wallSelection(opening.wall, openingId), contextMenu: { kind: "opening", openingId, x, y }, notice: null });
+    },
+    setOpeningOpen: (id, open) => {
+      if (open) {
+        const obstacles = openingMotionObstacles(get().arrangement, id);
+        if (obstacles.length > 0) {
+          const ids = obstacles.map((o) => (o.kind === "module" ? o.moduleId : o.kind === "opening" ? o.openingId : "wall"));
+          return { ok: false, issues: [{ code: "opening_blocked", params: { opening: id, obstacles: ids.join(",") } }] };
+        }
+      }
+      return get().updateOpening(id, { open });
+    },
+    setFrontsOpen: (id, open) => {
+      const instance = get().arrangement.modules.find((m) => m.id === id);
+      if (!instance) return { ok: false, issues: [{ code: "module_not_found", params: { id } }] };
+      // The fronts move in the cabinet's editing session: it must be the selected module (as from its menu).
+      if (get().selectedModuleId !== id) get().selectModule(id);
+      const preview = usePreviewStore.getState();
+      if (!open) {
+        preview.setOpen(movableFronts(instance), false);
+        return OK;
+      }
+      const checks = checkFrontMotion(get().arrangement, id);
+      const free = checks.filter((c) => c.obstacles.length === 0).map((c) => c.attachmentId);
+      const blocked = checks.filter((c) => c.obstacles.length > 0);
+      preview.setOpen(free, true);
+      if (blocked.length === 0) return OK;
+      const ids = [...new Set(blocked.flatMap((c) => c.obstacles.map((o) => (o.kind === "module" ? o.moduleId : o.kind === "opening" ? o.openingId : "wall"))))];
+      return { ok: false, issues: [{ code: "fronts_blocked", params: { module: id, count: blocked.length, obstacles: ids.join(",") } }] };
+    },
+    moveOpening: (id, offset, elevation) => {
+      const room = get().arrangement.room;
+      const opening = room.openings.find((o) => o.id === id);
+      if (!opening) return null;
+      const positioning = assistOpeningPosition(room, opening, offset, elevation);
+      if (positioning.offset !== opening.offset || positioning.elevation !== opening.elevation) {
+        get().updateOpening(id, { offset: positioning.offset, elevation: positioning.elevation });
+      }
+      return positioning;
+    },
+    // A new drag replaces an earlier notice (one explanation at a time).
+    setDraggingOpening: (drag) => set({ draggingOpening: drag, ...(drag ? { notice: null } : {}) }),
+    setNotice: (issues) => set({ notice: issues && issues.length ? issues : null }),
     openContextMenu: (moduleId, x, y) => {
       if (!get().arrangement.modules.some((m) => m.id === moduleId)) return;
-      set({ selectedModuleId: moduleId, contextMenu: { moduleId, x, y } });
+      set({ ...furnitureSelection(moduleId), contextMenu: { kind: "module", moduleId, x, y }, notice: null });
     },
     closeContextMenu: () => {
       if (get().contextMenu) set({ contextMenu: null });
@@ -275,6 +391,7 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
         selectedModuleId: null,
         selectedOpeningId: null,
         activeWall: "back",
+        wallSelected: true,
         dockingProposal: null,
         draggingModuleId: null,
         contextMenu: null,

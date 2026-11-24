@@ -107,6 +107,7 @@ function readRoom(data: unknown, issues: Issue[]): RoomConfiguration | null {
       height: o.height as number,
       clearanceDepth: o.clearanceDepth as number,
       ...(o.color !== undefined ? { color: o.color as RoomOpening["color"] } : {}),
+      ...(o.open === true ? { open: true } : {}),
     });
   }
   const room: RoomConfiguration = {

@@ -1,12 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { detectCollisions } from "@/domain/arrangement/collisions";
-import { useT } from "@/i18n";
+import { formatIssue, useT, type Translate } from "@/i18n";
+import type { Issue } from "@/domain/shared/issues";
+import type { Arrangement } from "@/domain/arrangement/types";
 import { useArrangementStore } from "@/store/useArrangementStore";
 import { buttonClass, primaryButtonClass } from "@/components/ui/fields";
-import { describeCollision, typeName } from "./ArrangementPanel";
+import { describeCollision, stateName, typeName } from "./ArrangementPanel";
 import { WALL_LETTERS } from "@/domain/room/types";
 import { prewarmPhotoRenderer } from "@/components/three/photo/photoService";
 import { PhotoPreview } from "./PhotoPreview";
@@ -127,7 +129,9 @@ export function CollisionNotes() {
     const seen = new Set<string>();
     const label = (id: string) => {
       const m = arrangement.modules.find((x) => x.id === id);
-      return m ? `${typeName(t, m.typeId)} (${id})` : id;
+      if (m) return `${typeName(t, m.typeId)} (${id})`;
+      const o = arrangement.room.openings.find((x) => x.id === id);
+      return o ? `${t(o.kind === "door" ? "opening.door" : "opening.window")} (${id})` : id;
     };
     for (const issue of detectCollisions(arrangement)) {
       // While a wall-mounted module is being positioned (dragged, or its wall-docking proposal is open),
@@ -150,6 +154,67 @@ export function CollisionNotes() {
         ))}
         {lines.length > MAX_COLLISION_NOTES && <li>{t("collision.more", { count: lines.length - MAX_COLLISION_NOTES })}</li>}
       </ul>
+    </div>
+  );
+}
+
+const NOTICE_MS = 6000;
+
+/** Furniture and windows/doors named as in the menu ("Szafka (module-1)", "Okno (opening-2)"). */
+function labelIssue(t: Translate, arrangement: Arrangement, issue: Issue): Issue {
+  const label = (id: string) => {
+    const m = arrangement.modules.find((x) => x.id === id);
+    if (m) return `${typeName(t, m.typeId)} (${id})`;
+    const o = arrangement.room.openings.find((x) => x.id === id);
+    if (o) return `${t(o.kind === "door" ? "opening.door" : "opening.window")} (${id})`;
+    return id;
+  };
+  const params: Record<string, string | number> = { ...issue.params };
+  for (const key of ["module", "opening", "other"]) if (typeof params[key] === "string") params[key] = label(params[key] as string);
+  if (typeof params.obstacles === "string") params.obstacles = params.obstacles.split(",").map((id) => (id === "wall" ? id : label(id))).join(",");
+  if (typeof params.state === "string") params.state = stateName(t, params.state);
+  return { ...issue, params };
+}
+
+/**
+ * Why an action from the 3D view (context menu) was not carried out — e.g. a bed that would hit a
+ * wardrobe when unfolded, or a window whose sash would hit furniture — and, while a window/door is
+ * dragged, the one positioning hint (stopped at the wall's edge / moved next to another opening).
+ */
+export function ActionNotice() {
+  const t = useT();
+  const arrangement = useArrangementStore((s) => s.arrangement);
+  const notice = useArrangementStore((s) => s.notice);
+  const drag = useArrangementStore((s) => s.draggingOpening);
+  const setNotice = useArrangementStore((s) => s.setNotice);
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(null), NOTICE_MS);
+    return () => window.clearTimeout(timer);
+  }, [notice, setNotice]);
+  const lines: string[] = [];
+  if (drag?.reason) {
+    const { params } = labelIssue(t, arrangement, { code: drag.reason.code, params: drag.reason.code === "opening_moved_off" ? { other: drag.reason.other } : {} });
+    lines.push(t(`positioning.${drag.reason.code}`, params as Record<string, string>));
+  }
+  for (const issue of notice ?? []) lines.push(formatIssue(t, labelIssue(t, arrangement, issue)));
+  if (lines.length === 0) return null;
+  return (
+    <div
+      role="alert"
+      data-action-notice
+      className="absolute left-1/2 top-3 z-20 flex w-[min(30rem,calc(100%-2rem))] -translate-x-1/2 items-start gap-3 rounded-xl border border-amber-300 bg-white/95 px-4 py-2.5 text-sm text-stone-800 shadow-lg backdrop-blur"
+    >
+      <ul className="flex-1 space-y-0.5">
+        {lines.map((line) => (
+          <li key={line}>{line}</li>
+        ))}
+      </ul>
+      {notice && (
+        <button type="button" aria-label={t("notice.close")} className="text-stone-500 hover:text-stone-800" onClick={() => setNotice(null)}>
+          ×
+        </button>
+      )}
     </div>
   );
 }

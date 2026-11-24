@@ -35,7 +35,7 @@ export function stateName(t: Translate, state: string): string {
 
 /**
  * Human-readable collision line for a module. `selfId`: the module the line is about (a module–module
- * conflict then names the other one); `label`: how the module itself is named (default: its id).
+ * conflict then names the other one); `label`: how the module itself (and a window/door) is named (default: its id).
  */
 export function describeCollision(
   t: Translate,
@@ -49,7 +49,7 @@ export function describeCollision(
     case "outside-room":
       return t("collision.outsideRoom", { module: label(issue.moduleId) }) + phase;
     case "opening":
-      return t("collision.opening", { module: label(issue.moduleId), opening: issue.openingId }) + phase;
+      return t("collision.opening", { module: label(issue.moduleId), opening: label(issue.openingId) }) + phase;
     case "module": {
       const self = selfId ?? issue.moduleId;
       const other = issue.moduleId === self ? issue.otherId : issue.moduleId;

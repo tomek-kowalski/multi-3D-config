@@ -50,3 +50,24 @@ export function furnitureStatuses(
   }
   return statuses;
 }
+
+/**
+ * Windows and doors use the same outlines, keyed `opening:<id>`: red while dragged to a position that
+ * had to be corrected or when furniture conflicts with them, green while dragged freely, blue when
+ * selected (only possible on the active wall).
+ */
+export function openingStatuses(
+  openingIds: readonly string[],
+  issues: readonly CollisionIssue[],
+  selectedId: string | null,
+  drag: { readonly id: string; readonly valid: boolean } | null,
+): Map<string, Exclude<FurnitureStatus, "normal">> {
+  const conflicting = new Set(issues.flatMap((i) => (i.kind === "opening" ? [i.openingId] : [])));
+  const statuses = new Map<string, Exclude<FurnitureStatus, "normal">>();
+  for (const id of openingIds) {
+    const dragged = drag?.id === id;
+    const status = furnitureStatus({ colliding: conflicting.has(id) || (dragged && !drag.valid), moving: dragged, selected: id === selectedId });
+    if (status !== "normal") statuses.set(`opening:${id}`, status);
+  }
+  return statuses;
+}

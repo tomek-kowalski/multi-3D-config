@@ -81,6 +81,13 @@ export function useT(): Translate {
 export function formatIssue(t: Translate, issue: Issue): string {
   const key = `issue.${issue.code}`;
   const params = { ...issue.params } as Record<string, string | number>;
+  // Obstacle lists (ids of furniture, windows, doors; "wall" for the room's walls) read as words.
+  if (typeof params.obstacles === "string") {
+    params.obstacles = params.obstacles
+      .split(",")
+      .map((id) => (id === "wall" ? t("obstacle.wall") : id))
+      .join(", ");
+  }
   if (isMessageKey(key)) return t(key, params);
   // Cabinet validation codes come with the cabinet's own detailed Polish message.
   if (issue.code.startsWith("cabinet.") && typeof params.message === "string") {

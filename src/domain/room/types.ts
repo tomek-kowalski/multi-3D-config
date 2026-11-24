@@ -38,6 +38,8 @@ export interface RoomOpening {
   readonly clearanceDepth: Millimeters;
   /** Door leaf colour; windows have none. */
   readonly color?: HexColor;
+  /** Opened (leaf/sashes turned into the room). Display state like a bed's folded/unfolded; default closed. */
+  readonly open?: boolean;
 }
 
 export interface RoomConfiguration {

@@ -1,5 +1,6 @@
 import { Color } from "three";
 import { wallFrame, wallPoint } from "@/domain/room/geometry";
+import { OPENING_ANGLE_DEG, OPENING_FRAME_MM, openingLeaves, type OpeningLeaf } from "@/domain/room/openingMotion";
 import { WALL_IDS, WALL_LETTERS, type RoomConfiguration, type RoomOpening, type WallId } from "@/domain/room/types";
 import { mmToM } from "../units";
 
@@ -25,7 +26,6 @@ export interface ScenePart {
 export const FRAME_COLOR = "#F4F3F0";
 export const FRAME_EDGE_COLOR = "#5E6166";
 export const GLASS_COLOR = "#A9CBE0";
-const FRAME_MM = 60;
 const FRAME_DEPTH_MM = 80;
 const SILL_DEPTH_MM = 140;
 
@@ -33,29 +33,110 @@ function part(key: string, role: ScenePart["role"], center: [number, number, num
   return { key, role, center, size, color, opacity, castShadow: false, receiveShadow: false };
 }
 
-export function openingParts(opening: RoomOpening): ScenePart[] {
+export interface OpeningLeafScene {
+  readonly id: OpeningLeaf["id"];
+  /** Hinge line in the opening's frame (metres): on the frame's inner face, at the leaf's bottom. */
+  readonly pivot: readonly [number, number, number];
+  /** +1: the leaf extends along +x from the hinge; −1: along −x. */
+  readonly direction: 1 | -1;
+  /** The leaf's parts relative to its pivot, closed. */
+  readonly parts: readonly ScenePart[];
+}
+
+export interface OpeningScene {
+  /** Frame (and window sill): never moves. */
+  readonly fixed: readonly ScenePart[];
+  /** Door leaf or window sashes: turn about their hinge when the opening is open. */
+  readonly leaves: readonly OpeningLeafScene[];
+}
+
+/**
+ * Rotation about +Y of a leaf group: turning inward (towards +z, into the room) by `progress` (0 closed,
+ * 1 fully open) of OPENING_ANGLE_DEG.
+ */
+export function leafRotation(direction: 1 | -1, progress: number): number {
+  return (-direction * progress * OPENING_ANGLE_DEG * Math.PI) / 180;
+}
+
+const LEAF_THICKNESS = 0.04;
+const SASH_THICKNESS = 0.05;
+
+/**
+ * A window or door: a stationary frame and the movable leaves (see openingLeaves in the domain, which
+ * gives the same leaves for the swing collision checks). A door has one leaf hinged on its left with the
+ * handle on the right; a window two casement sashes hinged at its outer edges.
+ */
+export function openingScene(opening: RoomOpening): OpeningScene {
   const w = mmToM(opening.width);
   const h = mmToM(opening.height);
-  const f = mmToM(FRAME_MM);
+  const f = mmToM(OPENING_FRAME_MM);
   const d = mmToM(FRAME_DEPTH_MM);
+  const leaves = openingLeaves(opening);
   if (opening.kind === "window") {
-    return [
+    const fixed = [
       part("left", "frame", [f / 2, h / 2, 0], [f, h, d], FRAME_COLOR),
       part("right", "frame", [w - f / 2, h / 2, 0], [f, h, d], FRAME_COLOR),
       part("bottom", "frame", [w / 2, f / 2, 0], [w, f, d], FRAME_COLOR),
       part("top", "frame", [w / 2, h - f / 2, 0], [w, f, d], FRAME_COLOR),
-      part("mullion", "frame", [w / 2, h / 2, 0], [f * 0.6, h, d * 0.8], FRAME_COLOR),
-      part("glass", "glass", [w / 2, h / 2, 0], [w - f, h - f, 0.006], GLASS_COLOR, 0.45),
       // Interior sill: makes the window's place in the wall readable from inside the room.
       part("sill", "sill", [w / 2, -0.01, mmToM(SILL_DEPTH_MM) / 2], [w + 2 * f, 0.02, mmToM(SILL_DEPTH_MM)], FRAME_COLOR),
     ];
+    return {
+      fixed,
+      leaves: leaves.map((leaf) => {
+        const sw = mmToM(leaf.width);
+        const sh = mmToM(leaf.top - leaf.bottom);
+        const bar = f * 0.6;
+        const s = leaf.direction; // sash parts extend along s·x from the hinge
+        const z = -SASH_THICKNESS / 2;
+        const x = (c: number) => s * c;
+        return {
+          id: leaf.id,
+          pivot: [mmToM(leaf.hingeU - opening.offset), f, d / 2] as const,
+          direction: leaf.direction,
+          parts: [
+            part(`${leaf.id}-outer`, "frame", [x(bar / 2), sh / 2, z], [bar, sh, SASH_THICKNESS], FRAME_COLOR),
+            part(`${leaf.id}-inner`, "frame", [x(sw - bar / 2), sh / 2, z], [bar, sh, SASH_THICKNESS], FRAME_COLOR),
+            part(`${leaf.id}-bottom`, "frame", [x(sw / 2), bar / 2, z], [sw, bar, SASH_THICKNESS], FRAME_COLOR),
+            part(`${leaf.id}-top`, "frame", [x(sw / 2), sh - bar / 2, z], [sw, bar, SASH_THICKNESS], FRAME_COLOR),
+            part(`${leaf.id}-glass`, "glass", [x(sw / 2), sh / 2, z], [sw - bar, sh - bar, 0.006], GLASS_COLOR, 0.45),
+          ],
+        };
+      }),
+    };
   }
-  return [
+  const fixed = [
     part("left", "frame", [f / 2, h / 2, 0], [f, h, d * 1.2], FRAME_COLOR),
     part("right", "frame", [w - f / 2, h / 2, 0], [f, h, d * 1.2], FRAME_COLOR),
     part("top", "frame", [w / 2, h - f / 2, 0], [w, f, d * 1.2], FRAME_COLOR),
-    part("leaf", "leaf", [w / 2, (h - f) / 2, 0], [w - 2 * f, h - f, 0.04], opening.color ?? "#FFFFFF"),
-    part("handle", "handle", [w - f - 0.08, (h - f) * 0.48, 0.035], [0.12, 0.02, 0.02], "#8D9094"),
+  ];
+  return {
+    fixed,
+    leaves: leaves.map((leaf) => {
+      const lw = mmToM(leaf.width);
+      const lh = mmToM(leaf.top - leaf.bottom);
+      return {
+        id: leaf.id,
+        pivot: [mmToM(leaf.hingeU - opening.offset), 0, (d * 1.2) / 2] as const,
+        direction: leaf.direction,
+        parts: [
+          part("leaf", "leaf", [lw / 2, lh / 2, -LEAF_THICKNESS / 2], [lw, lh, LEAF_THICKNESS], opening.color ?? "#FFFFFF"),
+          // Handle on the room side, near the free edge.
+          part("handle", "handle", [lw - 0.08, lh * 0.48, 0.015], [0.12, 0.02, 0.02], "#8D9094"),
+        ],
+      };
+    }),
+  };
+}
+
+/** Every part of the opening at its closed position, in the opening's frame. */
+export function openingParts(opening: RoomOpening): ScenePart[] {
+  const scene = openingScene(opening);
+  return [
+    ...scene.fixed,
+    ...scene.leaves.flatMap((leaf) =>
+      leaf.parts.map((p) => ({ ...p, center: [p.center[0] + leaf.pivot[0], p.center[1] + leaf.pivot[1], p.center[2] + leaf.pivot[2]] as const })),
+    ),
   ];
 }
 

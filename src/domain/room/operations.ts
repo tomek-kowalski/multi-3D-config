@@ -100,7 +100,7 @@ export function addOpening(
   return result.ok ? ok({ room: result.value, id }) : result;
 }
 
-export type OpeningPatch = Partial<Pick<RoomOpening, OpeningNumericField | "wall" | "color">>;
+export type OpeningPatch = Partial<Pick<RoomOpening, OpeningNumericField | "wall" | "color" | "open">>;
 
 export function updateOpening(room: RoomConfiguration, id: string, patch: OpeningPatch): Result<RoomConfiguration> {
   const index = room.openings.findIndex((o) => o.id === id);

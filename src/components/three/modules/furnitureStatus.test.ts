@@ -3,7 +3,7 @@ import { detectCollisions } from "@/domain/arrangement/collisions";
 import { addModule, setModuleState, setPlacement } from "@/domain/arrangement/operations";
 import type { Arrangement } from "@/domain/arrangement/types";
 import { DEFAULT_ROOM } from "@/domain/room/defaults";
-import { furnitureStatus, furnitureStatuses, STATUS_COLORS } from "./furnitureStatus";
+import { furnitureStatus, furnitureStatuses, openingStatuses, STATUS_COLORS } from "./furnitureStatus";
 
 function unwrap<T>(r: { ok: true; value: T } | { ok: false; issues: readonly unknown[] }): T {
   if (!r.ok) throw new Error(JSON.stringify(r.issues));
@@ -66,5 +66,17 @@ describe("furniture status outlines", () => {
     expect(furnitureStatuses(ids(a), issues, null, null).get("module-2")).toBe("collision");
     // Unfolding is not needed for this: the folded state is what is shown.
     expect(unwrap(setModuleState(a, "module-2", "folded")).arrangement.modules[1].state).toBe("folded");
+  });
+});
+
+describe("window and door outlines", () => {
+  const ids = ["window-1", "door-1"];
+  it("blue when selected, green while dragged freely, red when corrected or in conflict", () => {
+    expect(openingStatuses(ids, [], null, null).size).toBe(0);
+    expect(openingStatuses(ids, [], "window-1", null).get("opening:window-1")).toBe("selected");
+    expect(openingStatuses(ids, [], "window-1", { id: "window-1", valid: true }).get("opening:window-1")).toBe("valid");
+    expect(openingStatuses(ids, [], "window-1", { id: "window-1", valid: false }).get("opening:window-1")).toBe("collision");
+    const conflict = openingStatuses(ids, [{ kind: "opening", moduleId: "module-1", openingId: "door-1", phase: "static" }], null, null);
+    expect([...conflict]).toEqual([["opening:door-1", "collision"]]);
   });
 });

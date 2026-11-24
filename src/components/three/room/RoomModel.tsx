@@ -1,9 +1,9 @@
 "use client";
 
 import { Edges, Line } from "@react-three/drei";
-import type { ThreeEvent } from "@react-three/fiber";
-import { useMemo } from "react";
-import { FrontSide, Path, Shape, ShapeGeometry } from "three";
+import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
+import { useEffect, useMemo, useRef } from "react";
+import { FrontSide, Path, Plane, Raycaster, Shape, ShapeGeometry, Vector2, Vector3, type Group } from "three";
 import { openingKeepFreeBox, wallFrame } from "@/domain/room/geometry";
 import { WALL_IDS, type RoomConfiguration, type RoomOpening, type WallId } from "@/domain/room/types";
 import { planBounds } from "@/domain/spatial/geometry";
@@ -19,7 +19,8 @@ import {
   contrastColor,
   FRAME_EDGE_COLOR,
   openingOutline,
-  openingParts,
+  leafRotation,
+  openingScene,
   sceneOpenings,
   wallAngle,
   wallFloorBand,
@@ -119,28 +120,178 @@ function PartMesh({ part, wall }: { part: ScenePart; wall: WallId }) {
   );
 }
 
-/** Window (frame + glass) or door (frame + leaf in the door colour), placed in its wall opening. */
-function Opening({ room, opening, selected }: { room: RoomConfiguration; opening: RoomOpening; selected: boolean }) {
-  const select = useArrangementStore((s) => s.selectOpening);
-  const openRoomPanel = useArrangementStore((s) => s.setRoomPanelOpen);
+/** Wall-local snapping of a dragged window/door (mm). */
+const OPENING_SNAP_MM = 10;
+/** Seconds a leaf takes to open or close fully. */
+const SWING_SECONDS = 0.6;
+
+/** Outline id of a window/door (furniture outlines read `userData.moduleId`). */
+export const openingOutlineId = (id: string) => `opening:${id}`;
+
+/** The active window/door drag (outside React: it only lives between pointer down and up). */
+const openingDrag: { id: string | null; grabU: number; grabV: number; startX: number; startY: number; moved: boolean } = {
+  id: null,
+  grabU: 0,
+  grabV: 0,
+  startX: 0,
+  startY: 0,
+  moved: false,
+};
+
+/** Position along the wall (mm from its left end) of a room point given in metres. */
+function alongWall(f: ReturnType<typeof wallFrame>, x: number, z: number): number {
+  return (x * 1000 - f.origin.x) * f.along.x + (z * 1000 - f.origin.z) * f.along.z;
+}
+
+/**
+ * A window or door: a stationary frame and the leaves, which turn into the room about their hinges when
+ * the opening is open (animated). On the active wall it can be selected, opened from its context menu
+ * and dragged within the wall (windows along and up/down, doors along only — they stay on the floor),
+ * with the same positioning assistance as the numeric inputs. On other walls a click makes that wall
+ * active first.
+ */
+function Opening({ room, opening, selected, active }: { room: RoomConfiguration; opening: RoomOpening; selected: boolean; active: boolean }) {
+  const get = useThree((s) => s.get);
+  const invalidate = useThree((s) => s.invalidate);
   const frame = wallFrame(room, opening.wall);
   const angle = wallAngle(room, opening.wall);
   const keepFree = planBounds(openingKeepFreeBox(room, opening));
-  const parts = openingParts(opening).map((p) => <PartMesh key={p.key} part={p} wall={opening.wall} />);
+  const scene = useMemo(() => openingScene(opening), [opening]);
+  const leafRefs = useRef<(Group | null)[]>([]);
+  const progress = useRef<number | null>(null);
+  const id = opening.id;
+
+  useEffect(() => invalidate(), [opening.open, invalidate]);
+  useFrame((_, delta) => {
+    const target = opening.open ? 1 : 0;
+    // A window/door loaded open starts open; later changes swing.
+    if (progress.current === null) progress.current = target;
+    if (progress.current !== target) {
+      const step = Math.min(delta, 0.1) / SWING_SECONDS;
+      progress.current = target > progress.current ? Math.min(target, progress.current + step) : Math.max(target, progress.current - step);
+      invalidate();
+    }
+    const value = progress.current;
+    scene.leaves.forEach((leaf, i) => {
+      const group = leafRefs.current[i];
+      if (group) group.rotation.y = leafRotation(leaf.direction, value);
+    });
+  });
+
+  // Dragging in the wall plane (wall-local u along the wall, v up from the floor).
+  useEffect(() => {
+    const { gl } = get();
+    const element = gl.domElement;
+    const raycaster = new Raycaster();
+    const ndc = new Vector2();
+    const hit = new Vector3();
+    const onMove = (event: PointerEvent) => {
+      if (openingDrag.id !== id) return;
+      if (!openingDrag.moved && Math.hypot(event.clientX - openingDrag.startX, event.clientY - openingDrag.startY) < CLICK_TOLERANCE_PX) return;
+      openingDrag.moved = true;
+      const store = useArrangementStore.getState();
+      const current = store.arrangement.room.openings.find((o) => o.id === id);
+      if (!current) return;
+      const f = wallFrame(store.arrangement.room, current.wall);
+      const rect = element.getBoundingClientRect();
+      ndc.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
+      raycaster.setFromCamera(ndc, get().camera);
+      const plane = new Plane().setFromNormalAndCoplanarPoint(new Vector3(f.inward.x, 0, f.inward.z), new Vector3(mmToM(f.origin.x), 0, mmToM(f.origin.z)));
+      const point = raycaster.ray.intersectPlane(plane, hit);
+      if (!point) return;
+      const snap = (x: number) => Math.round(x / OPENING_SNAP_MM) * OPENING_SNAP_MM;
+      const offset = snap(alongWall(f, point.x, point.z) - openingDrag.grabU);
+      // Doors stay on the floor: only windows move up and down.
+      const elevation = current.kind === "door" ? current.elevation : snap(point.y * 1000 - openingDrag.grabV);
+      const positioning = store.moveOpening(id, offset, elevation);
+      if (positioning) {
+        const previous = store.draggingOpening;
+        // One explanation per situation: the hint changes only when the reason does.
+        const same =
+          previous?.id === id && previous.valid === positioning.valid && JSON.stringify(previous.reason) === JSON.stringify(positioning.reason);
+        if (!same) store.setDraggingOpening({ id, valid: positioning.valid, reason: positioning.reason });
+      }
+      get().invalidate();
+    };
+    const onUp = () => {
+      if (openingDrag.id !== id) return;
+      openingDrag.id = null;
+      useArrangementStore.getState().setDraggingOpening(null);
+      const controls = get().controls as unknown as { enabled: boolean } | null;
+      if (controls) controls.enabled = true;
+      element.style.cursor = "";
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+  }, [get, id]);
+
+  const onPointerDown = (event: ThreeEvent<PointerEvent>) => {
+    if (event.button !== 0 || !active) return;
+    event.stopPropagation();
+    const store = useArrangementStore.getState();
+    const current = store.arrangement.room.openings.find((o) => o.id === id);
+    if (!current) return;
+    const f = wallFrame(store.arrangement.room, current.wall);
+    Object.assign(openingDrag, {
+      id,
+      grabU: alongWall(f, event.point.x, event.point.z) - current.offset,
+      grabV: event.point.y * 1000 - current.elevation,
+      startX: event.nativeEvent.clientX,
+      startY: event.nativeEvent.clientY,
+      moved: false,
+    });
+    const { controls, gl } = get();
+    if (controls) (controls as unknown as { enabled: boolean }).enabled = false;
+    gl.domElement.style.cursor = "grabbing";
+  };
 
   return (
     <>
       <group
         position={[mmToM(frame.origin.x + frame.along.x * opening.offset), mmToM(opening.elevation), mmToM(frame.origin.z + frame.along.z * opening.offset)]}
         rotation={[0, angle, 0]}
+        userData={{ moduleId: openingOutlineId(opening.id) }}
+        onPointerDown={onPointerDown}
         onClick={(event: ThreeEvent<MouseEvent>) => {
           if (event.delta > CLICK_TOLERANCE_PX) return;
           event.stopPropagation();
-          select(opening.id);
-          openRoomPanel(true);
+          const store = useArrangementStore.getState();
+          // Windows and doors are selectable on the active wall only; elsewhere the click activates the wall.
+          if (!active) {
+            store.setActiveWall(opening.wall);
+            return;
+          }
+          // Selection only: the room menu ("Wymiary pomieszczenia") opens from the wall labels.
+          store.selectOpening(opening.id);
+        }}
+        onContextMenu={(event: ThreeEvent<MouseEvent>) => {
+          if (!active || event.delta > CLICK_TOLERANCE_PX) return;
+          event.stopPropagation();
+          event.nativeEvent.preventDefault();
+          useArrangementStore.getState().openOpeningMenu(opening.id, event.nativeEvent.clientX, event.nativeEvent.clientY);
         }}
       >
-        {parts}
+        {scene.fixed.map((p) => (
+          <PartMesh key={p.key} part={p} wall={opening.wall} />
+        ))}
+        {scene.leaves.map((leaf, i) => (
+          <group
+            key={leaf.id}
+            ref={(g) => {
+              leafRefs.current[i] = g;
+            }}
+            position={leaf.pivot as [number, number, number]}
+            rotation={[0, leafRotation(leaf.direction, opening.open ? 1 : 0), 0]}
+          >
+            {leaf.parts.map((p) => (
+              <PartMesh key={p.key} part={p} wall={opening.wall} />
+            ))}
+          </group>
+        ))}
       </group>
       {showKeepFreeVolume(selected) && (
         // The keep-free volume of the selected opening (opening + clearance): developer debugging only.
@@ -162,7 +313,9 @@ export function RoomModel() {
   const room = useArrangementStore((s) => s.arrangement.room);
   const selectedOpeningId = useArrangementStore((s) => s.selectedOpeningId);
   const activeWall = useArrangementStore((s) => s.activeWall);
-  const highlighted = wallHighlights(activeWall);
+  // Highlighted only while the wall is the selection (not while furniture is selected).
+  const wallSelected = useArrangementStore((s) => s.wallSelected);
+  const highlighted = wallHighlights(wallSelected ? activeWall : null);
   const proposal = useArrangementStore((s) => s.dockingProposal);
   const dockingWall =
     proposal?.kind === "wall" ? { wall: proposal.wall, color: proposal.verdict === "invalid" ? STATUS_COLORS.collision : STATUS_COLORS.valid } : null;
@@ -177,9 +330,9 @@ export function RoomModel() {
       {WALL_IDS.map((wall) => (
         <Wall key={wall} room={room} wall={wall} active={highlighted[wall]} docking={dockingWall?.wall === wall ? dockingWall.color : null} />
       ))}
-      <ActiveWallBand room={room} wall={activeWall} />
+      {wallSelected && <ActiveWallBand room={room} wall={activeWall} />}
       {sceneOpenings(room).map((o) => (
-        <Opening key={o.id} room={room} opening={o} selected={o.id === selectedOpeningId} />
+        <Opening key={o.id} room={room} opening={o} selected={o.id === selectedOpeningId} active={wallSelected && o.wall === activeWall} />
       ))}
     </group>
   );

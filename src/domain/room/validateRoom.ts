@@ -50,6 +50,9 @@ function validateOpening(room: RoomConfiguration, opening: RoomOpening, issues: 
   if (opening.kind === "door" && opening.color !== undefined && !isHexColor(opening.color)) {
     issues.push({ code: "invalid_color", path: `${base}.color` });
   }
+  if (opening.open !== undefined && typeof opening.open !== "boolean") {
+    issues.push({ code: "invalid_document", path: `${base}.open` });
+  }
   if (opening.kind === "window" && opening.color !== undefined) {
     issues.push({ code: "window_has_no_color", path: `${base}.color` });
   }

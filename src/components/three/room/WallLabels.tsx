@@ -21,13 +21,14 @@ export function WallLabelOverlay() {
   const t = useT();
   const room = useArrangementStore((s) => s.arrangement.room);
   const activeWall = useArrangementStore((s) => s.activeWall);
+  const wallSelected = useArrangementStore((s) => s.wallSelected);
   const visible = useArrangementStore((s) => s.showWallLabels);
   const setActiveWall = useArrangementStore((s) => s.setActiveWall);
   const openRoomPanel = useArrangementStore((s) => s.setRoomPanelOpen);
   if (!visible) return null;
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" data-wall-labels>
-      {wallLabels(room, activeWall).map((label) => (
+      {wallLabels(room, wallSelected ? activeWall : null).map((label) => (
         <button
           type="button"
           key={label.wall}
@@ -58,13 +59,14 @@ export function WallLabelOverlay() {
 export function WallLabelProjector() {
   const room = useArrangementStore((s) => s.arrangement.room);
   const activeWall = useArrangementStore((s) => s.activeWall);
+  const wallSelected = useArrangementStore((s) => s.wallSelected);
   const visible = useArrangementStore((s) => s.showWallLabels);
   const invalidate = useThree((s) => s.invalidate);
   // A room, selection or visibility change must reposition the labels even if the camera does not move.
-  useEffect(() => invalidate(), [room, activeWall, visible, invalidate]);
+  useEffect(() => invalidate(), [room, activeWall, wallSelected, visible, invalidate]);
   useFrame(({ camera, size }) => {
     const point = new Vector3();
-    for (const label of wallLabels(room, activeWall)) {
+    for (const label of wallLabels(room, wallSelected ? activeWall : null)) {
       const el = elements.get(label.wall);
       if (!el) continue;
       point.set(label.position[0], label.position[1], label.position[2]).project(camera);

@@ -12,7 +12,7 @@ import { useConfiguratorStore } from "@/store/useConfiguratorStore";
 import { frameBox } from "./cameraFraming";
 import { DOCKING_PREVIEW_ID, DockingPreview, ModuleObject } from "./modules/ModuleObject";
 import { FurnitureOutlines } from "./modules/FurnitureOutlines";
-import { collidingModules, furnitureStatuses } from "./modules/furnitureStatus";
+import { collidingModules, furnitureStatuses, openingStatuses } from "./modules/furnitureStatus";
 import { RoomModel } from "./room/RoomModel";
 import { WallLabelProjector } from "./room/WallLabels";
 import { PhotoRenderer } from "./photo/PhotoRenderer";
@@ -31,6 +31,8 @@ function ModulesLayer() {
   const issues = useMemo(() => detectCollisions(arrangement), [arrangement]);
   const colliding = useMemo(() => collidingModules(issues), [issues]);
   const proposal = useArrangementStore((s) => s.dockingProposal);
+  const selectedOpeningId = useArrangementStore((s) => s.selectedOpeningId);
+  const openingDrag = useArrangementStore((s) => s.draggingOpening);
   const statuses = useMemo(() => {
     // While a wall-mounted module is being positioned (dragged, or a wall-docking proposal is open),
     // its missing wall mounting is not flagged again: the proposal is the answer to it.
@@ -38,8 +40,10 @@ function ModulesLayer() {
     const shown = issues.filter((i) => !(i.kind === "wall-mounting" && positioning.has(i.moduleId)));
     const map = furnitureStatuses(arrangement.modules.map((m) => m.id), shown, selectedId, movingId);
     if (proposal) map.set(DOCKING_PREVIEW_ID, proposal.verdict === "invalid" ? "collision" : "valid");
+    const openings = openingStatuses(arrangement.room.openings.map((o) => o.id), issues, selectedOpeningId, openingDrag);
+    for (const [id, status] of openings) map.set(id, status);
     return map;
-  }, [arrangement.modules, issues, selectedId, movingId, proposal]);
+  }, [arrangement.modules, arrangement.room.openings, issues, selectedId, movingId, proposal, selectedOpeningId, openingDrag]);
   return (
     <>
       {arrangement.modules.map((m) => (

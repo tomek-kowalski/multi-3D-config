@@ -11,6 +11,7 @@ import { clearQuotationCache, resetSavedQuotations } from "@/services/quotation"
 import { useArrangementStore } from "@/store/useArrangementStore";
 import { FurnitureContextMenu } from "./FurnitureContextMenu";
 import { OrderDialog } from "./OrderDialog";
+import { ActionNotice } from "./ViewOverlay";
 
 const store = () => useArrangementStore.getState();
 
@@ -151,7 +152,33 @@ describe("furniture context menu", () => {
     expect(store().selectedModuleId).toBe("module-2");
     const menu = screen.getByRole("menu");
     expect(menu.getAttribute("data-furniture-context-menu")).toBe("module-2");
-    expect(within(menu).getByRole("menuitem").textContent).toBe("Usuń mebel");
+    // A bed offers its transformation besides removal.
+    expect(within(menu).getAllByRole("menuitem").map((b) => b.textContent)).toEqual(["Rozłóż łóżko", "Usuń mebel"]);
+  });
+
+  it("offers only removal for a cabinet without fronts", () => {
+    store().openContextMenu("module-1", 300, 200);
+    render(<FurnitureContextMenu />);
+    expect(screen.getAllByRole("menuitem").map((b) => b.textContent)).toEqual(["Usuń mebel"]);
+  });
+
+  it("opens, closes and removes a window of the active wall from its menu", () => {
+    store().addOpening("window", "left");
+    const id = store().selectedOpeningId!;
+    store().setActiveWall("back");
+    store().openOpeningMenu(id, 50, 50);
+    expect(store().contextMenu).toBeNull(); // not on the active wall
+    store().setActiveWall("left");
+    store().openOpeningMenu(id, 50, 50);
+    render(<FurnitureContextMenu />);
+    expect(screen.getByRole("menu").getAttribute("data-opening-context-menu")).toBe(id);
+    fireEvent.click(screen.getByRole("menuitem", { name: "Otwórz okno" }));
+    expect(store().arrangement.room.openings.find((o) => o.id === id)?.open).toBe(true);
+    expect(screen.queryByRole("menu")).toBeNull();
+    act(() => store().openOpeningMenu(id, 50, 50));
+    expect(screen.getAllByRole("menuitem").map((b) => b.textContent)).toEqual(["Zamknij okno", "Usuń okno"]);
+    fireEvent.click(screen.getByRole("menuitem", { name: "Usuń okno" }));
+    expect(store().arrangement.room.openings.some((o) => o.id === id)).toBe(false);
   });
 
   it("removes only that instance and keeps the state consistent", () => {
@@ -184,6 +211,23 @@ describe("furniture context menu", () => {
     fireEvent.pointerDown(document.body);
     expect(store().contextMenu).toBeNull();
     expect(store().arrangement.modules).toHaveLength(3);
+  });
+
+  it("explains why a door cannot be opened and keeps it closed", () => {
+    store().addOpening("door", "back");
+    const id = store().selectedOpeningId!;
+    store().updateOpening(id, { offset: 1000, clearanceDepth: 0 });
+    store().setPlacement("module-1", { x: 1500, z: 700, rotationDeg: 0 });
+    store().openOpeningMenu(id, 50, 50);
+    render(
+      <>
+        <FurnitureContextMenu />
+        <ActionNotice />
+      </>,
+    );
+    fireEvent.click(screen.getByRole("menuitem", { name: "Otwórz drzwi" }));
+    expect(store().arrangement.room.openings.find((o) => o.id === id)?.open).toBeFalsy();
+    expect(screen.getByRole("alert").textContent).toContain(`Drzwi (${id}): nie można otworzyć — skrzydło uderzyłoby w: Szafka modułowa (module-1)`);
   });
 
   it("does not open for empty space or unknown modules", () => {
