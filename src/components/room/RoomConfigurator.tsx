@@ -12,6 +12,8 @@ import { ArrangementPanel, typeName } from "./ArrangementPanel";
 import { ModulePanel } from "./ModulePanel";
 import { FurnitureContextMenu } from "./FurnitureContextMenu";
 import { OrderDialog } from "./OrderDialog";
+import { SharedLinkLoader } from "./SharedLinkLoader";
+import { WorkspaceActions } from "./WorkspaceActions";
 import { ActionNotice, CollisionNotes, DockingPrompt, ViewOverlay } from "./ViewOverlay";
 
 function LoadingScene() {
@@ -190,6 +192,7 @@ export function RoomConfigurator() {
         <DockingPrompt />
         <CollisionNotes />
         <ActionNotice />
+        <SharedLinkLoader />
         <FurnitureContextMenu />
         <p className="pointer-events-none absolute bottom-3 left-1/2 max-w-[calc(100%-2rem)] -translate-x-1/2 truncate rounded-full bg-white/80 px-3 py-1 text-xs text-stone-600 shadow-sm backdrop-blur">
           {t("app.sceneHint")}
@@ -228,6 +231,7 @@ export function RoomConfigurator() {
         </div>
 
         <footer className="space-y-2 border-t border-stone-200 px-6 py-4">
+          <WorkspaceActions />
           <p className={`text-xs ${conflicts > 0 ? "text-red-700" : "text-stone-500"}`}>
             {conflicts > 0 ? t("footer.conflicts", { count: conflicts }) : t("footer.noConflicts", { count: arrangement.modules.length })}
           </p>

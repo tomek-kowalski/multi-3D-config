@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "assets:clickbed": "node scripts/assets/convert-clickbed.mjs"
+    "assets:clickbed": "node scripts/assets/convert-clickbed.mjs",
+    "test:php": "php test/php/plugin-tests.php",
+    "test:e2e": "node e2e/run.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

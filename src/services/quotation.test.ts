@@ -7,14 +7,14 @@ import type { PriceLookup } from "@/domain/commerce/quote";
 import { DEFAULT_ROOM } from "@/domain/room/defaults";
 import { isMessageKey, translate } from "@/i18n";
 import {
-  bytesToBase64,
+  cartClaimFor,
   clearQuotationCache,
   emailQuotation,
   isValidEmail,
   prepareQuotation,
   resetSavedQuotations,
   saveQuotation,
-  savedQuoteNumberFor,
+  savedQuoteFor,
   type QuotationDeps,
   type QuoteRendering,
 } from "./quotation";
@@ -70,21 +70,9 @@ function deps(overrides: Partial<QuotationDeps> = {}) {
     t: (key, params) => (isMessageKey(key) ? translate("pl", key, params) : key),
     locale: "pl-PL",
     now: () => new Date("2026-11-24T10:00:00Z"),
+    backend: null,
   };
   return { deps: { ...base, ...overrides }, capture, fetchPrices };
-}
-
-function backend(responses: (Response | Error)[]) {
-  const calls: { url: string; body: Record<string, unknown>; blob?: Blob; type?: string }[] = [];
-  const fetch = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
-    const type = (init?.headers as Record<string, string> | undefined)?.["Content-Type"];
-    if (init?.body instanceof Blob) calls.push({ url: String(url), body: {}, blob: init.body, type });
-    else calls.push({ url: String(url), body: JSON.parse(String(init?.body ?? "{}")), type });
-    const next = responses.shift();
-    if (!next || next instanceof Error) throw next ?? new Error("no response");
-    return next;
-  });
-  return { backend: { baseUrl: "https://shop.example", fetch: fetch as unknown as typeof globalThis.fetch }, calls };
 }
 
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -134,65 +122,151 @@ describe("quotation pipeline", () => {
   });
 });
 
-describe("quotation e-mail", () => {
-  async function prepared() {
-    const r = await prepareQuotation(1, deps().deps);
-    if (!r.ok) throw new Error();
+const QUOTE_ID = "3f2b8a4e-1c2d-4e5f-9a6b-7c8d9e0f1a2b";
+const CONFIG_URL = "https://configurator.example.pl/c/AbCdEfGhIjKlMnOpQrStUvWxYz0123456789_-abcde";
+
+type Call = { method: string; path: string; headers: Record<string, string>; json?: Record<string, unknown>; body?: unknown };
+
+/** The configurator's server (BFF) as the browser sees it: answers by "METHOD path". */
+function server(answers: Record<string, (Response | Error)[]>) {
+  const calls: Call[] = [];
+  const fetch = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
+    const path = String(url).replace("https://cfg.test", "");
+    const headers = (init?.headers ?? {}) as Record<string, string>;
+    const call: Call = { method: init?.method ?? "GET", path, headers };
+    if (headers["Content-Type"] === "application/json") call.json = JSON.parse(String(init?.body));
+    else call.body = init?.body;
+    calls.push(call);
+    const queue = answers[`${call.method} ${path}`];
+    const next = queue?.shift();
+    if (!next || next instanceof Error) throw next ?? new Error(`unexpected ${call.method} ${path}`);
+    return next;
+  });
+  return { backend: { baseUrl: "https://cfg.test", fetch: fetch as unknown as typeof globalThis.fetch }, calls };
+}
+
+const reserved = () => json(201, { id: QUOTE_ID, number: "OF-20261124-7K3QZD", createdAt: "2026-11-24T10:00:00+00:00", expiresAt: "2027-01-23T10:00:00+00:00", configurationUrl: CONFIG_URL });
+const Q = `/api/quotes/${QUOTE_ID}`;
+
+describe("quotation reservation (number and configuration link from the server)", () => {
+  it("uses the server's number and prints the configuration link of the quoted snapshot in the PDF", async () => {
+    const { backend: b, calls } = server({ "POST /api/quotes": [reserved()] });
+    const result = await prepareQuotation(1, deps({ backend: b }).deps);
+    if (!result.ok) throw new Error(JSON.stringify(result.issues));
+    expect(result.value.quote.number).toBe("OF-20261124-7K3QZD");
+    expect(result.value.remote).toEqual({ id: QUOTE_ID, configurationUrl: CONFIG_URL });
+    expect(result.value.fileName).toBe("oferta-OF-20261124-7K3QZD.pdf");
+    const pdfText = new TextDecoder("latin1").decode(result.value.pdf);
+    expect(pdfText).toContain(`/URI (${CONFIG_URL})`);
+    // The reservation carries the configuration snapshot (no prices, no session data) and the CSRF header.
+    expect(calls).toHaveLength(1);
+    expect(calls[0].headers["X-Multi3D-Request"]).toBe("1");
+    const snapshot = calls[0].json!.snapshot as Record<string, unknown>;
+    expect(snapshot.format).toBe("multi3d-configuration-snapshot");
+    expect((snapshot.arrangement as { modules: unknown[] }).modules).toHaveLength(3);
+    expect(JSON.stringify(snapshot)).not.toMatch(/price|email|session|cart/i);
+  });
+
+  it("falls back to a local, unstored quotation without a link when the server cannot reserve it", async () => {
+    const { backend: b } = server({ "POST /api/quotes": [json(503, { code: "backend_not_configured" })] });
+    const result = await prepareQuotation(1, deps({ backend: b }).deps);
+    if (!result.ok) throw new Error();
+    expect(result.value.remote).toBeNull();
+    expect(result.value.quote.number).toMatch(/^OF-20261124-[A-Z2-9]{4}$/);
+    expect(new TextDecoder("latin1").decode(result.value.pdf)).not.toContain("/URI");
+    expect(await saveQuotation(result.value, b)).toMatchObject({ ok: false, issues: [{ code: "quote_reserve_failed" }] });
+  });
+
+  it("refuses renderings of a configuration that changed while rendering", async () => {
+    const other = { room: DEFAULT_ROOM, modules: [] };
+    expect(await prepareQuotation(1, deps({ current: () => other }).deps)).toMatchObject({ ok: false, issues: [{ code: "quote_configuration_changed" }] });
+  });
+});
+
+describe("quotation storage and e-mail (through the configurator's server)", () => {
+  async function prepared(b: ReturnType<typeof server>["backend"]) {
+    const r = await prepareQuotation(1, deps({ backend: b }).deps);
+    if (!r.ok || !r.value.remote) throw new Error(JSON.stringify(r));
     return r.value;
   }
 
-  it("validates the address before contacting the shop", async () => {
+  it("validates the address before contacting the server", async () => {
     expect(isValidEmail("klient@example.pl")).toBe(true);
-    for (const bad of ["", "klient", "a@b", "a@b.c", "a b@c.pl", "a@b.pl,c@d.pl"]) expect(isValidEmail(bad)).toBe(false);
-    const { backend: b, calls } = backend([]);
-    expect(await emailQuotation(await prepared(), "nope", b)).toMatchObject({ ok: false, issues: [{ code: "quote_invalid_email" }] });
-    expect(calls).toHaveLength(0);
+    for (const bad of ["", "klient", "a@b", "a@b.c", "a b@c.pl", "a@b.pl,c@d.pl", "x@y.pl\r\nBcc: z@w.pl"]) expect(isValidEmail(bad)).toBe(false);
+    const { backend: b, calls } = server({ "POST /api/quotes": [reserved()] });
+    expect(await emailQuotation(await prepared(b), "nope", b)).toMatchObject({ ok: false, issues: [{ code: "quote_invalid_email" }] });
+    expect(calls).toHaveLength(1); // the reservation only
   });
 
-  it("stores the quotation (metadata in the record, PNGs as files), then sends exactly that PDF", async () => {
-    const q = await prepared();
-    const { backend: b, calls } = backend([json(201, { number: q.quote.number }), json(201, { stored: true }), json(200, { sent: true })]);
+  it("stores the document, the PDF and the PNGs by quotation id, then sends exactly that PDF", async () => {
+    const { backend: b, calls } = server({
+      "POST /api/quotes": [reserved()],
+      [`PUT ${Q}`]: [json(201, { stored: true })],
+      [`POST ${Q}/pdf`]: [json(201, { stored: true })],
+      [`POST ${Q}/renderings/1`]: [json(201, { stored: true })],
+      [`POST ${Q}/email`]: [json(200, { sent: true })],
+    });
+    const q = await prepared(b);
     expect(await emailQuotation(q, " klient@example.pl ", b)).toEqual({ ok: true, value: true });
-    expect(calls[0].url).toBe("https://shop.example/wp-json/multi3d/v1/quotes");
-    expect(calls[0].body.pdf).toBe(bytesToBase64(q.pdf));
-    expect(calls[0].body.quote).toEqual(JSON.parse(JSON.stringify(q.quote)));
-    expect(calls[0].body.renderings).toEqual(q.images.map((i) => JSON.parse(JSON.stringify(i.meta))));
-    expect(calls[0].body).not.toHaveProperty("images"); // no image data in the database record
-    expect(calls[1]).toMatchObject({ url: `https://shop.example/wp-json/multi3d/v1/quotes/${q.quote.number}/renderings/1`, type: "image/png" });
-    expect(calls[1].blob).toBe(q.images[0].png);
-    expect(calls[2].url).toBe(`https://shop.example/wp-json/multi3d/v1/quotes/${q.quote.number}/email`);
-    expect(calls[2].body).toEqual({ email: "klient@example.pl" });
-    expect(savedQuoteNumberFor(arrangement())).toBe(q.quote.number);
+    const [, put, pdf, png, mail] = calls;
+    expect(put.json!.quote).toEqual(JSON.parse(JSON.stringify(q.quote)));
+    expect(put.json!.renderings).toEqual(q.images.map((i) => JSON.parse(JSON.stringify(i.meta))));
+    expect(put.json).not.toHaveProperty("pdf"); // no binaries in the database record
+    expect(pdf.headers["Content-Type"]).toBe("application/pdf");
+    expect(pdf.body).toBe(q.pdf);
+    expect(png.headers["Content-Type"]).toBe("image/png");
+    expect(png.body).toBe(q.images[0].png);
+    expect(mail.json).toEqual({ email: "klient@example.pl" });
+    // The quotation number is never used to address anything.
+    expect(calls.every((c) => !c.path.includes("OF-"))).toBe(true);
+    expect(savedQuoteFor(arrangement())).toEqual({ id: QUOTE_ID, number: "OF-20261124-7K3QZD" });
   });
 
-  it("stores each quotation once (download, then e-mail: one record, one upload)", async () => {
-    const q = await prepared();
-    const { backend: b, calls } = backend([json(201, {}), json(201, {}), json(200, { sent: true })]);
+  it("stores each quotation once (download, then e-mail), and accepts an earlier store (409)", async () => {
+    const { backend: b, calls } = server({
+      "POST /api/quotes": [reserved()],
+      [`PUT ${Q}`]: [json(409, { code: "quote_already_stored" })],
+      [`POST ${Q}/pdf`]: [json(200, { stored: true })],
+      [`POST ${Q}/renderings/1`]: [json(200, { stored: true })],
+      [`POST ${Q}/email`]: [json(200, { sent: true })],
+    });
+    const q = await prepared(b);
     expect(await saveQuotation(q, b)).toEqual({ ok: true, value: { number: q.quote.number } });
     expect(await emailQuotation(q, "klient@example.pl", b)).toEqual({ ok: true, value: true });
-    expect(calls.map((c) => c.url.replace(/.*\/v1/, ""))).toEqual(["/quotes", `/quotes/${q.quote.number}/renderings/1`, `/quotes/${q.quote.number}/email`]);
+    expect(calls.map((c) => `${c.method} ${c.path}`)).toEqual(["POST /api/quotes", `PUT ${Q}`, `POST ${Q}/pdf`, `POST ${Q}/renderings/1`, `POST ${Q}/email`]);
   });
 
-  it("reports the shop's actual failure", async () => {
-    const q = await prepared();
-    expect(await emailQuotation(q, "klient@example.pl", backend([json(201, {}), json(201, {}), json(502, { sent: false })]).backend)).toMatchObject({
-      ok: false,
-      issues: [{ code: "quote_email_failed" }],
+  it("reports the server's actual failure", async () => {
+    const { backend: b } = server({
+      "POST /api/quotes": [reserved()],
+      [`PUT ${Q}`]: [json(201, {}), json(500, {})],
+      [`POST ${Q}/pdf`]: [json(201, {})],
+      [`POST ${Q}/renderings/1`]: [json(201, {})],
+      [`POST ${Q}/email`]: [json(502, { code: "email_failed" }), json(429, { code: "rate_limited" })],
     });
-    expect(await emailQuotation(q, "klient@example.pl", backend([json(429, {})]).backend)).toMatchObject({
-      ok: false,
-      issues: [{ code: "quote_email_rate_limited" }],
-    });
+    const q = await prepared(b);
+    expect(await emailQuotation(q, "klient@example.pl", b)).toMatchObject({ ok: false, issues: [{ code: "quote_email_failed" }] });
+    expect(await emailQuotation(q, "klient@example.pl", b)).toMatchObject({ ok: false, issues: [{ code: "quote_email_rate_limited" }] });
     resetSavedQuotations();
-    expect(await emailQuotation(q, "klient@example.pl", backend([new Error("offline")]).backend)).toMatchObject({
-      ok: false,
-      issues: [{ code: "quote_backend_unreachable" }],
-    });
-    expect(await saveQuotation(q, backend([json(500, {})]).backend)).toMatchObject({ ok: false, issues: [{ code: "quote_save_failed" }] });
+    expect(await saveQuotation(q, b)).toMatchObject({ ok: false, issues: [{ code: "quote_save_failed", params: { status: 500 } }] });
+    resetSavedQuotations();
+    expect(await saveQuotation(q, server({ [`PUT ${Q}`]: [new Error("offline")] }).backend)).toMatchObject({ ok: false, issues: [{ code: "quote_backend_unreachable" }] });
     // A rejected image upload is a failed save (never reported as stored).
-    expect(await saveQuotation(q, backend([json(201, {}), json(400, { code: "invalid_image" })]).backend)).toMatchObject({
-      ok: false,
-      issues: [{ code: "quote_save_failed" }],
+    const rejected = server({ [`PUT ${Q}`]: [json(201, {})], [`POST ${Q}/pdf`]: [json(201, {})], [`POST ${Q}/renderings/1`]: [json(422, { code: "invalid_image" })] });
+    expect(await saveQuotation(q, rejected.backend)).toMatchObject({ ok: false, issues: [{ code: "quote_save_failed" }] });
+  });
+
+  it("links the cart hand-off with a single-use claim of the stored quotation, never with its number", async () => {
+    const { backend: b } = server({
+      "POST /api/quotes": [reserved()],
+      [`PUT ${Q}`]: [json(201, {})],
+      [`POST ${Q}/pdf`]: [json(201, {})],
+      [`POST ${Q}/renderings/1`]: [json(201, {})],
+      [`POST ${Q}/cart-claim`]: [json(200, { claim: "c".repeat(43) })],
     });
+    expect(await cartClaimFor(arrangement(), b)).toBeNull(); // nothing stored yet
+    await saveQuotation(await prepared(b), b);
+    expect(await cartClaimFor(arrangement(), b)).toBe("c".repeat(43));
+    expect(await cartClaimFor({ room: DEFAULT_ROOM, modules: [] }, b)).toBeNull(); // another arrangement
   });
 });

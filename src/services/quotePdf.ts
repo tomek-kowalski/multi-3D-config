@@ -34,12 +34,17 @@ export interface QuotePdfInput {
   readonly t: PdfTranslate;
   /** BCP 47 locale for dates and money, e.g. "pl-PL". */
   readonly locale: string;
+  /**
+   * Public link to the immutable configuration snapshot of this quotation (null: not stored on the
+   * server). It opens exactly the quoted arrangement, never the customer's session or quotation.
+   */
+  readonly configurationUrl?: string | null;
 }
 
 const PAGE = { width: 210, height: 297, margin: 16 };
 const CONTENT_WIDTH = PAGE.width - 2 * PAGE.margin;
 
-export function buildQuotePdf({ quote, images, fonts, t, locale }: QuotePdfInput): Uint8Array {
+export function buildQuotePdf({ quote, images, fonts, t, locale, configurationUrl }: QuotePdfInput): Uint8Array {
   const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
   doc.addFileToVFS("DejaVuSans.ttf", fonts.regular);
   doc.addFont("DejaVuSans.ttf", "DejaVu", "normal");
@@ -76,6 +81,21 @@ export function buildQuotePdf({ quote, images, fonts, t, locale }: QuotePdfInput
   text(`${t("quote.number")}: ${quote.number}`, 11);
   text(`${t("quote.date")}: ${date}`, 11);
   text(t("quote.validity", { days: QUOTE_RETENTION_DAYS }), 9);
+  if (configurationUrl) {
+    y += 2;
+    text(t("quote.configurationLink", { days: QUOTE_RETENTION_DAYS }), 9, true);
+    doc.setFont("DejaVu", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(30, 64, 175);
+    const lines = doc.splitTextToSize(configurationUrl, CONTENT_WIDTH) as string[];
+    ensure(lines.length * 3.6);
+    for (const line of lines) {
+      doc.textWithLink(line, PAGE.margin, y + 2.9, { url: configurationUrl });
+      y += 3.6;
+    }
+    doc.setTextColor(0, 0, 0);
+    text(t("quote.configurationLinkNote"), 8);
+  }
   y += 4;
 
   // 3D renderings

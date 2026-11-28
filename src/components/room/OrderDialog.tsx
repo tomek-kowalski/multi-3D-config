@@ -7,7 +7,8 @@ import { isMessageKey, summaryValue, useLocaleStore, useT } from "@/i18n";
 import { downloadJson, fetchShopPrices, shopUrl, submitOrderToShop, type ShopPrice } from "@/services/woocommerce";
 import { useArrangementStore } from "@/store/useArrangementStore";
 import { buttonClass, IssueList, primaryButtonClass } from "@/components/ui/fields";
-import { savedQuoteNumberFor } from "@/services/quotation";
+import { browserBff } from "@/services/bff";
+import { cartClaimFor } from "@/services/quotation";
 import { QuotePanel } from "./QuotePanel";
 import { describeCollision, typeName } from "./ArrangementPanel";
 
@@ -199,7 +200,12 @@ export function OrderDialog({ onClose }: { onClose: () => void }) {
             type="button"
             className={primaryButtonClass}
             disabled={!order || !shop || !allAccepted}
-            onClick={() => order && submitOrderToShop(order, accepted, savedQuoteNumberFor(arrangement))}
+            onClick={async () => {
+              if (!order) return;
+              // A stored quotation of exactly this arrangement is linked through a single-use claim.
+              const claim = await cartClaimFor(arrangement, browserBff);
+              submitOrderToShop(order, accepted, claim ?? undefined);
+            }}
           >
             {t("order.toCart")}
           </button>

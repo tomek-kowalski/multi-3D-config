@@ -19,6 +19,7 @@ import { RoomModel } from "./room/RoomModel";
 import { WallLabelProjector } from "./room/WallLabels";
 import { PhotoRenderer } from "./photo/PhotoRenderer";
 import { mmToM } from "./units";
+import { registerViewCamera, takePendingCameraView } from "./viewCamera";
 
 type OrbitControlsImpl = ComponentRef<typeof OrbitControls>;
 
@@ -82,11 +83,37 @@ function RoomCameraRig() {
 
   const roomBox = () => new Box3(new Vector3(0, 0, 0), new Vector3(mmToM(room.width), mmToM(room.height), mmToM(room.depth)));
 
+  /** A stored view (shared configuration): exactly that camera position and target. */
+  const applyView = (view: { position: readonly number[]; target: readonly number[] }) => {
+    const state = get();
+    const orbit = controls.current;
+    if (!orbit) return;
+    state.camera.position.set(view.position[0], view.position[1], view.position[2]);
+    orbit.target.set(view.target[0], view.target[1], view.target[2]);
+    orbit.update();
+    state.invalidate();
+  };
+
   const framed = useRef(false);
   useLayoutEffect(() => {
     if (framed.current) return;
     framed.current = true;
-    frame(roomBox(), false);
+    const shared = takePendingCameraView();
+    if (shared) applyView(shared);
+    else frame(roomBox(), false);
+  });
+
+  useEffect(() => {
+    registerViewCamera({
+      get: () => {
+        const orbit = controls.current;
+        if (!orbit) return null;
+        const p = get().camera.position;
+        return { position: [p.x, p.y, p.z], target: [orbit.target.x, orbit.target.y, orbit.target.z] };
+      },
+      set: applyView,
+    });
+    return () => registerViewCamera(null);
   });
 
   const handled = useRef(viewRequest?.seq ?? 0);

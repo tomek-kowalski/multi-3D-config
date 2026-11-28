@@ -1,22 +1,26 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { PhotoProgress } from "@/components/three/photo/photoEngine";
 import { getPhotoRenderer } from "@/components/three/photo/photoService";
 import { quoteCapture } from "@/components/three/photo/quoteCapture";
 import type { Issue } from "@/domain/shared/issues";
 import { isMessageKey, useLocaleStore, useT } from "@/i18n";
 import { loadPdfFonts } from "@/services/quotePdf";
+import { arrangementKey } from "@/domain/sharing/snapshot";
+import { browserBff } from "@/services/bff";
 import {
   downloadPdf,
   emailQuotation,
   isValidEmail,
+  listQuotations,
   prepareQuotation,
+  quotationPdfUrl,
   saveQuotation,
   type PreparedQuotation,
   type QuotationDeps,
-  type QuoteBackend,
   type RenderingCount,
+  type StoredQuotation,
 } from "@/services/quotation";
 import { fetchShopPrices, shopUrl } from "@/services/woocommerce";
 import { useArrangementStore } from "@/store/useArrangementStore";
@@ -44,13 +48,56 @@ export function useQuotationDeps(): () => QuotationDeps {
       loadFonts: loadPdfFonts,
       t: (key, params) => (isMessageKey(key) ? t(key, params) : key),
       locale: bcp47,
+      current: () => useArrangementStore.getState().arrangement,
+      backend: browserBff,
     };
   };
 }
 
-function backend(): QuoteBackend | null {
-  const base = shopUrl();
-  return base ? { baseUrl: base, fetch: (...args) => fetch(...args) } : null;
+/** A stored quotation is a clean point of the working configuration (if it still is that configuration). */
+function markSaved(prepared: PreparedQuotation) {
+  const store = useArrangementStore.getState();
+  if (arrangementKey(store.arrangement) === prepared.arrangementKey) store.markClean();
+}
+
+/**
+ * "Twoje oferty": the quotations stored by this browser session, with their PDFs (served to this session
+ * only). They stay available after "Nowa konfiguracja".
+ */
+function QuoteHistory({ refresh }: { refresh: number }) {
+  const t = useT();
+  const locale = useLocaleStore((s) => s.locale);
+  const [quotes, setQuotes] = useState<StoredQuotation[]>([]);
+  const load = useCallback(() => {
+    void listQuotations(browserBff).then((r) => setQuotes(r.ok ? r.value : []));
+  }, []);
+  useEffect(() => load(), [load, refresh]);
+  if (quotes.length === 0) return null;
+  const date = (iso: string) => new Intl.DateTimeFormat(locale === "pl" ? "pl-PL" : "en-GB", { dateStyle: "medium" }).format(new Date(iso));
+  return (
+    <section className="space-y-2" aria-labelledby="quote-history" data-quote-history>
+      <h3 id="quote-history" className="text-sm font-semibold text-stone-800">
+        {t("quote.yourQuotes")}
+      </h3>
+      <ul className="divide-y divide-stone-100 rounded-lg border border-stone-200 text-sm">
+        {quotes.map((q) => (
+          <li key={q.id} className="flex items-center justify-between gap-3 px-3 py-2" data-quote-number={q.number}>
+            <span>
+              <span className="font-medium text-stone-900">{q.number}</span>{" "}
+              <span className="text-xs text-stone-500">
+                · {date(q.createdAt)} · {q.status === "ordered" ? t("quote.statusOrdered") : q.expiresAt ? t("quote.validUntil", { date: date(q.expiresAt) }) : ""}
+              </span>
+            </span>
+            {q.hasPdf && (
+              <a className="text-xs font-medium text-stone-700 underline hover:text-stone-900" href={quotationPdfUrl(q.id)} download>
+                {t("quote.openPdf")}
+              </a>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 }
 
 /**
@@ -67,7 +114,8 @@ export function QuotePanel() {
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState(false);
   const emailId = useId();
-  const shop = backend();
+  const shop = browserBff;
+  const [stored, setStored] = useState(0);
   const busy = status.kind === "busy";
 
   const controller = useRef<AbortController | null>(null);
@@ -97,13 +145,14 @@ export function QuotePanel() {
     if (!prepared) return;
     downloadPdf(prepared);
     // Storing the quotation (60-day retention) must not block the download.
-    const stored = shop ? await saveQuotation(prepared, shop) : null;
+    const result = await saveQuotation(prepared, shop);
+    if (result.ok) {
+      markSaved(prepared);
+      setStored((n) => n + 1);
+    }
     setStatus({
       kind: "done",
-      message:
-        stored && !stored.ok
-          ? t("quote.savedLocallyOnly", { number: prepared.quote.number })
-          : t("quote.downloaded", { number: prepared.quote.number }),
+      message: result.ok ? t("quote.downloaded", { number: prepared.quote.number }) : t("quote.savedLocallyOnly", { number: prepared.quote.number }),
     });
   };
 
@@ -113,11 +162,14 @@ export function QuotePanel() {
       return;
     }
     setEmailError(false);
-    if (!shop) return;
     const prepared = await prepare();
     if (!prepared) return;
     setStatus({ kind: "busy", message: t("quote.sending") });
     const result = await emailQuotation(prepared, email, shop);
+    if (result.ok) {
+      markSaved(prepared);
+      setStored((n) => n + 1);
+    }
     setStatus(result.ok ? { kind: "done", message: t("quote.sent", { email: email.trim(), number: prepared.quote.number }) } : { kind: "error", issues: result.issues });
   };
 
@@ -154,7 +206,6 @@ export function QuotePanel() {
           }}
           noValidate
         >
-          {!shop && <p className="text-xs text-amber-800">{t("quote.emailNoShop")}</p>}
           <label htmlFor={emailId} className="text-sm font-medium text-stone-800">
             {t("quote.emailLabel")}
           </label>
@@ -168,7 +219,7 @@ export function QuotePanel() {
               aria-invalid={emailError}
               className={`w-full rounded-lg border px-3 py-2 text-sm ${emailError ? "border-red-400" : "border-stone-300"}`}
             />
-            <button type="submit" className={primaryButtonClass} disabled={busy || !shop}>
+            <button type="submit" className={primaryButtonClass} disabled={busy}>
               {t("quote.send")}
             </button>
           </div>
@@ -203,6 +254,7 @@ export function QuotePanel() {
       )}
       {status.kind === "error" && <IssueList issues={status.issues} />}
       <p className="text-xs text-stone-500">{t("quote.note")}</p>
+      <QuoteHistory refresh={stored} />
     </div>
   );
 }

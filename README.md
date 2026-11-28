@@ -90,18 +90,29 @@ The order dialog has two tabs: **Cały układ (N)** (cart hand-off of the comple
 3. one PDF is built with jsPDF and the embedded DejaVu Sans (Polish characters; `public/fonts`), then
    either downloaded or sent by e-mail. Both actions use the same cached quotation.
 
-The WordPress plugin (`includes/quotes.php`) stores quotations. The quotation JSON (configuration plus
-pricing snapshot) is post meta; the PDF and renderings are files in a protected uploads folder.
-Temporary quotations are deleted after 60 days (daily WP-Cron). A quotation whose cart is ordered is
-marked "ordered" and kept, and the order gets its own copy. The plugin sends e-mails with `wp_mail`
-(rate-limited per IP).
+Quotations are stored through the configurator's own server (BFF route handlers in `src/app/api`),
+which signs every call to the WordPress plugin. The server assigns the internal id (UUID) and a unique
+number, and the PDF contains a link to the quoted configuration. A quotation is reachable only by the
+anonymous browser session that created it. The quotation JSON (configuration plus pricing snapshot) is
+post meta; the PDF and renderings are files in a protected uploads folder. Temporary quotations expire
+after 60 days (daily WP-Cron); ordered ones are kept, and the order gets its own copy.
+
+## Sessions, "Nowa konfiguracja" and "Udostępnij konfigurację"
+
+Each browser tab has its own working configuration (sessionStorage); nothing is sent to a server while
+editing. "Udostępnij konfigurację" stores an immutable snapshot and returns a link `/c/{token}`, valid for
+60 days. Anyone with the link can open it and change their own copy. See
+[docs/sessions-and-sharing.md](docs/sessions-and-sharing.md) for the architecture, security, database,
+environment variables, `wp-config.php` and production deployment.
 
 ## Commands
 
 ```bash
 npm install
 npm run dev          # http://localhost:3000
-npm test             # vitest (domain, store, i18n)
+npm test             # vitest (domain, store, i18n, BFF)
+npm run test:php     # plugin security/lifecycle tests on a WordPress stub (PHP + pdo_sqlite)
+npm run test:e2e     # Playwright, multiple customers: builds .next-e2e, ports 3210 + 8790
 npm run typecheck
 npm run lint
 npm run build

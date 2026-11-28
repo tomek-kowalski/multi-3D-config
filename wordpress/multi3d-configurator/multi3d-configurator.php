@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Multi 3D Configurator – WooCommerce bridge
  * Description: Receives orders from the multi-furniture 3D configurator, adds every configured module to the WooCommerce cart (WooCommerce prices them) and stores the complete arrangement with the order so it can be reconstructed.
- * Version: 0.1.0
+ * Version: 0.2.0
  * Requires Plugins: woocommerce
  * Text Domain: multi3d
  *
@@ -18,6 +18,14 @@
  * 3. Each cart line keeps the module id, furniture type and note; the arrangement document is kept in
  *    the session and saved on the order (meta `_multi3d_arrangement`), with per-line meta.
  * 4. The customer is redirected to the cart. Prices always come from WooCommerce.
+ * 5. When the hand-off belongs to a stored quotation, the form carries `quoteClaim`: a single-use claim
+ *    the quotation's owner obtained through the configurator's server (includes/quotes.php). The order
+ *    then keeps the quotation's configuration and pricing snapshot.
+ *
+ * Quotations and shared configurations are served only to the configurator's server
+ * (backend-for-frontend), which signs every request: define MULTI3D_BFF_SECRET in wp-config.php
+ * (includes/bff.php). The cart hand-off stays a top-level form post in the customer's own shop session,
+ * so every customer has their own WooCommerce cart.
  *
  * Optional: define MULTI3D_ALLOWED_ORIGIN (e.g. 'https://configurator.example.com') in wp-config.php
  * to allow the configurator to read product prices from the public Store API cross-origin.
@@ -30,7 +38,10 @@ const MULTI3D_MAX_BYTES     = 1048576;
 const MULTI3D_SESSION_KEY   = 'multi3d_arrangement';
 const MULTI3D_CART_ITEM_KEY = 'multi3d';
 
+require_once __DIR__ . '/includes/bff.php';
+require_once __DIR__ . '/includes/shares.php';
 require_once __DIR__ . '/includes/quotes.php';
+register_activation_hook( __FILE__, 'multi3d_install_schema' );
 register_activation_hook( __FILE__, 'multi3d_schedule_quote_purge' );
 register_deactivation_hook( __FILE__, 'multi3d_unschedule_quote_purge' );
 

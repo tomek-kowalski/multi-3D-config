@@ -83,9 +83,10 @@ export const ORDER_FIELD = "multi3d_order";
 /**
  * Sends the order to the shop as a regular form submission (top-level navigation), so the cart is
  * created in the customer's own shop session; the plugin then redirects to the cart. `accepted` holds
- * the shop's terms fields the customer ticked (field name → value).
+ * the shop's terms fields the customer ticked (field name → value). `quoteClaim`: single-use claim of
+ * this session's stored quotation (from the configurator's server), never a quotation number.
  */
-export function submitOrderToShop(payload: OrderPayload, accepted: Readonly<Record<string, string>>, quoteNumber?: string): boolean {
+export function submitOrderToShop(payload: OrderPayload, accepted: Readonly<Record<string, string>>, quoteClaim?: string): boolean {
   const base = shopUrl();
   if (!base) return false;
   const form = document.createElement("form");
@@ -99,7 +100,7 @@ export function submitOrderToShop(payload: OrderPayload, accepted: Readonly<Reco
     input.value = value;
     form.appendChild(input);
   };
-  field(ORDER_FIELD, JSON.stringify({ ...payload, acceptedTerms: accepted, ...(quoteNumber ? { quoteNumber } : {}) }));
+  field(ORDER_FIELD, JSON.stringify({ ...payload, acceptedTerms: accepted, ...(quoteClaim ? { quoteClaim } : {}) }));
   document.body.appendChild(form);
   form.submit();
   return true;

@@ -113,9 +113,22 @@ describe("Zamówienie", () => {
     const capture = vi.fn(async (request: PhotoRequest) => fakePhotos(request.count));
     registerPhotoRenderer(capture);
     const fonts = join(__dirname, "../../../public/fonts");
+    // Fonts from disk; the configurator's server (BFF) reserves and stores the quotation.
+    const id = "3f2b8a4e-1c2d-4e5f-9a6b-7c8d9e0f1a2b";
+    const api = vi.fn((url: string, init?: RequestInit) => {
+      const key = `${init?.method ?? "GET"} ${url}`;
+      if (key === "POST /api/quotes")
+        return Response.json(
+          { id, number: "OF-20261124-SRV7QZ", createdAt: "2026-11-24T10:00:00Z", expiresAt: "2027-01-23T10:00:00Z", configurationUrl: "https://cfg.test/c/" + "a".repeat(43) },
+          { status: 201 },
+        );
+      if (key === "GET /api/quotes") return Response.json({ quotes: [] });
+      if (key.startsWith(`PUT /api/quotes/${id}`) || key.startsWith(`POST /api/quotes/${id}/`)) return Response.json({ stored: true }, { status: 201 });
+      throw new Error(`unexpected ${key}`);
+    });
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (url: string) => new Response(readFileSync(join(fonts, url.replace("/fonts/", ""))))),
+      vi.fn(async (url: string, init?: RequestInit) => (url.startsWith("/api/") ? api(url, init) : new Response(readFileSync(join(fonts, url.replace("/fonts/", "")))))),
     );
     const createObjectURL = vi.fn((blob: Blob) => {
       void blob;
@@ -130,7 +143,16 @@ describe("Zamówienie", () => {
     const group = screen.getByText("Liczba wizualizacji 3D").closest("fieldset")!;
     fireEvent.click(within(group as HTMLElement).getByRole("button", { name: "3" }));
     fireEvent.click(screen.getByRole("button", { name: "Zapisz PDF na komputerze" }));
-    await waitFor(() => expect(screen.getByRole("status").textContent).toMatch(/Oferta OF-\d{8}-\w{4} została zapisana jako PDF\./));
+    await waitFor(() => expect(screen.getByRole("status").textContent).toBe("Oferta OF-20261124-SRV7QZ została zapisana jako PDF."));
+    // Stored through the server by its internal id: document, PDF, then the three renderings.
+    expect(api.mock.calls.map(([url, init]) => `${init?.method} ${url}`).filter((c) => !c.startsWith("GET"))).toEqual([
+      "POST /api/quotes",
+      `PUT /api/quotes/${id}`,
+      `POST /api/quotes/${id}/pdf`,
+      `POST /api/quotes/${id}/renderings/1`,
+      `POST /api/quotes/${id}/renderings/2`,
+      `POST /api/quotes/${id}/renderings/3`,
+    ]);
     expect(capture.mock.calls[0][0]).toMatchObject({ count: 3 });
     expect(click).toHaveBeenCalledTimes(1);
     const blob = createObjectURL.mock.calls[0][0];
