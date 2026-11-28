@@ -43,7 +43,8 @@ import type { FurnitureTypeId, ModuleId, OperationalStateId } from "@/domain/mod
 import { DEFAULT_ROOM } from "@/domain/room/defaults";
 import * as roomOps from "@/domain/room/operations";
 import type { HexColor, OpeningKind, RoomConfiguration, RoomDimensionKey, RoomFloor, WallId } from "@/domain/room/types";
-import { exportArrangementJson, importArrangementJson } from "@/domain/serialization/arrangementJson";
+import { exportArrangementJson, importArrangementJson, parseArrangementDocument, toArrangementDocument } from "@/domain/serialization/arrangementJson";
+import { arrangementKey } from "@/domain/sharing/snapshot";
 import type { Issue, Result } from "@/domain/shared/issues";
 import type { Placement } from "@/domain/spatial/geometry";
 
@@ -97,8 +98,17 @@ export interface ArrangementState {
   /** Result of an action that could not be carried out (shown briefly in the 3D view). */
   readonly notice: readonly Issue[] | null;
   readonly viewRequest: ViewRequest | null;
-  /** True once the saved arrangement (if any) was loaded on the client. */
+  /** True once this tab's working configuration (if any) was restored on the client. */
   readonly hydrated: boolean;
+  /**
+   * The working configuration's identifier (random, per tab). "Nowa konfiguracja" and opening a shared
+   * link start a new one. It identifies the workspace locally only; it is never proof of ownership.
+   */
+  readonly workspaceId: string;
+  /** Where the working configuration started: the default room, or a shared snapshot. */
+  readonly workspaceOrigin: WorkspaceOrigin;
+  /** Canonical JSON of the arrangement at the last clean point (start, load, share, quotation). */
+  readonly baselineKey: string;
 
   setRoomDimension: (key: RoomDimensionKey, value: number) => ActionResult;
   setWallColor: (wall: WallId, color: HexColor) => ActionResult;
@@ -154,12 +164,51 @@ export interface ArrangementState {
   importJson: (json: string) => ActionResult;
   exportJson: () => string;
   reset: () => void;
+  /** Restores this tab's working configuration (sessionStorage); a new tab starts with the default. */
   hydrate: () => void;
+  /** Whether the arrangement changed since the last clean point (unsaved changes). */
+  isDirty: () => boolean;
+  /** The current arrangement is saved (shared or quoted): it is the new clean point. */
+  markClean: () => void;
+  /** Starts a new, independent working configuration with the default room and no furniture. */
+  startNewWorkspace: () => void;
+  /** Replaces the working configuration with a loaded snapshot, as a new independent workspace. */
+  loadWorkspace: (arrangement: Arrangement, origin: WorkspaceOrigin, options?: { showWallLabels?: boolean }) => void;
 }
+
+export type WorkspaceOrigin = "new" | "shared";
 
 export const INITIAL_ARRANGEMENT: Arrangement = { room: DEFAULT_ROOM, modules: [] };
 
-const STORAGE_KEY = "multi3d.arrangement.v1";
+/** This tab's working configuration (sessionStorage: per tab, survives reloads, not shared between tabs). */
+export const WORKSPACE_STORAGE_KEY = "multi3d.workspace.v2";
+/**
+ * The former device-wide copy (localStorage), shared by every tab and every person using the browser.
+ * It is deleted on start and never restored: on a shared computer it would hand one customer's design
+ * to the next.
+ */
+export const LEGACY_STORAGE_KEY = "multi3d.arrangement.v1";
+const INITIAL_KEY = arrangementKey(INITIAL_ARRANGEMENT);
+
+export function newWorkspaceId(): string {
+  return globalThis.crypto.randomUUID();
+}
+
+interface StoredWorkspace {
+  readonly v: 2;
+  readonly id: string;
+  readonly origin: WorkspaceOrigin;
+  readonly arrangement: unknown;
+  readonly baselineKey: string;
+}
+
+function workspaceStorage(): Storage | null {
+  try {
+    return typeof window === "undefined" ? null : window.sessionStorage;
+  } catch {
+    return null;
+  }
+}
 const OK: ActionResult = { ok: true };
 
 export const useArrangementStore = create<ArrangementState>()((set, get) => {
@@ -204,6 +253,10 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
     notice: null,
     viewRequest: null,
     hydrated: false,
+    // Set on the client (hydrate); the server render never carries anyone's workspace.
+    workspaceId: "",
+    workspaceOrigin: "new",
+    baselineKey: INITIAL_KEY,
 
     setRoomDimension: (key, value) => applyRoom(roomOps.setRoomDimension(get().arrangement.room, key, value)),
     setWallColor: (wall, color) => applyRoom(roomOps.setWallColor(get().arrangement.room, wall, color)),
@@ -402,32 +455,118 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
     hydrate: () => {
       if (get().hydrated) return;
       try {
-        const saved = window.localStorage.getItem(STORAGE_KEY);
-        const result = saved ? importArrangementJson(saved) : null;
-        set({ hydrated: true, ...(result?.ok ? { arrangement: result.value } : {}) });
+        window.localStorage?.removeItem(LEGACY_STORAGE_KEY);
       } catch {
-        set({ hydrated: true });
+        // Storage unavailable: nothing to remove.
       }
+      let restored: Partial<ArrangementState> | null = null;
+      try {
+        const raw = workspaceStorage()?.getItem(WORKSPACE_STORAGE_KEY);
+        const saved = raw ? (JSON.parse(raw) as Partial<StoredWorkspace>) : null;
+        const result = saved && saved.v === 2 && typeof saved.id === "string" && saved.id ? parseArrangementDocument(saved.arrangement) : null;
+        if (saved && result?.ok) {
+          restored = {
+            arrangement: result.value,
+            workspaceId: saved.id,
+            workspaceOrigin: saved.origin === "shared" ? "shared" : "new",
+            baselineKey: typeof saved.baselineKey === "string" ? saved.baselineKey : INITIAL_KEY,
+          };
+        }
+      } catch {
+        restored = null;
+      }
+      set({ hydrated: true, ...(restored ?? { workspaceId: newWorkspaceId(), workspaceOrigin: "new", baselineKey: INITIAL_KEY }) });
+    },
+    isDirty: () => arrangementKey(get().arrangement) !== get().baselineKey,
+    markClean: () => set({ baselineKey: arrangementKey(get().arrangement) }),
+    startNewWorkspace: () => {
+      usePreviewStore.getState().closeAll();
+      set({
+        ...TRANSIENT_RESET,
+        arrangement: INITIAL_ARRANGEMENT,
+        workspaceId: newWorkspaceId(),
+        workspaceOrigin: "new",
+        baselineKey: INITIAL_KEY,
+      });
+    },
+    loadWorkspace: (arrangement, origin, options) => {
+      usePreviewStore.getState().closeAll();
+      set({
+        ...TRANSIENT_RESET,
+        arrangement,
+        workspaceId: newWorkspaceId(),
+        workspaceOrigin: origin,
+        baselineKey: arrangementKey(arrangement),
+        ...(options?.showWallLabels !== undefined ? { showWallLabels: options.showWallLabels } : {}),
+      });
     },
   };
 });
 
-/** Saves the arrangement locally after every change (once hydrated), so a reload keeps the design. */
+/** Selection, menus, drags and proposals: cleared whenever the working configuration is replaced. */
+const TRANSIENT_RESET: Partial<ArrangementState> = {
+  selectedModuleId: null,
+  selectedOpeningId: null,
+  activeWall: "back",
+  wallSelected: true,
+  dockingProposal: null,
+  draggingModuleId: null,
+  draggingOpening: null,
+  contextMenu: null,
+  notice: null,
+  activeMenu: "arrangement",
+  roomPanelOpen: false,
+};
+
+/**
+ * Keeps this tab's working configuration in sessionStorage after every change (debounced), so a
+ * reload restores it. Nothing is sent to a server while editing.
+ */
 export function persistArrangement(): () => void {
   let timer: ReturnType<typeof setTimeout> | undefined;
+  const write = () => {
+    timer = undefined;
+    const state = useArrangementStore.getState();
+    if (!state.hydrated || !state.workspaceId) return;
+    const stored: StoredWorkspace = {
+      v: 2,
+      id: state.workspaceId,
+      origin: state.workspaceOrigin,
+      arrangement: toArrangementDocument(state.arrangement),
+      baselineKey: state.baselineKey,
+    };
+    try {
+      workspaceStorage()?.setItem(WORKSPACE_STORAGE_KEY, JSON.stringify(stored));
+    } catch {
+      // Storage full or unavailable: the design still works, it is just not kept across reloads.
+    }
+  };
   const unsubscribe = useArrangementStore.subscribe((state, previous) => {
-    if (!state.hydrated || state.arrangement === previous.arrangement) return;
+    if (!state.hydrated) return;
+    const changed =
+      state.arrangement !== previous.arrangement ||
+      state.workspaceId !== previous.workspaceId ||
+      state.baselineKey !== previous.baselineKey ||
+      state.hydrated !== previous.hydrated;
+    if (!changed) return;
     clearTimeout(timer);
-    timer = setTimeout(() => {
-      try {
-        window.localStorage.setItem(STORAGE_KEY, exportArrangementJson(state.arrangement));
-      } catch {
-        // Storage full or unavailable: the design still works, it is just not kept across reloads.
-      }
-    }, 300);
+    // A replaced workspace is written at once: a reload right after "Nowa konfiguracja" or opening a
+    // shared link must never bring the previous configuration back.
+    if (state.workspaceId !== previous.workspaceId) write();
+    else timer = setTimeout(write, 300);
   });
+  const flush = () => {
+    if (timer !== undefined) {
+      clearTimeout(timer);
+      write();
+    }
+  };
+  if (typeof window !== "undefined") window.addEventListener("pagehide", flush);
+  // A restored or new workspace is recorded at once (its id survives a reload before any change).
+  write();
   return () => {
-    clearTimeout(timer);
+    flush();
+    if (typeof window !== "undefined") window.removeEventListener("pagehide", flush);
     unsubscribe();
   };
 }
