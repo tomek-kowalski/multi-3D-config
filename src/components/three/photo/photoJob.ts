@@ -4,7 +4,7 @@ import type { GpuChoice, PhotoMode } from "./capabilities";
 import { planPhotoViews, toThreeCamera } from "./photoCamera";
 import { PhotoRenderError, renderPhotoViews, type PhotoBackend, type RenderedPhoto } from "./photoEngine";
 import { buildPhotoScene, type AppearanceDiagnostics, type SceneSnapshot } from "./photoScene";
-import { cachedPhoto, configurationKey, photoCacheKey, storePhoto, type PhotoRequest } from "./photoService";
+import { cachedPhoto, configurationKey, photoCacheEnabled, photoCacheKey, storePhoto, type PhotoRequest } from "./photoService";
 import { resolvePhotoSettings, type PhotoQuality, type PhotoSettings } from "./photoSettings";
 
 /** What a photo request needs from the app and the browser (injected, so it is testable without a GPU). */
@@ -105,7 +105,7 @@ export async function runPhotoJob(request: PhotoRequest, deps: PhotoJobDeps): Pr
     const views = planPhotoViews(arrangement, request.count, settings.width / settings.height, { drawn, margin: settings.frameMargin });
     const configuration = configurationKey(arrangement);
     const keys = views.map((v) => photoCacheKey(configuration, settings, v.id));
-    const reuse = request.reuse !== false;
+    const reuse = request.reuse !== false && photoCacheEnabled();
     const reused = keys.map((k) => (reuse ? cachedPhoto(k) : undefined));
     const missing = views.filter((_, i) => !reused[i]);
     const signal = request.signal;
@@ -167,7 +167,7 @@ export async function runPhotoJob(request: PhotoRequest, deps: PhotoJobDeps): Pr
     const published = await Promise.all(results.map(publish));
     if (signal?.aborted) throw new PhotoRenderError("cancelled");
     rendered.forEach((photo) => deps.recordPerformance?.(photo));
-    rendered.forEach((photo) => storePhoto(photoCacheKey(configuration, settings, photo.viewId), photo));
+    if (photoCacheEnabled()) rendered.forEach((photo) => storePhoto(photoCacheKey(configuration, settings, photo.viewId), photo));
     return published;
   } finally {
     snapshot?.dispose();

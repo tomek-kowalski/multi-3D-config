@@ -4,6 +4,7 @@ import type { PhotoMode } from "./capabilities";
 import type { PhotoProgress, RenderedPhoto } from "./photoEngine";
 import type { PhotoViewId } from "./photoCamera";
 import { settingsKey, type PhotoQualityRequest, type PhotoSettings } from "./photoSettings";
+import { RENDERING_FINGERPRINT } from "./renderingFingerprint";
 
 export interface PhotoRequest {
   /** Number of views (1–3): front-right, front-left, front. */
@@ -100,7 +101,21 @@ export function configurationKey(arrangement: Arrangement): string {
 }
 
 export function photoCacheKey(configuration: string, settings: PhotoSettings, view: PhotoViewId): string {
-  return `${configuration}#${settingsKey(settings)}#${view}`;
+  return `${configuration}#${settingsKey(settings)}#${RENDERING_FINGERPRINT}#${view}`;
+}
+
+/**
+ * Whether completed renderings may be reused. Production: yes. `next dev`: never — every photo is
+ * rendered fresh, so rendering changes are always visible. A production build can be tested without the
+ * cache with `localStorage.setItem("multi3d.photo.cache", "off")`.
+ */
+export function photoCacheEnabled(): boolean {
+  if (process.env.NODE_ENV === "development") return false;
+  try {
+    return typeof window === "undefined" || window.localStorage.getItem("multi3d.photo.cache") !== "off";
+  } catch {
+    return true;
+  }
 }
 
 export function cachedPhoto(key: string): RenderedPhoto | undefined {
