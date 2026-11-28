@@ -1,5 +1,7 @@
 import { Color } from "three";
-import { getMaterial, type MaterialId } from "@/domain/furniture/materials";
+import { materialRegistry } from "@/domain/materials";
+import { cabinetFinishSelection } from "@/domain/materials/bindings";
+import type { MaterialId } from "@/domain/furniture/materials";
 
 export interface MaterialAppearance {
   readonly color: string;
@@ -10,11 +12,16 @@ export interface MaterialAppearance {
 
 const cache = new Map<MaterialId, MaterialAppearance>();
 
-/** Resolves a catalog material into the values a MeshStandardMaterial needs. */
+/**
+ * Scalar summary of a cabinet finish (colour, roughness, outline colour), resolved through the universal
+ * material registry — the single source of finish appearance. Rendering itself uses the PBR factory.
+ */
 export function getMaterialAppearance(id: MaterialId): MaterialAppearance {
   let appearance = cache.get(id);
   if (!appearance) {
-    const { color, roughness } = getMaterial(id);
+    const resolved = materialRegistry.resolve(cabinetFinishSelection(id));
+    const color = resolved.source === "registry" && resolved.color.kind === "solid" ? resolved.color.srgbHex : "#808080";
+    const roughness = resolved.finish?.roughness ?? 0.7;
     const edge = new Color(color);
     const { l } = edge.getHSL({ h: 0, s: 0, l: 0 });
     edge.offsetHSL(0, 0, l < 0.35 ? 0.14 : -0.22);

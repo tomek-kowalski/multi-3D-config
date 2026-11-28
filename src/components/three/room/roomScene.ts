@@ -2,6 +2,7 @@ import { Color } from "three";
 import { wallFrame, wallPoint } from "@/domain/room/geometry";
 import { OPENING_ANGLE_DEG, OPENING_FRAME_MM, openingLeaves, type OpeningLeaf } from "@/domain/room/openingMotion";
 import { WALL_IDS, WALL_LETTERS, type RoomConfiguration, type RoomOpening, type WallId } from "@/domain/room/types";
+import { materialRegistry } from "@/domain/materials";
 import { mmToM } from "../units";
 
 /**
@@ -16,22 +17,37 @@ export interface ScenePart {
   readonly role: "frame" | "glass" | "sill" | "leaf" | "handle";
   readonly center: readonly [number, number, number];
   readonly size: readonly [number, number, number];
+  /** Configured or default colour (frames, sills, leaves). Glass and handles use registered materials. */
   readonly color: string;
-  readonly opacity: number;
-  /** Windows and doors never cast or receive shadows (they would darken the wall and the opening). */
+  /**
+   * In the viewport windows and doors never cast or receive shadows: the viewport's walls cast none, so a
+   * leaf's shadow would fall through its own wall into the room. (Photos let walls and the door leaf cast
+   * shadows — see photoScene.ts — so the floor under the door's undercut is shaded there.)
+   */
   readonly castShadow: false;
   readonly receiveShadow: false;
 }
 
 export const FRAME_COLOR = "#F4F3F0";
 export const FRAME_EDGE_COLOR = "#5E6166";
-export const GLASS_COLOR = "#A9CBE0";
+/** The viewport glass proxy colour, read from the single registered glass definition. */
+export const GLASS_COLOR = materialRegistry.getFinishProfile("finish/glass-clear").transmission!.proxy.srgbHex;
 const FRAME_DEPTH_MM = 80;
 const SILL_DEPTH_MM = 140;
 
-function part(key: string, role: ScenePart["role"], center: [number, number, number], size: [number, number, number], color: string, opacity = 1): ScenePart {
-  return { key, role, center, size, color, opacity, castShadow: false, receiveShadow: false };
+function part(key: string, role: ScenePart["role"], center: [number, number, number], size: [number, number, number], color: string): ScenePart {
+  return { key, role, center, size, color, castShadow: false, receiveShadow: false };
 }
+
+/**
+ * Clearance between a door leaf and the finished floor (undercut): residential interior doors hang
+ * 8–12 mm above the floor covering; 10 mm. The opening, frame and swing geometry are unchanged — only
+ * the drawn leaf ends 10 mm above the floor instead of standing on it.
+ */
+export const DOOR_UNDERCUT_MM = 10;
+
+/** Depth of a door frame, half of which projects beyond the wall line into the doorway (metres). */
+export const DOOR_FRAME_DEPTH_M = (FRAME_DEPTH_MM / 1000) * 1.2;
 
 export interface OpeningLeafScene {
   readonly id: OpeningLeaf["id"];
@@ -99,7 +115,7 @@ export function openingScene(opening: RoomOpening): OpeningScene {
             part(`${leaf.id}-inner`, "frame", [x(sw - bar / 2), sh / 2, z], [bar, sh, SASH_THICKNESS], FRAME_COLOR),
             part(`${leaf.id}-bottom`, "frame", [x(sw / 2), bar / 2, z], [sw, bar, SASH_THICKNESS], FRAME_COLOR),
             part(`${leaf.id}-top`, "frame", [x(sw / 2), sh - bar / 2, z], [sw, bar, SASH_THICKNESS], FRAME_COLOR),
-            part(`${leaf.id}-glass`, "glass", [x(sw / 2), sh / 2, z], [sw - bar, sh - bar, 0.006], GLASS_COLOR, 0.45),
+            part(`${leaf.id}-glass`, "glass", [x(sw / 2), sh / 2, z], [sw - bar, sh - bar, 0.006], GLASS_COLOR),
           ],
         };
       }),
@@ -115,12 +131,13 @@ export function openingScene(opening: RoomOpening): OpeningScene {
     leaves: leaves.map((leaf) => {
       const lw = mmToM(leaf.width);
       const lh = mmToM(leaf.top - leaf.bottom);
+      const undercut = leaf.bottom === 0 ? mmToM(DOOR_UNDERCUT_MM) : 0;
       return {
         id: leaf.id,
         pivot: [mmToM(leaf.hingeU - opening.offset), 0, (d * 1.2) / 2] as const,
         direction: leaf.direction,
         parts: [
-          part("leaf", "leaf", [lw / 2, lh / 2, -LEAF_THICKNESS / 2], [lw, lh, LEAF_THICKNESS], opening.color ?? "#FFFFFF"),
+          part("leaf", "leaf", [lw / 2, (lh + undercut) / 2, -LEAF_THICKNESS / 2], [lw, lh - undercut, LEAF_THICKNESS], opening.color ?? "#FFFFFF"),
           // Handle on the room side, near the free edge.
           part("handle", "handle", [lw - 0.08, lh * 0.48, 0.015], [0.12, 0.02, 0.02], "#8D9094"),
         ],

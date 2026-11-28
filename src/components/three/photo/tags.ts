@@ -8,7 +8,9 @@ import type { WallId } from "@/domain/room/types";
  * - board: a furniture panel (cabinet panels; bed body and front with their decor);
  * - metal: handles, bed hardware; dark: the dark plate of a recessed grip;
  * - fabric: a mattress; wall / floor: the room; frame, glass, sill, leaf, handle: window and door parts;
- * - loading: the placeholder of a model that is still loading (the photo waits for it).
+ * - loading: the placeholder of a model that is still loading (the photo waits for it);
+ * - exterior: the daytime view behind a window, created by the photo scene itself (never tagged in the
+ *   live scene).
  */
 export type PhotoRole =
   | "board"
@@ -22,7 +24,8 @@ export type PhotoRole =
   | "sill"
   | "leaf"
   | "handle"
-  | "loading";
+  | "loading"
+  | "exterior";
 
 export interface PhotoTag {
   readonly role: PhotoRole;

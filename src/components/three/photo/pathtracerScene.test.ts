@@ -1,11 +1,17 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { BoxGeometry, Group, Mesh, MeshPhysicalMaterial, MeshStandardMaterial, PlaneGeometry, RepeatWrapping, SRGBColorSpace, Texture, type Object3D } from "three";
+import { BoxGeometry, Group, Mesh, MeshPhysicalMaterial, MeshStandardMaterial, PlaneGeometry, type Object3D } from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { PathTracingSceneGenerator } from "three-gpu-pathtracer";
 import { describe, expect, it } from "vitest";
 import { getBedModel } from "@/domain/beds/catalog";
-import { applyBedVisibility, prepareBedScene, SWATCH_SIZE_M } from "../modules/BedModel";
+import { materialRegistry } from "@/domain/materials";
+import { PHOTO_CAPABILITIES, VIEWPORT_CONSTRAINED } from "../materials/materialQuality";
+import { createSourceCache, createTextureResources } from "../materials/textureResources";
+import { applyBedMaterials, applyBedVisibility, BED_FIXED_BINDING, bedDecorBinding, prepareBedScene } from "../modules/BedModel";
+
+/** Decoded decor images stand-in (node has no image decoder): sized like the HD swatches. */
+const fakeImages = createSourceCache(async () => ({ width: 406, height: 370 }));
 import { buildPhotoScene, takeSnapshot } from "./photoScene";
 import { photoTag } from "./tags";
 
@@ -17,18 +23,19 @@ async function loadBed(): Promise<Object3D> {
 /** A live scene like the app's: a bed with a wood decor, a cabinet panel, two walls and the floor. */
 async function liveScene() {
   const root = new Group();
-  const { root: bed, materials } = prepareBedScene(await loadBed());
+  const { root: bed, sources } = prepareBedScene(await loadBed());
   applyBedVisibility(bed, "unfolded", true);
-  const decor = new Texture();
-  decor.colorSpace = SRGBColorSpace;
-  decor.wrapS = decor.wrapT = RepeatWrapping;
-  decor.repeat.set(1 / SWATCH_SIZE_M, 1 / SWATCH_SIZE_M);
-  for (const slot of ["front", "body"]) {
-    const m = materials.get(slot)!;
-    m.map = decor;
-    m.color.set("#ffffff");
-    m.userData.decor = { texture: "K001-PW.jpg", code: "K001", structure: "PW", swatchSizeM: SWATCH_SIZE_M };
-  }
+  // The bed's materials come from the shared factory, as in the app (bound slots, real decor entry).
+  const runtime = {
+    registry: materialRegistry,
+    capabilities: { ...PHOTO_CAPABILITIES, mode: "viewport" as const, supportsTransmission: false },
+    quality: VIEWPORT_CONSTRAINED,
+    textures: createTextureResources({ sources: fakeImages }),
+  };
+  const decorSet = applyBedMaterials(bed, sources, bedDecorBinding(4000, { decorCategory: "standard", frontDecor: "K001-PW", bodyDecor: "K001-PW" }), runtime);
+  applyBedMaterials(bed, sources, BED_FIXED_BINDING, runtime);
+  await decorSet.ready;
+  const redecorate = (decorId: string) => applyBedMaterials(bed, sources, bedDecorBinding(4000, { decorCategory: "standard", frontDecor: decorId, bodyDecor: decorId }), runtime);
   root.add(bed);
   const panel = new Mesh(new BoxGeometry(), new MeshStandardMaterial({ color: "#67452F", roughness: 0.65 }));
   panel.userData = photoTag("board");
@@ -39,7 +46,7 @@ async function liveScene() {
   const floor = new Mesh(new PlaneGeometry(4, 3.5), new MeshStandardMaterial({ color: "#B79D7C", roughness: 0.9 }));
   floor.userData = photoTag("floor");
   root.add(panel, back, left, floor);
-  return { root, materials, back, floor };
+  return { root, redecorate, back, floor };
 }
 
 /** Role of the material of every triangle in the path tracer's merged geometry. */
@@ -63,7 +70,8 @@ function triangleRoles(scene: Object3D) {
 describe("path tracer scene: room and furniture materials stay separate", () => {
   it("indexes every triangle with its own mesh's material", async () => {
     const { root } = await liveScene();
-    const snapshot = takeSnapshot(root);
+    const snapshot = takeSnapshot(root, { textures: createTextureResources({ sources: fakeImages }) });
+    await snapshot.ready;
     const scene = buildPhotoScene(snapshot, [], null);
     const { roles, materials } = triangleRoles(scene);
     // Expected per-role triangle counts, straight from the snapshot meshes.
@@ -90,20 +98,23 @@ describe("path tracer scene: room and furniture materials stay separate", () => 
   });
 
   it("changing a furniture decor never changes the walls or the floor", async () => {
-    const { root, materials, back, floor } = await liveScene();
-    const before = takeSnapshot(root);
+    const { root, redecorate, back, floor } = await liveScene();
+    const scope = () => ({ textures: createTextureResources({ sources: fakeImages }) });
+    const before = takeSnapshot(root, scope());
+    await before.ready;
     const wallColor = (s: ReturnType<typeof takeSnapshot>, role: string) =>
       s.items.filter((i) => i.tag.role === role).map((i) => [i.material.color.getHexString(), i.material.map]);
     const walls = wallColor(before, "wall");
     const floors = wallColor(before, "floor");
-    // The customer picks another decor and colour for the bed.
-    const other = new Texture();
-    materials.get("front")!.map = other;
-    materials.get("body")!.color.set("#222222");
-    const after = takeSnapshot(root);
+    const boardImages = (s: ReturnType<typeof takeSnapshot>) => new Set(s.items.filter((i) => i.tag.role === "board" && i.material.map).map((i) => i.material.map!.name));
+    // The customer picks another decor for the bed.
+    redecorate("K005-PW");
+    const after = takeSnapshot(root, scope());
+    await after.ready;
     expect(wallColor(after, "wall")).toEqual(walls);
     expect(wallColor(after, "floor")).toEqual(floors);
-    expect(after.items.some((i) => i.tag.role === "board" && i.material.map === other)).toBe(true);
+    expect([...boardImages(before)]).toEqual(["decor:K001-PW.jpg"]);
+    expect([...boardImages(after)]).toEqual(["decor:K005-PW.jpg"]);
     // The live room materials were never touched by either snapshot.
     expect((back.material as MeshStandardMaterial).map).toBeNull();
     expect((floor.material as MeshStandardMaterial).color.getHexString()).toBe("b79d7c");

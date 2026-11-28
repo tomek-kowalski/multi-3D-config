@@ -24,11 +24,11 @@ import { getBedModel } from "@/domain/beds/catalog";
 import { DEFAULT_ROOM } from "@/domain/room/defaults";
 import { addOpening } from "@/domain/room/operations";
 import { WALL_IDS } from "@/domain/room/types";
-import { applyBedVisibility, prepareBedScene, SWATCH_SIZE_M } from "../modules/BedModel";
+import { applyBedVisibility, NO_SWATCH_COLOR, prepareBedScene, SWATCH_SIZE_M } from "../modules/BedModel";
 import { opensContextMenu } from "../modules/ModuleObject";
 import { wallHiddenForCamera } from "../room/roomScene";
 import { createBackendPool } from "./backendPool";
-import { autoQuality, chooseRenderMode, MIN_TEXTURE_SIZE, readPerformance, recordPerformance, type GpuChoice } from "./capabilities";
+import { autoQuality, chooseRenderMode, MIN_TEXTURE_SIZE, probeGpu, readPerformance, recordPerformance, type GpuChoice } from "./capabilities";
 import {
   arrangementFacingDeg,
   boxCorners,
@@ -44,14 +44,21 @@ import {
 } from "./photoCamera";
 import { PhotoRenderError, renderPhotoViews, type PhotoBackend, type PhotoEngineDeps } from "./photoEngine";
 import { isPhotoJobRunning, runPhotoJob, type PhotoJobDeps } from "./photoJob";
-import { FABRIC_MAX_ALBEDO, GLASS_TINT, photoMaterial } from "./photoMaterials";
-import { applyHdDecors, buildPhotoScene, takeSnapshot } from "./photoScene";
+import { photoMaterial } from "./photoMaterials";
+import { buildPhotoScene, takeSnapshot } from "./photoScene";
+import { materialRegistry } from "@/domain/materials";
+import { bedDecorSelection, cabinetFinishSelection, configuredColor, REGISTERED, ROOM_WALL_TEMPLATE } from "@/domain/materials/bindings";
+import type { MaterialSelection } from "@/domain/materials/contracts";
+import { attachMaterialBinding } from "../materials/materialSlots";
+import { createSourceCache, createTextureResources } from "../materials/textureResources";
+import { applyBedMaterials } from "../modules/BedModel";
+import { PHOTO_CAPABILITIES, VIEWPORT_CONSTRAINED } from "../materials/materialQuality";
 import { clearPhotoCache, renderingMetadata } from "./photoService";
 import { DEFAULT_PHOTO_SETTINGS, QUALITY_PRESETS, resolvePhotoSettings } from "./photoSettings";
 import { HIGHLIGHT_PERCENTILE, HIGHLIGHT_TARGET, highlightExposure, MIN_EXPOSURE } from "./exposure";
 import { photoTag } from "./tags";
 
-const GPU: GpuChoice = { mode: "pathtraced", reason: null };
+const GPU: GpuChoice = { mode: "pathtraced", reason: null, rasterEligible: true };
 /** Path tracing settings (the default quality is the fast renderer). */
 const PT = { ...DEFAULT_PHOTO_SETTINGS, quality: "standard" as const };
 
@@ -147,13 +154,66 @@ describe("photo settings and GPU detection", () => {
   });
 
   it("chooses path tracing only on capable hardware GPUs and labels every fallback", () => {
-    const good = { webgl2: true, floatColorBuffer: true, maxTextureSize: 16384, renderer: "ANGLE (NVIDIA GeForce RTX 3060)" };
-    expect(chooseRenderMode(good)).toEqual({ mode: "pathtraced", reason: null });
-    expect(chooseRenderMode(null)).toEqual({ mode: "unsupported", reason: "no_webgl" });
-    expect(chooseRenderMode({ ...good, webgl2: false })).toMatchObject({ mode: "raster", reason: "no_webgl2" });
-    expect(chooseRenderMode({ ...good, floatColorBuffer: false })).toMatchObject({ mode: "raster", reason: "no_float_textures" });
-    expect(chooseRenderMode({ ...good, maxTextureSize: MIN_TEXTURE_SIZE / 2 })).toMatchObject({ mode: "raster", reason: "small_textures" });
+    const good = { webgl2: true, floatColorBuffer: true, halfFloatTarget: true, floatTarget: true, maxTextureSize: 16384, maxArrayTextureLayers: 2048, renderer: "ANGLE (NVIDIA GeForce RTX 3060)" };
+    expect(chooseRenderMode(good)).toEqual({ mode: "pathtraced", reason: null, rasterEligible: true });
+    expect(chooseRenderMode(null)).toEqual({ mode: "unsupported", reason: "no_webgl", rasterEligible: false });
+    expect(chooseRenderMode({ ...good, maxTextureSize: MIN_TEXTURE_SIZE / 2 })).toMatchObject({ mode: "raster", reason: "small_textures", rasterEligible: true });
+    expect(chooseRenderMode({ ...good, maxArrayTextureLayers: 8 })).toMatchObject({ mode: "raster", reason: "small_textures" });
     expect(chooseRenderMode({ ...good, renderer: "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device))" })).toMatchObject({ mode: "raster", reason: "software_gpu" });
+  });
+
+  it("never promises a backend the device cannot create (TR-01)", () => {
+    const good = { webgl2: true, floatColorBuffer: true, halfFloatTarget: true, floatTarget: true, maxTextureSize: 16384, maxArrayTextureLayers: 2048, renderer: "ANGLE (Intel UHD 620)" };
+    // WebGL 1: three's WebGLRenderer (used by both backends) cannot run - no fallback is promised.
+    expect(chooseRenderMode({ ...good, webgl2: false })).toEqual({ mode: "unsupported", reason: "no_webgl2", rasterEligible: false });
+    // D-2: both backends run the denoiser (RGBA32F normal/position guides) and the exposure metering
+    // (RGBA32F), so half-float targets alone qualify NEITHER backend — never a raster promise.
+    expect(chooseRenderMode({ ...good, floatColorBuffer: false, floatTarget: false })).toEqual({ mode: "unsupported", reason: "no_render_targets", rasterEligible: false });
+    // Extension exposed but the RGBA32F attachment is incomplete: unsupported as well.
+    expect(chooseRenderMode({ ...good, floatTarget: false })).toEqual({ mode: "unsupported", reason: "no_render_targets", rasterEligible: false });
+    // Half-float attachment failed: both backends need RGBA16F (accumulation / denoiser ping-pong).
+    expect(chooseRenderMode({ ...good, halfFloatTarget: false })).toEqual({ mode: "unsupported", reason: "no_render_targets", rasterEligible: false });
+    // Both formats renderable but small/software: the fast renderer only.
+    expect(chooseRenderMode({ ...good, maxTextureSize: 2048 })).toEqual({ mode: "raster", reason: "small_textures", rasterEligible: true });
+    // Neither backend's targets work: unsupported (never a raster promise).
+    expect(chooseRenderMode({ ...good, halfFloatTarget: false, floatColorBuffer: false })).toEqual({ mode: "unsupported", reason: "no_render_targets", rasterEligible: false });
+  });
+
+  it("probes real framebuffer completeness for each backend's render targets", () => {
+    const fakeCanvas = (opts: { float: boolean; halfComplete: boolean; floatComplete: boolean }) => {
+      let internal = 0;
+      let attached = 0;
+      const gl = {
+        RGBA16F: 0x881a, RGBA32F: 0x8814, HALF_FLOAT: 0x140b, FLOAT: 0x1406, RGBA: 0x1908, TEXTURE_2D: 1, FRAMEBUFFER: 2, COLOR_ATTACHMENT0: 3,
+        FRAMEBUFFER_COMPLETE: 0x8cd5, NO_ERROR: 0, MAX_TEXTURE_SIZE: 10, MAX_ARRAY_TEXTURE_LAYERS: 11,
+        getExtension: (name: string) => (name === "EXT_color_buffer_float" ? (opts.float ? {} : null) : name === "EXT_color_buffer_half_float" ? {} : null),
+        getParameter: (p: number) => (p === 10 ? 16384 : p === 11 ? 2048 : null),
+        createTexture: () => ({}), createFramebuffer: () => ({}), deleteTexture: () => {}, deleteFramebuffer: () => {},
+        bindTexture: () => {}, bindFramebuffer: () => {}, getError: () => 0,
+        texImage2D: (_t: number, _l: number, format: number) => {
+          internal = format;
+        },
+        framebufferTexture2D: () => {
+          attached = internal;
+        },
+        checkFramebufferStatus: () => ((attached === 0x881a && opts.halfComplete) || (attached === 0x8814 && opts.floatComplete) ? 0x8cd5 : 0x8cdd),
+      };
+      return { getContext: (kind: string) => (kind === "webgl2" ? gl : null) } as unknown as HTMLCanvasElement;
+    };
+    const ok = probeGpu(() => fakeCanvas({ float: true, halfComplete: true, floatComplete: true }))!;
+    expect(ok).toMatchObject({ webgl2: true, halfFloatTarget: true, floatTarget: true, maxArrayTextureLayers: 2048 });
+    expect(chooseRenderMode(ok)).toMatchObject({ mode: "pathtraced", rasterEligible: true });
+    // A driver whose half-float attachment is incomplete gets no fast-renderer promise.
+    const noHalf = probeGpu(() => fakeCanvas({ float: true, halfComplete: false, floatComplete: true }))!;
+    expect(noHalf).toMatchObject({ halfFloatTarget: false, floatTarget: true });
+    expect(chooseRenderMode(noHalf)).toMatchObject({ mode: "unsupported", reason: "no_render_targets" });
+    const noFloat = probeGpu(() => fakeCanvas({ float: true, halfComplete: true, floatComplete: false }))!;
+    expect(chooseRenderMode(noFloat)).toMatchObject({ mode: "unsupported", reason: "no_render_targets" });
+    const broken = probeGpu(() => fakeCanvas({ float: false, halfComplete: false, floatComplete: false }))!;
+    expect(chooseRenderMode(broken)).toMatchObject({ mode: "unsupported", reason: "no_render_targets" });
+    const webgl1 = probeGpu(() => ({ getContext: (k: string) => (k === "webgl" ? { getExtension: () => null, getParameter: () => 4096, MAX_TEXTURE_SIZE: 1 } : null) }) as unknown as HTMLCanvasElement)!;
+    expect(webgl1.webgl2).toBe(false);
+    expect(chooseRenderMode(webgl1)).toMatchObject({ mode: "unsupported", reason: "no_webgl2" });
   });
 });
 
@@ -223,64 +283,132 @@ describe("photo camera", () => {
 });
 
 describe("photo materials", () => {
-  it("keeps the configured colour and decor image exactly; adds only surface physics", () => {
+  it("legacy pass-through: an unbound mesh keeps its colour, maps and physical fields exactly (TR-02)", () => {
     const map = new Texture();
     map.colorSpace = SRGBColorSpace;
-    const source = new MeshStandardMaterial({ color: "#67452F", roughness: 0.65, map });
+    const normalMap = new Texture();
+    const roughnessMap = new Texture();
+    const source = new MeshPhysicalMaterial({ color: "#67452F", roughness: 0.65, map, normalMap, roughnessMap, clearcoat: 0.5, sheen: 0.3 });
     const board = photoMaterial("board", source);
     expect(board).toBeInstanceOf(MeshPhysicalMaterial);
     expect(board.color.getHexString()).toBe(new Color("#67452F").getHexString());
-    expect(board.map).toBe(map);
-    expect(board.roughness).toBe(0.65);
-    expect(board.transparent).toBe(false);
-
-    source.userData.decor = { texture: "7045-MG.jpg", code: "7045", structure: "MG", swatchSizeM: SWATCH_SIZE_M };
-    expect(photoMaterial("board", source)).toMatchObject({ clearcoat: 1, roughness: 0.12 }); // high gloss
-    source.userData.decor = { texture: null, code: "AL01", structure: "SM", swatchSizeM: SWATCH_SIZE_M };
-    expect(photoMaterial("board", source).metalness).toBeGreaterThan(0.5); // metal decor
-
-    // The supplied mattress fabric: hue kept, albedo capped at real white fabric (not a customer colour).
-    const mattress = new Color("#E6E3DC");
-    const fabric = photoMaterial("fabric", new MeshStandardMaterial({ color: "#E6E3DC" }));
-    expect(fabric.sheen).toBeGreaterThan(0);
-    expect(Math.max(fabric.color.r, fabric.color.g, fabric.color.b)).toBeCloseTo(FABRIC_MAX_ALBEDO, 5);
-    expect(fabric.color.r / fabric.color.b).toBeCloseTo(mattress.r / mattress.b, 5);
-    const grey = photoMaterial("fabric", new MeshStandardMaterial({ color: "#808080" }));
-    expect(grey.color.getHexString()).toBe("808080"); // darker fabrics are untouched
-    const glass = photoMaterial("glass", new MeshStandardMaterial({ color: "#A9CBE0", transparent: true, opacity: 0.35 }));
-    expect(glass).toMatchObject({ transmission: 1, transparent: false });
-    expect(glass.color.getHexString()).toBe(new Color(GLASS_TINT).getHexString());
+    expect([board.map, board.normalMap, board.roughnessMap]).toEqual([map, normalMap, roughnessMap]);
+    expect(board).toMatchObject({ roughness: 0.65, clearcoat: 0.5, sheen: 0.3, transparent: false });
     const wall = photoMaterial("wall", new MeshStandardMaterial({ color: "#D9D4CC" }));
     expect(wall.color.getHexString()).toBe(new Color("#D9D4CC").getHexString());
     // The source material is never modified.
     expect(source.color.getHexString()).toBe(new Color("#67452F").getHexString());
   });
 
-  it("uses the HD decor image with the same orientation and placement, keeping the preview on failure", async () => {
-    const { scene, panelMaterial } = liveScene();
-    const preview = new Texture();
-    preview.wrapS = preview.wrapT = RepeatWrapping;
-    preview.repeat.set(1 / SWATCH_SIZE_M, 1 / SWATCH_SIZE_M);
-    preview.colorSpace = SRGBColorSpace;
-    panelMaterial.map = preview;
-    panelMaterial.userData.decor = { texture: "K001-PW.jpg", code: "K001", structure: "PW", swatchSizeM: SWATCH_SIZE_M };
-    const snapshot = takeSnapshot(scene);
-    const load = vi.fn(async (url: string) => {
-      expect(url).toBe("/textures/decors/hd/K001-PW.jpg");
-      return new Texture();
-    });
-    expect(await applyHdDecors(snapshot, load)).toBe(1);
-    const board = snapshot.items.find((i) => i.tag.role === "board")!.material;
-    expect(board.map).not.toBe(preview);
-    expect(board.map!.repeat.toArray()).toEqual(preview.repeat.toArray());
-    expect(board.map!.wrapS).toBe(RepeatWrapping);
-    expect(board.map!.colorSpace).toBe(SRGBColorSpace);
+  function bound(selection: MaterialSelection, role: Parameters<typeof photoTag>[0], wall?: Parameters<typeof photoTag>[1]) {
+    const mesh = new Mesh(new BoxGeometry(), new MeshStandardMaterial());
+    mesh.userData = photoTag(role, wall);
+    attachMaterialBinding(mesh, { binding: { slots: [{ slotId: "surface", selection, side: "front", mapping: { kind: "authored-uv0", uvUnits: "metres" } }], groups: [] }, authored: {} });
+    return mesh;
+  }
 
-    const second = takeSnapshot(scene);
-    expect(await applyHdDecors(second, async () => Promise.reject(new Error("404")))).toBe(0);
-    expect(second.items.find((i) => i.tag.role === "board")!.material.map).toBe(preview);
+  it("bound meshes: the photo material is built by the shared factory from the frozen selection", async () => {
+    const scene = new Scene();
+    const white = bound(cabinetFinishSelection("white-matte"), "board");
+    const walnut = bound(cabinetFinishSelection("walnut"), "board");
+    const wall = bound(configuredColor(ROOM_WALL_TEMPLATE, "#D9D4CC"), "wall", "back");
+    const glass = bound({ kind: "registered", id: REGISTERED.glass }, "glass", "front");
+    scene.add(white, walnut, wall, glass);
+    const urls: string[] = [];
+    const textures = createTextureResources({ sources: createSourceCache(async (url) => (urls.push(url), { width: 8, height: 8 })) });
+    const snapshot = takeSnapshot(scene, { textures });
+    await snapshot.ready;
+    const [board, wood, paint, pane] = snapshot.items.map((i) => i.material);
+    expect(board).toBeInstanceOf(MeshPhysicalMaterial);
+    expect(board.color.getHexString()).toBe(new Color("#F2F0EA").getHexString());
+    expect(board.roughness).toBe(0.85);
+    // Walnut (Phase 4A): the generic walnut image, enhanced tier, calibrated to the catalog colour.
+    expect(wood.map).not.toBeNull();
+    expect(wood.normalMap).not.toBeNull();
+    expect(wood.roughnessMap).not.toBeNull();
+    const mean = wood.userData.meanLinearAlbedo as number[];
+    const target = new Color("#67452F");
+    [target.r, target.g, target.b].forEach((c, i) => expect(mean[i]).toBeCloseTo(c, 5));
+    expect(wood.roughness).toBeCloseTo(0.65 / 0.6458, 4); // finish mean over the map's measured mean
+    // Walls: configured colour unchanged, plaster relief and matt sheen variation from the wall profile.
+    expect(paint).toMatchObject({ side: 2 }); // matt paint, light-blocking on both sides
+    expect(paint.roughness).toBeCloseTo(0.92 / 0.9087, 4);
+    expect(paint.normalMap).not.toBeNull();
+    expect(paint.map).toBeNull();
+    expect(paint.color.getHexString()).toBe(new Color("#D9D4CC").getHexString());
+    expect(pane).toMatchObject({ transmission: 1, ior: 1.5, transparent: false });
+    expect(urls).toContain("/textures/pbr/walnut_veneer_02/albedo_2k.jpg");
+    expect(urls).toContain("/textures/pbr/white_plaster_02/normal_1k.png");
+    // The live meshes keep their own materials.
+    expect((walnut.material as MeshStandardMaterial).color.getHexString()).toBe("ffffff");
+    expect(snapshot.diagnostics()).toEqual({ unavailable: [], failed: [] });
     snapshot.dispose();
-    second.dispose();
+  });
+
+  it("uses the enhanced image of the same decor, one shared texture per decor, at the decor's physical repeat", async () => {
+    const root = new Group();
+    const { root: bed, sources } = prepareBedScene(await loadBed("clickbed-o"));
+    const viewportTextures = createTextureResources({ sources: createSourceCache(async () => ({ width: 256, height: 256 })) });
+    const runtime = { registry: materialRegistry, capabilities: { ...PHOTO_CAPABILITIES, mode: "viewport" as const }, quality: VIEWPORT_CONSTRAINED, textures: viewportTextures };
+    const metres = { kind: "authored-uv0", uvUnits: "metres" } as const;
+    // The same decor on front and body.
+    const set = applyBedMaterials(
+      bed,
+      sources,
+      {
+        slots: [
+          { slotId: "front", selection: bedDecorSelection(4000, "standard", "K003-PW"), mapping: metres, side: "front" },
+          { slotId: "body", selection: bedDecorSelection(4000, "standard", "K003-PW"), mapping: metres, side: "front" },
+          { slotId: "mattress", selection: { kind: "authored", overrides: { finishProfileId: "finish/textile-ticking" } }, side: "front" },
+          { slotId: "hardware", selection: { kind: "authored", overrides: { finishProfileId: "finish/mechanism-painted-metal" } }, side: "front" },
+        ],
+        groups: [],
+      },
+      runtime,
+    );
+    await set.ready;
+    applyBedVisibility(bed, "unfolded", true);
+    root.add(bed);
+    const urls: string[] = [];
+    const photoTextures = createTextureResources({
+      sources: createSourceCache(async (url) => {
+        urls.push(url);
+        return { width: 406, height: 370 };
+      }),
+    });
+    const snapshot = takeSnapshot(root, { textures: photoTextures });
+    await snapshot.ready;
+    expect(urls).toEqual(["/textures/decors/hd/K003-PW.jpg"]); // enhanced tier of the same decor, loaded once
+    const boards = snapshot.items.filter((i) => i.tag.role === "board").map((i) => i.material);
+    const maps = new Set(boards.map((m) => m.map));
+    expect(maps.size).toBe(1); // front and body share one texture object (one path-tracer layer)
+    const map = [...maps][0]!;
+    expect(map.repeat.toArray()).toEqual([1 / SWATCH_SIZE_M, 1 / SWATCH_SIZE_M]);
+    expect(map.colorSpace).toBe(SRGBColorSpace);
+    expect(map.wrapS).toBe(RepeatWrapping);
+    // Mattress: the authored material with the textile profile (albedo capped at real white ticking,
+    // sheen) — identical in the viewport and the photo.
+    const fabric = snapshot.items.find((i) => i.tag.role === "fabric")!.material;
+    expect(Math.max(fabric.color.r, fabric.color.g, fabric.color.b)).toBeCloseTo(0.72, 5);
+    expect(fabric.sheen).toBeGreaterThan(0);
+    expect(set.bySlot.get("mattress")!.material.color.getHexString()).toBe(fabric.color.getHexString());
+    snapshot.dispose();
+    expect(photoTextures.stats().activeLeases).toBe(0); // every lease released; the scope (here the caller's) frees them
+    photoTextures.dispose();
+    expect(photoTextures.stats().textures).toBe(0);
+    set.dispose();
+  });
+
+  it("a decor without an authorized swatch stays explicitly unavailable, never another decor", async () => {
+    const scene = new Scene();
+    scene.add(bound(bedDecorSelection(4000, "standard", "8361-SN"), "board"));
+    const snapshot = takeSnapshot(scene);
+    await snapshot.ready;
+    const m = snapshot.items[0].material;
+    expect(m.map).toBeNull();
+    expect(m.color.getHexString()).toBe(new Color(NO_SWATCH_COLOR).getHexString());
+    expect(snapshot.diagnostics().unavailable).toEqual(["8361 SN"]);
+    snapshot.dispose();
   });
 });
 
@@ -404,8 +532,8 @@ describe("render engine", () => {
   });
 
   it("reports unsupported browsers and labels detected fallbacks", async () => {
-    await expect(renderPhotoViews(views(), PT, engineDeps({ choice: { mode: "unsupported", reason: "no_webgl" } }))).rejects.toBeInstanceOf(PhotoRenderError);
-    const [raster] = await renderPhotoViews(views().slice(0, 1), PT, engineDeps({ choice: { mode: "raster", reason: "software_gpu" } }));
+    await expect(renderPhotoViews(views(), PT, engineDeps({ choice: { mode: "unsupported", reason: "no_webgl", rasterEligible: false } }))).rejects.toBeInstanceOf(PhotoRenderError);
+    const [raster] = await renderPhotoViews(views().slice(0, 1), PT, engineDeps({ choice: { mode: "raster", reason: "software_gpu", rasterEligible: true } }));
     expect(raster).toMatchObject({ mode: "raster", fallbackReason: "software_gpu" });
   });
 });
@@ -425,7 +553,7 @@ describe("photo job", () => {
       choice: () => GPU,
       autoQuality: () => "standard",
       loadEnvironment: async () => new Texture(),
-      upgradeTextures: async () => 0,
+      prepareMaterials: (snapshot) => snapshot.ready,
       createBackend: (mode) => (created.push(fakeBackend(mode)), created.at(-1)!),
       now: () => (t += 50),
       nextFrame: async () => {},
@@ -651,7 +779,9 @@ describe("automatic quality from measured performance", () => {
     const quick = recordPerformance({ mode: "pathtraced", samples: 192, width: 1920, height: 1080, timings: timings(40_000) }, store);
     expect(autoQuality(GPU, quick)).toBe("standard");
     // …but never where path tracing is unavailable.
-    expect(autoQuality({ mode: "raster", reason: "software_gpu" }, quick)).toBe("fast");
+    expect(autoQuality({ mode: "raster", reason: "software_gpu", rasterEligible: true }, quick)).toBe("fast");
+    // A device whose fast renderer is ineligible path traces.
+    expect(autoQuality({ mode: "pathtraced", reason: null, rasterEligible: false }, slow)).toBe("standard");
   });
 
   it("normalizes to 1920×1080 and records the fast renderer's frame time", () => {
@@ -674,7 +804,7 @@ describe("automatic quality from measured performance", () => {
       choice: () => GPU,
       autoQuality: () => "fast",
       loadEnvironment: async () => new Texture(),
-      upgradeTextures: async () => 0,
+      prepareMaterials: (snapshot) => snapshot.ready,
       createBackend: (mode, s) => (settingsSeen.push(`${mode}:${s.quality}`), fakeBackend(mode)),
       now: () => (t += 50),
       nextFrame: async () => {},

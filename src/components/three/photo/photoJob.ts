@@ -3,7 +3,7 @@ import type { Arrangement } from "@/domain/arrangement/types";
 import type { GpuChoice, PhotoMode } from "./capabilities";
 import { planPhotoViews, toThreeCamera } from "./photoCamera";
 import { PhotoRenderError, renderPhotoViews, type PhotoBackend, type RenderedPhoto } from "./photoEngine";
-import { buildPhotoScene, type SceneSnapshot } from "./photoScene";
+import { buildPhotoScene, type AppearanceDiagnostics, type SceneSnapshot } from "./photoScene";
 import { cachedPhoto, configurationKey, photoCacheKey, storePhoto, type PhotoRequest } from "./photoService";
 import { resolvePhotoSettings, type PhotoQuality, type PhotoSettings } from "./photoSettings";
 
@@ -17,8 +17,16 @@ export interface PhotoJobDeps {
   /** Records the measured performance of a finished render. */
   recordPerformance?(photo: RenderedPhoto): void;
   loadEnvironment(): Promise<Texture>;
-  /** Swaps decor previews for HD images in the snapshot (failures keep the preview images). */
-  upgradeTextures(snapshot: SceneSnapshot): Promise<unknown>;
+  /**
+   * Waits until the snapshot's materials are complete (all textures of the frozen appearance applied
+   * or definitively failed): a photo never renders a half-loaded or previous appearance.
+   */
+  prepareMaterials(snapshot: SceneSnapshot): Promise<unknown>;
+  /**
+   * Adds the visible note to an image showing unavailable manufacturer appearances or decor images that
+   * failed to load (in the current language: applied when the image is returned, never cached).
+   */
+  annotate?(image: Blob, appearance: AppearanceDiagnostics): Promise<Blob>;
   createBackend(mode: PhotoMode, settings: PhotoSettings, environment: Texture): PhotoBackend;
   now(): number;
   nextFrame(): Promise<void>;
@@ -30,6 +38,31 @@ export const MODEL_WAIT_MS = 20_000;
 const MODEL_POLL_MS = 250;
 
 let running = false;
+
+/** Whether an image must carry the appearance note. */
+export function needsAnnotation(appearance: AppearanceDiagnostics | undefined): boolean {
+  return !!appearance && (appearance.unavailable.length > 0 || appearance.failed.length > 0);
+}
+
+/** Rejects with "cancelled" as soon as the signal aborts (the awaited work itself keeps running). */
+function abortable<T>(work: Promise<T>, signal: AbortSignal | undefined): Promise<T> {
+  if (!signal) return work;
+  if (signal.aborted) return Promise.reject(new PhotoRenderError("cancelled"));
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(new PhotoRenderError("cancelled"));
+    signal.addEventListener("abort", onAbort, { once: true });
+    work.then(
+      (value) => {
+        signal.removeEventListener("abort", onAbort);
+        resolve(value);
+      },
+      (error) => {
+        signal.removeEventListener("abort", onAbort);
+        reject(error);
+      },
+    );
+  });
+}
 
 export function isPhotoJobRunning(): boolean {
   return running;
@@ -46,7 +79,11 @@ export async function runPhotoJob(request: PhotoRequest, deps: PhotoJobDeps): Pr
   let snapshot: SceneSnapshot | null = null;
   try {
     const requested = request.settings?.quality ?? "auto";
-    const settings = resolvePhotoSettings({ ...request.settings, quality: requested === "auto" ? deps.autoQuality() : requested });
+    const choice = deps.choice();
+    let quality: PhotoQuality = requested === "auto" ? deps.autoQuality() : requested;
+    // The fast renderer is offered only where its render targets work; such a device path traces instead.
+    if (quality === "fast" && !choice.rasterEligible && choice.mode === "pathtraced") quality = "standard";
+    const settings = resolvePhotoSettings({ ...request.settings, quality });
     const jobStarted = deps.now();
     let captured = deps.capture();
     let snapshotMs = deps.now() - jobStarted;
@@ -68,15 +105,34 @@ export async function runPhotoJob(request: PhotoRequest, deps: PhotoJobDeps): Pr
     const views = planPhotoViews(arrangement, request.count, settings.width / settings.height, { drawn, margin: settings.frameMargin });
     const configuration = configurationKey(arrangement);
     const keys = views.map((v) => photoCacheKey(configuration, settings, v.id));
-    const reused = keys.map((k) => (request.reuse === false ? undefined : cachedPhoto(k)));
+    const reuse = request.reuse !== false;
+    const reused = keys.map((k) => (reuse ? cachedPhoto(k) : undefined));
     const missing = views.filter((_, i) => !reused[i]);
-    if (missing.length === 0) return reused as RenderedPhoto[];
+    const signal = request.signal;
+    /** The note is added at return time (current language); the cache keeps the plain image. */
+    const publish = async (photo: RenderedPhoto): Promise<RenderedPhoto> => {
+      if (!needsAnnotation(photo.appearance) || !deps.annotate) return photo;
+      const blob = await abortable(deps.annotate(photo.blob, photo.appearance!), signal);
+      return { ...photo, blob };
+    };
+    if (missing.length === 0) {
+      const published = await Promise.all((reused as RenderedPhoto[]).map(publish));
+      if (signal?.aborted) throw new PhotoRenderError("cancelled");
+      return published;
+    }
 
-    const choice = deps.choice();
     const prepareStarted = deps.now();
-    const [environment] = await Promise.all([deps.loadEnvironment(), deps.upgradeTextures(snapshot)]);
+    let materialsMs = 0;
+    // Cancellable: a cancelled request stops waiting at once. The shared image loads continue for
+    // their other consumers; this snapshot's leases are released by dispose() below.
+    const [environment] = await abortable(
+      Promise.all([deps.loadEnvironment(), deps.prepareMaterials(snapshot).then(() => (materialsMs = deps.now() - prepareStarted))]),
+      signal,
+    );
     const prepareMs = deps.now() - prepareStarted;
-    if (request.signal?.aborted) throw new PhotoRenderError("cancelled");
+    const appearance = snapshot.diagnostics();
+    const textureStats = snapshot.textureStats();
+    if (signal?.aborted) throw new PhotoRenderError("cancelled");
     const frozen = snapshot;
     const renderedRaw = await renderPhotoViews(
       missing,
@@ -84,22 +140,35 @@ export async function runPhotoJob(request: PhotoRequest, deps: PhotoJobDeps): Pr
       {
         choice,
         createBackend: (mode, s) => deps.createBackend(mode, s, environment),
-        buildView: (view): { scene: Scene; camera: PerspectiveCamera } => ({
-          scene: buildPhotoScene(frozen, view.hiddenWalls, environment),
-          camera: toThreeCamera(view.camera),
-        }),
+        buildView: (view): { scene: Scene; camera: PerspectiveCamera } => {
+          const camera = toThreeCamera(view.camera);
+          return { scene: buildPhotoScene(frozen, view.hiddenWalls, environment, undefined, camera), camera };
+        },
         now: deps.now,
         nextFrame: deps.nextFrame,
       },
       { signal: request.signal, onProgress: request.onProgress, onPreview: request.onPreview },
     );
-    // Job-level stages: snapshot (scene copy), prepare (HDRI + HD decor textures), total of the request.
-    const jobTimings = { snapshot: Math.round(snapshotMs), prepare: Math.round(prepareMs), job: Math.round(deps.now() - jobStarted) };
-    const rendered = renderedRaw.map((photo) => ({ ...photo, timings: { ...photo.timings, ...jobTimings } }));
+    // Job-level stages: snapshot (scene copy), prepare (HDRI + material textures), materials (texture
+    // readiness alone), total of the request; and the snapshot's material texture residency.
+    const jobTimings = {
+      snapshot: Math.round(snapshotMs),
+      prepare: Math.round(prepareMs),
+      materials: Math.round(materialsMs),
+      textures: textureStats.textures,
+      textureKiB: Math.round(textureStats.residentBytes / 1024),
+      job: Math.round(deps.now() - jobStarted),
+    };
+    // A cancelled job never caches or publishes anything.
+    if (signal?.aborted) throw new PhotoRenderError("cancelled");
+    const rendered = renderedRaw.map((photo) => ({ ...photo, appearance, timings: { ...photo.timings, ...jobTimings } }));
+    let next = 0;
+    const results = reused.map((photo) => photo ?? rendered[next++]);
+    const published = await Promise.all(results.map(publish));
+    if (signal?.aborted) throw new PhotoRenderError("cancelled");
     rendered.forEach((photo) => deps.recordPerformance?.(photo));
     rendered.forEach((photo) => storePhoto(photoCacheKey(configuration, settings, photo.viewId), photo));
-    let next = 0;
-    return reused.map((photo) => photo ?? rendered[next++]);
+    return published;
   } finally {
     snapshot?.dispose();
     running = false;

@@ -1,35 +1,91 @@
 /**
- * GPU detection for the photorealistic renderer. Path tracing (three-gpu-pathtracer) needs WebGL 2
- * with renderable float textures and large data textures (the BVH). Software rasterizers technically
- * pass those checks but would need many minutes per image, so they get the raster fallback.
+ * GPU detection for the photorealistic renderer. Both backends use three's WebGLRenderer, which needs
+ * WebGL 2, and every render-target format they actually allocate must be renderable:
+ * - fast raster (rasterBackend.ts) accumulates into RGBA16F colour attachments;
+ * - the path tracer (three-gpu-pathtracer) accumulates into RGBA32F targets and keeps its BVH and
+ *   material/texture data in large textures and a 2D texture array;
+ * - BOTH run the guided denoiser (denoiser.ts: RGBA16F albedo/ping-pong targets, RGBA32F normal and
+ *   position guides) and the exposure metering (exposure.ts: an RGBA32F target read back as floats), so
+ *   both need RGBA16F and RGBA32F attachments (RENDER_TARGET_REQUIREMENTS).
+ * Eligibility is decided per backend from real framebuffer-completeness probes, so the app never
+ * offers a backend the device cannot create. Software rasterizers pass the checks but would need many
+ * minutes per path-traced image, so they only get the fast renderer.
  */
 
 export interface GpuProbe {
   readonly webgl2: boolean;
+  /** EXT_color_buffer_float is exposed. */
   readonly floatColorBuffer: boolean;
+  /** An RGBA16F (half-float) texture attachment is framebuffer-complete (fast raster). Defaults to floatColorBuffer. */
+  readonly halfFloatTarget?: boolean;
+  /** An RGBA32F texture attachment is framebuffer-complete (path tracer). Defaults to floatColorBuffer. */
+  readonly floatTarget?: boolean;
   readonly maxTextureSize: number;
+  /** MAX_ARRAY_TEXTURE_LAYERS (path-tracer texture array). Defaults to the WebGL 2 minimum, 256. */
+  readonly maxArrayTextureLayers?: number;
   /** Unmasked renderer string when the browser exposes it. */
   readonly renderer: string | null;
 }
 
 export type PhotoMode = "pathtraced" | "raster";
 
+/** Why path tracing is not used on this device. */
+export type TraceIneligibleReason = "no_float_textures" | "small_textures" | "software_gpu";
+
 export type GpuChoice =
-  | { readonly mode: "pathtraced"; readonly reason: null }
-  | { readonly mode: "raster"; readonly reason: "no_webgl2" | "no_float_textures" | "small_textures" | "software_gpu" }
-  | { readonly mode: "unsupported"; readonly reason: "no_webgl" };
+  | { readonly mode: "pathtraced"; readonly reason: null; readonly rasterEligible: boolean }
+  | { readonly mode: "raster"; readonly reason: TraceIneligibleReason; readonly rasterEligible: true }
+  | { readonly mode: "unsupported"; readonly reason: "no_webgl" | "no_webgl2" | "no_render_targets"; readonly rasterEligible: false };
+
+/** Render-target formats each backend allocates (verified against the backend sources by tests). */
+export const RENDER_TARGET_REQUIREMENTS = {
+  raster: ["RGBA16F", "RGBA32F"],
+  pathtraced: ["RGBA16F", "RGBA32F"],
+} as const;
 
 /** Minimum MAX_TEXTURE_SIZE for the path tracer's BVH and texture atlases. */
 export const MIN_TEXTURE_SIZE = 4096;
+/** Minimum MAX_ARRAY_TEXTURE_LAYERS for the path tracer's texture array (the photo budget is 16–32). */
+export const MIN_ARRAY_LAYERS = 32;
 const SOFTWARE_RENDERER = /swiftshader|llvmpipe|softpipe|software|basic render driver|microsoft basic/i;
 
 export function chooseRenderMode(probe: GpuProbe | null): GpuChoice {
-  if (!probe) return { mode: "unsupported", reason: "no_webgl" };
-  if (!probe.webgl2) return { mode: "raster", reason: "no_webgl2" };
-  if (!probe.floatColorBuffer) return { mode: "raster", reason: "no_float_textures" };
-  if (probe.maxTextureSize < MIN_TEXTURE_SIZE) return { mode: "raster", reason: "small_textures" };
-  if (probe.renderer && SOFTWARE_RENDERER.test(probe.renderer)) return { mode: "raster", reason: "software_gpu" };
-  return { mode: "pathtraced", reason: null };
+  if (!probe) return { mode: "unsupported", reason: "no_webgl", rasterEligible: false };
+  // three's WebGLRenderer (both backends) cannot run on WebGL 1.
+  if (!probe.webgl2) return { mode: "unsupported", reason: "no_webgl2", rasterEligible: false };
+  const halfFloatTarget = probe.halfFloatTarget ?? probe.floatColorBuffer;
+  const floatTarget = probe.floatColorBuffer && (probe.floatTarget ?? probe.floatColorBuffer);
+  // Both backends need both formats (denoiser guides and exposure metering are RGBA32F).
+  const rasterEligible = halfFloatTarget && floatTarget;
+  if (!rasterEligible) return { mode: "unsupported", reason: "no_render_targets", rasterEligible: false };
+  const traceReason: TraceIneligibleReason | null =
+    probe.maxTextureSize < MIN_TEXTURE_SIZE || (probe.maxArrayTextureLayers ?? 256) < MIN_ARRAY_LAYERS
+      ? "small_textures"
+      : probe.renderer && SOFTWARE_RENDERER.test(probe.renderer)
+        ? "software_gpu"
+        : null;
+  if (traceReason === null) return { mode: "pathtraced", reason: null, rasterEligible };
+  return { mode: "raster", reason: traceReason, rasterEligible: true };
+}
+
+/** Whether a colour texture of this format can be rendered to (framebuffer completeness). */
+function renderable(gl: WebGL2RenderingContext, internalFormat: number, type: number): boolean {
+  const texture = gl.createTexture();
+  const framebuffer = gl.createFramebuffer();
+  try {
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, internalFormat, 4, 4, 0, gl.RGBA, type, null);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+    return gl.getError() === gl.NO_ERROR && gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
+  } catch {
+    return false;
+  } finally {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    gl.deleteFramebuffer(framebuffer);
+    gl.deleteTexture(texture);
+  }
 }
 
 /** Probes the browser's WebGL support on a throw-away canvas (null: no WebGL at all). */
@@ -40,10 +96,15 @@ export function probeGpu(createCanvas: () => HTMLCanvasElement = () => document.
     const gl = gl2 ?? (canvas.getContext("webgl") as WebGLRenderingContext | null);
     if (!gl) return null;
     const debug = gl.getExtension("WEBGL_debug_renderer_info");
+    const floatColorBuffer = gl2 ? gl2.getExtension("EXT_color_buffer_float") !== null : false;
+    const halfFloatExtension = gl2 ? floatColorBuffer || gl2.getExtension("EXT_color_buffer_half_float") !== null : false;
     const probe: GpuProbe = {
       webgl2: gl2 !== null,
-      floatColorBuffer: gl2 ? gl2.getExtension("EXT_color_buffer_float") !== null : false,
+      floatColorBuffer,
+      halfFloatTarget: gl2 && halfFloatExtension ? renderable(gl2, gl2.RGBA16F, gl2.HALF_FLOAT) : false,
+      floatTarget: gl2 && floatColorBuffer ? renderable(gl2, gl2.RGBA32F, gl2.FLOAT) : false,
       maxTextureSize: Number(gl.getParameter(gl.MAX_TEXTURE_SIZE)) || 0,
+      maxArrayTextureLayers: gl2 ? Number(gl2.getParameter(gl2.MAX_ARRAY_TEXTURE_LAYERS)) || 0 : 0,
       renderer: debug ? String(gl.getParameter(debug.UNMASKED_RENDERER_WEBGL)) : null,
     };
     gl.getExtension("WEBGL_lose_context")?.loseContext();
@@ -118,7 +179,8 @@ export function recordPerformance(
   return next;
 }
 
-/** The quality "auto" stands for on this device. */
+/** The quality "auto" stands for on this device (path tracing when the fast renderer is not eligible). */
 export function autoQuality(choice: GpuChoice, performance: DevicePerformance): "fast" | "standard" {
+  if (choice.mode === "pathtraced" && !choice.rasterEligible) return "standard";
   return choice.mode === "pathtraced" && (performance.pathtracedSppPerSecond ?? 0) >= AUTO_PATH_TRACING_MIN_SPP ? "standard" : "fast";
 }

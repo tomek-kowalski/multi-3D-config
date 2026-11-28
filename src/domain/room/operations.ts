@@ -8,6 +8,7 @@ import type {
   OpeningNumericField,
   RoomConfiguration,
   RoomDimensionKey,
+  RoomFloor,
   RoomOpening,
   WallId,
 } from "./types";
@@ -29,6 +30,17 @@ export function setWallColor(room: RoomConfiguration, wall: WallId, color: HexCo
 
 export function setFloorColor(room: RoomConfiguration, color: HexColor): Result<RoomConfiguration> {
   return commit({ ...room, floorColor: color });
+}
+
+/** Floor material or colour floor; `floorColor` is kept, so switching back restores the chosen colour. */
+export function setFloor(room: RoomConfiguration, floor: RoomFloor): Result<RoomConfiguration> {
+  if (floor.kind === "color") {
+    // A colour floor is stored as the absent field: identical to every room saved before floor materials.
+    const { floor: _previous, ...rest } = room;
+    void _previous;
+    return commit(rest);
+  }
+  return commit({ ...room, floor: { kind: "material", materialId: floor.materialId, plankAxis: floor.plankAxis } });
 }
 
 function nextOpeningId(room: RoomConfiguration, kind: OpeningKind): string {

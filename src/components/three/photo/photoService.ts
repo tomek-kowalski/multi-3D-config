@@ -58,6 +58,13 @@ export interface RenderingMetadata {
   readonly hiddenWalls: readonly string[];
   readonly settings: PhotoSettings;
   readonly fallbackReason: string | null;
+  /** Optional maps left out to meet the path-tracer budget (absent: none). */
+  readonly reductions?: readonly string[];
+  /**
+   * Manufacturer appearances the image could not show as authorized (absent: none), stored with the
+   * quotation so the record explains its note: decors without a catalog swatch, failed image loads.
+   */
+  readonly appearance?: { readonly unavailable: readonly string[]; readonly failed: readonly string[] };
 }
 
 export function renderingMetadata(photo: RenderedPhoto): RenderingMetadata {
@@ -74,6 +81,10 @@ export function renderingMetadata(photo: RenderedPhoto): RenderingMetadata {
     hiddenWalls: [...photo.hiddenWalls],
     settings: photo.settings,
     fallbackReason: photo.fallbackReason,
+    ...(photo.reductions && photo.reductions.length > 0 ? { reductions: [...photo.reductions] } : {}),
+    ...(photo.appearance && (photo.appearance.unavailable.length > 0 || photo.appearance.failed.length > 0)
+      ? { appearance: { unavailable: [...photo.appearance.unavailable], failed: [...photo.appearance.failed] } }
+      : {}),
   };
 }
 

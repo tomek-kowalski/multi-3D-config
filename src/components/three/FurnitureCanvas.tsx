@@ -6,12 +6,38 @@ import { NeutralToneMapping } from "three";
 import { useConfiguratorStore } from "@/store/useConfiguratorStore";
 import { CameraRig } from "./CameraRig";
 import { FurnitureRenderer } from "./FurnitureRenderer";
+import { FURNITURE_LIGHTING, MaterialRuntimeProvider, useViewportLighting } from "./materials/MaterialRuntime";
 
 const BACKGROUND_COLOR = "#ecebe8";
 const CAMERA_FOV = 35;
 
 function clearSelection() {
   useConfiguratorStore.getState().selectCompartment(null);
+}
+
+/** Studio lights of the cabinet view; balanced with the reflection environment once it is ready. */
+function FurnitureLights() {
+  const light = useViewportLighting(FURNITURE_LIGHTING);
+  return (
+    <>
+      <ambientLight intensity={light.ambient} />
+      <directionalLight
+        position={[2.5, 4.5, 3.5]}
+        intensity={light.key}
+        castShadow
+        shadow-mapSize={[2048, 2048]}
+        shadow-bias={-0.0004}
+        shadow-normalBias={0.02}
+        shadow-camera-left={-3}
+        shadow-camera-right={3}
+        shadow-camera-top={3.5}
+        shadow-camera-bottom={-1}
+        shadow-camera-near={0.5}
+        shadow-camera-far={15}
+      />
+      <directionalLight position={[-3, 2, -2]} intensity={light.fill} />
+    </>
+  );
 }
 
 /**
@@ -34,24 +60,10 @@ export function FurnitureCanvas() {
     >
       <color attach="background" args={[BACKGROUND_COLOR]} />
 
-      <ambientLight intensity={1.4} />
-      <directionalLight
-        position={[2.5, 4.5, 3.5]}
-        intensity={2.8}
-        castShadow
-        shadow-mapSize={[2048, 2048]}
-        shadow-bias={-0.0004}
-        shadow-normalBias={0.02}
-        shadow-camera-left={-3}
-        shadow-camera-right={3}
-        shadow-camera-top={3.5}
-        shadow-camera-bottom={-1}
-        shadow-camera-near={0.5}
-        shadow-camera-far={15}
-      />
-      <directionalLight position={[-3, 2, -2]} intensity={0.8} />
-
-      <FurnitureRenderer />
+      <MaterialRuntimeProvider lighting={FURNITURE_LIGHTING}>
+        <FurnitureLights />
+        <FurnitureRenderer />
+      </MaterialRuntimeProvider>
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[20, 20]} />

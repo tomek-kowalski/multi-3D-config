@@ -1,7 +1,17 @@
 import type { Issue } from "../shared/issues";
 import { ROOM_LIMITS } from "./defaults";
 import { wallLength } from "./geometry";
-import { WALL_IDS, type HexColor, type RoomConfiguration, type RoomOpening } from "./types";
+import {
+  FLOOR_MATERIAL_IDS,
+  FLOOR_PLANK_AXES,
+  WALL_IDS,
+  type FloorMaterialId,
+  type FloorPlankAxis,
+  type HexColor,
+  type RoomConfiguration,
+  type RoomFloor,
+  type RoomOpening,
+} from "./types";
 
 const HEX_COLOR = /^#[0-9A-Fa-f]{6}$/;
 
@@ -75,6 +85,19 @@ function validateOverlaps(room: RoomConfiguration, issues: Issue[]) {
   }
 }
 
+/** A floor value this version understands (unknown materials or axes are rejected, never guessed). */
+export function isRoomFloor(value: unknown): value is RoomFloor {
+  if (typeof value !== "object" || value === null) return false;
+  const v = value as Record<string, unknown>;
+  if (v.kind === "color") return Object.keys(v).length === 1;
+  return (
+    v.kind === "material" &&
+    FLOOR_MATERIAL_IDS.includes(v.materialId as FloorMaterialId) &&
+    FLOOR_PLANK_AXES.includes(v.plankAxis as FloorPlankAxis) &&
+    Object.keys(v).length === 3
+  );
+}
+
 export function validateRoom(room: RoomConfiguration): Issue[] {
   const issues: Issue[] = [];
   checkRange(room.width, ROOM_LIMITS.width, "width", issues);
@@ -84,6 +107,7 @@ export function validateRoom(room: RoomConfiguration): Issue[] {
     if (!isHexColor(room.wallColors[wall])) issues.push({ code: "invalid_color", path: `wallColors.${wall}` });
   }
   if (!isHexColor(room.floorColor)) issues.push({ code: "invalid_color", path: "floorColor" });
+  if (room.floor !== undefined && !isRoomFloor(room.floor)) issues.push({ code: "invalid_floor", path: "floor" });
   const ids = new Set<string>();
   for (const opening of room.openings) {
     if (ids.has(opening.id)) issues.push({ code: "duplicate_id", path: `openings.${opening.id}` });

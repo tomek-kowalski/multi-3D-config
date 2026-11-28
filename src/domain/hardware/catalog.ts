@@ -4,16 +4,15 @@
  * Generic shapes only; no manufacturer products (Phase 3B).
  */
 /*
- * `metalness` / `roughness` are rendering hints. The scene has no environment map (no external HDR
- * assets), and a fully metallic material only reflects its environment — it would render nearly
- * black. Moderate metalness keeps the finishes recognisable under the neutral studio lights.
+ * IDs, names and swatch colours only. How a finish renders (metal vs. coating, roughness) is defined
+ * once in the universal material registry (src/domain/materials/bindings.ts, hardware finish profiles).
  */
 export const HARDWARE_FINISHES = [
-  { id: "chrome", name: "Chrom", color: "#D9DCDF", metalness: 0.35, roughness: 0.2 },
-  { id: "brushed-steel", name: "Stal szczotkowana", color: "#A9ADB1", metalness: 0.3, roughness: 0.45 },
-  { id: "black-matte", name: "Czarny mat", color: "#232323", metalness: 0.1, roughness: 0.7 },
-  { id: "brass", name: "Mosiądz", color: "#C9A24A", metalness: 0.4, roughness: 0.3 },
-  { id: "white", name: "Biały", color: "#F2F2F0", metalness: 0, roughness: 0.5 },
+  { id: "chrome", name: "Chrom", color: "#D9DCDF" },
+  { id: "brushed-steel", name: "Stal szczotkowana", color: "#A9ADB1" },
+  { id: "black-matte", name: "Czarny mat", color: "#232323" },
+  { id: "brass", name: "Mosiądz", color: "#C9A24A" },
+  { id: "white", name: "Biały", color: "#F2F2F0" },
 ] as const;
 
 export type HardwareFinishId = (typeof HARDWARE_FINISHES)[number]["id"];

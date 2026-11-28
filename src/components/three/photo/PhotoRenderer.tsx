@@ -2,14 +2,16 @@
 
 import { useThree } from "@react-three/fiber";
 import { useEffect } from "react";
-import { TextureLoader, type Texture } from "three";
+import type { Texture } from "three";
+import { translate, useLocaleStore } from "@/i18n";
 import { useArrangementStore } from "@/store/useArrangementStore";
 import { createBackendPool } from "./backendPool";
 import { autoQuality, chooseRenderMode, probeGpu, readPerformance, recordPerformance, type GpuChoice } from "./capabilities";
 import type { Arrangement } from "@/domain/arrangement/types";
 import { planPhotoViews, toThreeCamera } from "./photoCamera";
 import { isPhotoJobRunning, runPhotoJob } from "./photoJob";
-import { applyHdDecors, buildPhotoScene, takeSnapshot, type SceneSnapshot } from "./photoScene";
+import { annotateImage } from "./annotation";
+import { buildPhotoScene, takeSnapshot, type AppearanceDiagnostics, type SceneSnapshot } from "./photoScene";
 import { registerPhotoPrewarm, registerPhotoRenderer } from "./photoService";
 import { resolvePhotoSettings } from "./photoSettings";
 
@@ -39,6 +41,17 @@ function loadEnvironment(): Promise<Texture> {
   });
 }
 
+/**
+ * The note burned into an exported image (current language): decors without an authorized swatch and
+ * decor images that failed to load.
+ */
+export function appearanceNote(appearance: AppearanceDiagnostics, locale = useLocaleStore.getState().locale): string {
+  const lines: string[] = [];
+  if (appearance.unavailable.length > 0) lines.push(translate(locale, "photo.annotation.unavailable", { decors: appearance.unavailable.join(", ") }));
+  if (appearance.failed.length > 0) lines.push(translate(locale, "photo.annotation.failed", { decors: appearance.failed.join(", ") }));
+  return lines.join(" ");
+}
+
 let prewarming: Promise<void> | null = null;
 
 /**
@@ -66,9 +79,12 @@ function prewarm(capture: () => { arrangement: Arrangement; snapshot: SceneSnaps
       const { arrangement, snapshot } = capture();
       try {
         if (snapshot.loading === 0) {
+          // Compile the programs of the final appearance (textured materials use other shader variants).
+          await snapshot.ready;
           const [view] = planPhotoViews(arrangement, 1, settings.width / settings.height);
           t = performance.now();
-          await backend.setScene(buildPhotoScene(snapshot, view.hiddenWalls, env), toThreeCamera(view.camera));
+          const camera = toThreeCamera(view.camera);
+          await backend.setScene(buildPhotoScene(snapshot, view.hiddenWalls, env, undefined, camera), camera);
           mark("compile", t);
           t = performance.now();
           backend.step(0);
@@ -103,10 +119,8 @@ export function PhotoRenderer() {
         recordPerformance: (photo) => recordPerformance(photo),
         // A prewarm in progress finishes first (its renderer is then reused, not created twice).
         loadEnvironment: () => (prewarming ?? Promise.resolve()).then(loadEnvironment),
-        upgradeTextures: (snapshot) => {
-          const loader = new TextureLoader();
-          return applyHdDecors(snapshot, (url) => loader.loadAsync(url));
-        },
+        prepareMaterials: (snapshot) => snapshot.ready,
+        annotate: (image, appearance) => annotateImage(image, appearanceNote(appearance)),
         createBackend: (mode, settings) => pool.acquire(mode, settings),
         now: () => performance.now(),
         nextFrame: () => new Promise((resolve) => requestAnimationFrame(() => resolve())),

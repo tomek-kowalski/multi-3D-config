@@ -3,6 +3,7 @@
 import {
   Box3,
   Color,
+  CubeCamera,
   DataUtils,
   DirectionalLight,
   HemisphereLight,
@@ -16,8 +17,11 @@ import {
   Sphere,
   SRGBColorSpace,
   Vector3,
+  WebGLCubeRenderTarget,
   WebGLRenderer,
   WebGLRenderTarget,
+  type Material,
+  type MeshStandardMaterial,
   type PerspectiveCamera,
   type Scene,
   type Texture,
@@ -66,6 +70,22 @@ export interface RasterLighting {
  * the unshadowed fill are stronger than the path tracer's.
  */
 export const RASTER_LIGHTING: RasterLighting = { environmentIntensity: 0.35, bounceIntensity: 0.6, keyIntensity: 2.3, skyIntensity: 2.1 };
+
+/**
+ * Metals show almost nothing but reflections. The path tracer reflects the lit room itself (walls, floor,
+ * furniture, the window's exterior) plus the HDRI. Phase 3 stood in for the room with the HDRI at 1.6×,
+ * which made polished hardware a uniform white (handles read as white lines, knobs as dots: the studio
+ * HDRI is bright almost everywhere). Since Phase 4AB.2 the fast renderer reflects the room too: one cube
+ * capture of the lit photo scene per view (ROOM_PROBE_SIZE² per face, prefiltered for roughness) is the
+ * metals' environment map, at its physical intensity. Per-view material copies — the snapshot's
+ * materials and their appearance definition are unchanged.
+ */
+export const RASTER_METAL_ENVIRONMENT_INTENSITY = 1;
+/** Face size of the room reflection capture (6 faces; RGBA16F; ~1.5 MiB plus its PMREM). */
+export const ROOM_PROBE_SIZE = 256;
+/** Height of the capture point above the floor (furniture hardware height, metres). */
+const ROOM_PROBE_HEIGHT_M = 1.1;
+const METALLIC = 0.5;
 
 /**
  * Average colour of the HDRI's upper hemisphere (solid-angle weighted), normalized to luminance 1: the
@@ -168,6 +188,9 @@ export function createFastRasterBackend(
   renderer.shadowMap.autoUpdate = true;
   const pmrem = new PMREMGenerator(renderer);
   const prefiltered = pmrem.fromEquirectangular(environment).texture;
+  const probeTarget = new WebGLCubeRenderTarget(ROOM_PROBE_SIZE, { type: HalfFloatType });
+  const probeCamera = new CubeCamera(0.05, 80, probeTarget);
+  let roomReflections: WebGLRenderTarget | null = null;
   const make = () => new WebGLRenderTarget(settings.width, settings.height, { type: HalfFloatType, format: RGBAFormat, depthBuffer: true });
   const frameTarget = make();
   let accum = [make(), make()];
@@ -194,6 +217,7 @@ export function createFastRasterBackend(
 
   let scene: Scene | null = null;
   let camera: PerspectiveCamera | null = null;
+  const metalCopies = new Map<Material, MeshStandardMaterial>();
   let frames = 0;
   let sphere = new Sphere();
   let softbox: { center: Vector3; u: Vector3; v: Vector3 } | null = null;
@@ -275,21 +299,78 @@ export function createFastRasterBackend(
       }
       scene.environment = prefiltered;
       scene.environmentIntensity = lighting.environmentIntensity;
-      sphere = new Box3().setFromObject(scene).getBoundingSphere(new Sphere());
+      // The room's extent (the window exteriors are far outside it and must not widen light or shadows).
+      const roomBox = new Box3();
+      scene.traverse((o) => {
+        if (o instanceof Mesh && o.userData.photo?.role !== "exterior") roomBox.expandByObject(o);
+      });
+      sphere = roomBox.getBoundingSphere(new Sphere());
       // The walls also cast shadows here: they shade the room from low sky directions.
       scene.traverse((o) => {
         if (o instanceof Mesh && o.userData.photo?.role === "wall") o.castShadow = true;
       });
-      // Floor bounce in the configured floor colour (walls and furniture take its warmth, as in path tracing).
+      metalCopies.forEach((m) => m.dispose());
+      metalCopies.clear();
+      scene.traverse((o) => {
+        if (!(o instanceof Mesh)) return;
+        const swap = (m: Material) => {
+          const metal = m as MeshStandardMaterial;
+          if (!metal.isMeshStandardMaterial || metal.metalness < METALLIC) return m;
+          let copy = metalCopies.get(m);
+          if (!copy) {
+            copy = metal.clone();
+            copy.envMap = prefiltered;
+            copy.envMapIntensity = RASTER_METAL_ENVIRONMENT_INTENSITY;
+            metalCopies.set(m, copy);
+          }
+          return copy;
+        };
+        o.material = Array.isArray(o.material) ? o.material.map(swap) : swap(o.material);
+      });
+      // Floor bounce in the floor's mean albedo (walls and furniture take its warmth, as in path tracing):
+      // a textured floor's colour factor is only a gain, so the factory's measured mean is used.
       let floorColor: Color | null = null;
       scene.traverse((o) => {
-        if (o instanceof Mesh && o.userData.photo?.role === "floor") floorColor = (o.material as { color: Color }).color;
+        if (!(o instanceof Mesh) || o.userData.photo?.role !== "floor") return;
+        const m = o.material as { color: Color; userData?: { meanLinearAlbedo?: [number, number, number] } };
+        const mean = m.userData?.meanLinearAlbedo;
+        floorColor = mean ? new Color(mean[0], mean[1], mean[2]) : m.color;
       });
       if (floorColor) bounce.groundColor.copy(floorColor);
       scene.add(light, light.target, bounce);
       scene.updateMatrixWorld(true);
       // Compile all programs up front (three's parallel compile), then the guide buffers for the denoiser.
       await renderer.compileAsync(scene, camera);
+      // The room as the metals see it: one cube capture of the lit scene (first frame's light), prefiltered.
+      // Same CubeUV environment format as the HDRI, so the compiled metal programs are reused.
+      {
+        const started = performance.now();
+        const { direction, intensity, color } = lightFor(0);
+        light.intensity = intensity;
+        light.color.copy(color);
+        light.position.copy(sphere.center).addScaledVector(direction, sphere.radius * 2);
+        light.target.position.copy(sphere.center);
+        light.target.updateMatrixWorld();
+        light.updateMatrixWorld();
+        const metals: Mesh[] = [];
+        scene.traverse((o) => {
+          const copies = new Set<Material>(metalCopies.values());
+          if (o instanceof Mesh && o.visible && (Array.isArray(o.material) ? o.material : [o.material]).some((m) => copies.has(m))) metals.push(o);
+        });
+        // Metals do not see themselves (no self-reflection from the capture point).
+        metals.forEach((m) => (m.visible = false));
+        probeCamera.position.set(sphere.center.x, ROOM_PROBE_HEIGHT_M, sphere.center.z);
+        probeCamera.updateMatrixWorld();
+        probeCamera.update(renderer, scene);
+        metals.forEach((m) => (m.visible = true));
+        roomReflections?.dispose();
+        roomReflections = pmrem.fromCubemap(probeTarget.texture);
+        metalCopies.forEach((copy) => {
+          copy.envMap = roomReflections!.texture;
+          copy.envMapIntensity = RASTER_METAL_ENVIRONMENT_INTENSITY;
+        });
+        performance.measure?.("photo:raster:room-reflections", { start: started, end: performance.now() });
+      }
       gtao?.dispose();
       gtao = new GTAOPass(scene, camera, settings.width, settings.height);
       gtao.output = GTAOPass.OUTPUT.Denoise;
@@ -346,6 +427,7 @@ export function createFastRasterBackend(
       return canvasToBlob(renderer.domElement, format);
     },
     dispose() {
+      metalCopies.forEach((m) => m.dispose());
       for (const t of [frameTarget, ...accum, occluded, aoScratch]) t.dispose();
       gtao?.dispose();
       applyAo.dispose();
@@ -355,6 +437,8 @@ export function createFastRasterBackend(
       denoiser.dispose();
       metering.dispose();
       prefiltered.dispose();
+      roomReflections?.dispose();
+      probeTarget.dispose();
       pmrem.dispose();
       renderer.dispose();
       renderer.forceContextLoss();

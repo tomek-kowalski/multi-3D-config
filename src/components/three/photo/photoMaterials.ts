@@ -1,22 +1,5 @@
-import { Color, DoubleSide, FrontSide, MeshPhysicalMaterial, type Material, type Texture } from "three";
+import { Color, DoubleSide, FrontSide, MeshPhysicalMaterial, MeshStandardMaterial, type Material, type Texture } from "three";
 import type { PhotoRole } from "./tags";
-
-/** Decor of a bed board, recorded on its live material by BedModel (userData.decor). */
-export interface PhotoDecor {
-  /** Swatch file in /textures/decors (and /textures/decors/hd); null when the catalog has no image. */
-  readonly texture: string | null;
-  readonly code: string;
-  /** Surface structure code from the shop (e.g. SM, PW, MG = mirror gloss, AG = acrylic gloss). */
-  readonly structure: string;
-  /** Real-world size of one swatch image, metres. */
-  readonly swatchSizeM: number;
-}
-
-/** Highest linear albedo of the supplied mattress fabric (real white ticking reflects about 70%). */
-export const FABRIC_MAX_ALBEDO = 0.72;
-
-/** Glass of windows and doors: clear, very slightly green-tinted float glass. */
-export const GLASS_TINT = "#F3F8F6";
 
 type Standardish = Material & {
   color?: Color;
@@ -26,98 +9,66 @@ type Standardish = Material & {
   userData: Record<string, unknown>;
 };
 
-export function isGlossDecor(decor: PhotoDecor | null): boolean {
-  return !!decor && /^(MG|AG|HG|PG)$/.test(decor.structure);
-}
+const COPIED_MAPS = [
+  "map",
+  "normalMap",
+  "roughnessMap",
+  "metalnessMap",
+  "aoMap",
+  "emissiveMap",
+  "alphaMap",
+  "bumpMap",
+  "clearcoatMap",
+  "clearcoatNormalMap",
+  "clearcoatRoughnessMap",
+  "sheenColorMap",
+  "sheenRoughnessMap",
+  "specularIntensityMap",
+  "specularColorMap",
+  "transmissionMap",
+  "thicknessMap",
+] as const;
 
-export function isMetalDecor(decor: PhotoDecor | null): boolean {
-  return !!decor && decor.code.startsWith("AL");
+/**
+ * Renderer compatibility policy of the photo scene, per role (applied to every photo material, bound or
+ * legacy): walls and floor block light from both sides, so the room is lit through its open top.
+ * Appearance (colour, finish, maps) is never changed here — it comes from the shared factory.
+ */
+export function applyPhotoRolePolicy(m: MeshPhysicalMaterial, role: PhotoRole): MeshPhysicalMaterial {
+  m.userData = { ...m.userData, role };
+  if (role === "wall" || role === "floor") m.side = DoubleSide;
+  if (!(m.transmission > 0) && m.opacity >= 1) m.transparent = false;
+  m.needsUpdate = true;
+  return m;
 }
 
 /**
- * The physically based material of one photo mesh, made from the live material at snapshot time.
- * Colours and decor images are copied exactly (the same sRGB colour, the same texture placement); only
- * the surface physics is added: gloss decors get a clear coat, metal decors metalness, mattresses a
- * fabric sheen, glass real transmission. `hdMap` replaces the preview decor image by the full-resolution
- * catalog image with the same orientation and placement.
+ * Legacy pass-through for a tagged mesh that has no material binding yet: a faithful physical copy of
+ * its live material — colour, every supported map with its own transform and colour space, scalar and
+ * physical fields (TR-02: normal/roughness/clear coat/sheen are no longer dropped) — plus the role policy.
+ * Bound meshes (every current product, room part and accessory) never come here: their photo material
+ * is built by the shared factory from the frozen binding (photoScene.ts).
  */
-export function photoMaterial(role: PhotoRole, source: Material, hdMap: Texture | null = null): MeshPhysicalMaterial {
-  const s = source as Standardish;
-  const color = s.color ? s.color.clone() : new Color("#ffffff");
-  const map = hdMap ?? s.map ?? null;
-  const roughness = typeof s.roughness === "number" ? s.roughness : 0.6;
-  const metalness = typeof s.metalness === "number" ? s.metalness : 0;
-  const m = new MeshPhysicalMaterial({ color, map, roughness, metalness, side: FrontSide });
-  m.name = `photo:${role}`;
-  m.userData = { role };
-
-  switch (role) {
-    case "board": {
-      const decor = (s.userData?.decor as PhotoDecor | null | undefined) ?? null;
-      m.userData.decor = decor;
-      if (isGlossDecor(decor)) {
-        // High-gloss lacquer/acrylic: smooth clear coat over the decor.
-        m.roughness = 0.12;
-        m.clearcoat = 1;
-        m.clearcoatRoughness = 0.04;
-      } else if (isMetalDecor(decor)) {
-        m.metalness = 0.75;
-        m.roughness = 0.32;
-      } else {
-        // Melamine boards: matt to satin, with a thin specular layer.
-        m.specularIntensity = 0.5;
-      }
-      break;
+export function photoMaterial(role: PhotoRole, source: Material): MeshPhysicalMaterial {
+  const s = source as Standardish & Partial<MeshPhysicalMaterial>;
+  const m = new MeshPhysicalMaterial({ side: FrontSide });
+  if ((s as MeshPhysicalMaterial).isMeshPhysicalMaterial) {
+    m.copy(s as MeshPhysicalMaterial);
+  } else if ((s as { isMeshStandardMaterial?: boolean }).isMeshStandardMaterial) {
+    MeshStandardMaterial.prototype.copy.call(m, s as MeshStandardMaterial);
+  } else {
+    m.color = s.color ? s.color.clone() : new Color("#ffffff");
+    for (const key of COPIED_MAPS) {
+      const value = (s as unknown as Record<string, unknown>)[key];
+      if (value) (m as unknown as Record<string, unknown>)[key] = value;
     }
-    case "fabric": {
-      // The mattress comes with the supplied model (not a customer colour); its 0.90 linear albedo is
-      // brighter than any real fabric and, with a full sheen on top, rendered as flat white. Real white
-      // cotton/polyester ticking reflects ~70%: the colour keeps its hue, capped at that albedo, and
-      // the sheen is a soft rim, not a second coat of light.
-      const max = Math.max(color.r, color.g, color.b);
-      if (max > FABRIC_MAX_ALBEDO) m.color.multiplyScalar(FABRIC_MAX_ALBEDO / max);
-      m.roughness = 1;
-      m.metalness = 0;
-      m.sheen = 0.35;
-      m.sheenRoughness = 0.8;
-      m.sheenColor = m.color.clone().multiplyScalar(0.6);
-      break;
-    }
-    case "metal":
-    case "handle":
-      m.metalness = Math.max(metalness, role === "handle" ? 0.9 : metalness);
-      m.roughness = Math.min(roughness, 0.4);
-      break;
-    case "wall":
-      // Matt emulsion paint; both sides block light, so the room is lit through its open top.
-      m.roughness = 0.92;
-      m.side = DoubleSide;
-      break;
-    case "floor":
-      m.roughness = 0.7;
-      m.side = DoubleSide;
-      break;
-    case "glass":
-      m.color = new Color(GLASS_TINT);
-      m.metalness = 0;
-      m.roughness = 0;
-      m.transmission = 1;
-      m.ior = 1.5;
-      m.thickness = 0.004;
-      m.side = DoubleSide;
-      break;
-    case "frame":
-    case "sill":
-    case "leaf":
-      m.roughness = 0.45;
-      m.metalness = 0;
-      break;
-    case "dark":
-    case "loading":
-      break;
+    if (typeof s.roughness === "number") m.roughness = s.roughness;
+    if (typeof s.metalness === "number") m.metalness = s.metalness;
   }
-  m.transparent = false;
+  m.name = `photo:${role}`;
+  m.side = s.side === DoubleSide ? DoubleSide : FrontSide;
   m.opacity = 1;
-  m.needsUpdate = true;
-  return m;
+  m.transparent = false;
+  m.depthWrite = true;
+  return applyPhotoRolePolicy(m, role);
 }

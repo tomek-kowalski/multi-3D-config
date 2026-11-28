@@ -1,0 +1,447 @@
+{
+  "source": "Poly Haven (polyhaven.com), CC0 1.0 Universal; processed by the Phase 4A/4B pipeline, see docs/material-phase4ab-assets.md",
+  "assets": {
+    "oak_veneer_02": {
+      "name": "Oak Veneer 02",
+      "authors": [
+        "Jenelle van Heerden"
+      ],
+      "url": "https://polyhaven.com/a/oak_veneer_02",
+      "physicalSizeMm": [
+        1000,
+        1000
+      ],
+      "coverageM": [
+        1.0,
+        1.0
+      ],
+      "rotatedCcw90": false,
+      "files": {
+        "albedo_1k.jpg": {
+          "width": 1024,
+          "height": 1024,
+          "bytes": 586151,
+          "md5": "895eda215c5d808bbc42041b498a856c",
+          "meanLinearRgb": [
+            0.71513,
+            0.4853,
+            0.30082
+          ]
+        },
+        "albedo_2k.jpg": {
+          "width": 2048,
+          "height": 2048,
+          "bytes": 2526115,
+          "md5": "c046feadfb4ec99fe749f1840d8afd64",
+          "meanLinearRgb": [
+            0.71612,
+            0.48588,
+            0.30156
+          ]
+        },
+        "normal_1k.png": {
+          "width": 1024,
+          "height": 1024,
+          "bytes": 702175,
+          "md5": "a9745692173bc9855d51e3fb66af3d90"
+        },
+        "normal_512.png": {
+          "width": 512,
+          "height": 512,
+          "bytes": 156725,
+          "md5": "2aafe19cf3e09048ce34f93aaeb615a5"
+        },
+        "roughness_1k.png": {
+          "width": 1024,
+          "height": 1024,
+          "bytes": 678310,
+          "md5": "f9f9486756b72b553a0f0390a9a4fc33",
+          "mean": 0.5738
+        },
+        "roughness_256.png": {
+          "width": 256,
+          "height": 256,
+          "bytes": 37198,
+          "md5": "09d7b4d7c00274a2ef2c08e0c8594fbf",
+          "mean": 0.5738
+        }
+      }
+    },
+    "oak_veneer_03": {
+      "name": "Oak Veneer 03",
+      "authors": [
+        "Jenelle van Heerden"
+      ],
+      "url": "https://polyhaven.com/a/oak_veneer_03",
+      "physicalSizeMm": [
+        1000,
+        1000
+      ],
+      "coverageM": [
+        1.0,
+        1.0
+      ],
+      "rotatedCcw90": false,
+      "files": {
+        "albedo_1k.jpg": {
+          "width": 1024,
+          "height": 1024,
+          "bytes": 577314,
+          "md5": "c6b42ce1605db4e9479f87ddc1e02529",
+          "meanLinearRgb": [
+            0.76033,
+            0.59954,
+            0.45599
+          ]
+        },
+        "albedo_2k.jpg": {
+          "width": 2048,
+          "height": 2048,
+          "bytes": 2330434,
+          "md5": "6840bcf7720c277139313b7f2397b509",
+          "meanLinearRgb": [
+            0.76007,
+            0.59974,
+            0.45665
+          ]
+        },
+        "normal_1k.png": {
+          "width": 1024,
+          "height": 1024,
+          "bytes": 675493,
+          "md5": "9219eb7476304a7753dc4221ca327296"
+        },
+        "normal_512.png": {
+          "width": 512,
+          "height": 512,
+          "bytes": 142301,
+          "md5": "f5d028ff07d490f9b663789227c672a8"
+        },
+        "roughness_1k.png": {
+          "width": 1024,
+          "height": 1024,
+          "bytes": 671619,
+          "md5": "4649d8e64c002c06835c7627362f3b71",
+          "mean": 0.4798
+        },
+        "roughness_256.png": {
+          "width": 256,
+          "height": 256,
+          "bytes": 39277,
+          "md5": "d148b256265dc365d6cff858b36c2182",
+          "mean": 0.4798
+        }
+      }
+    },
+    "walnut_veneer_02": {
+      "name": "Walnut Veneer 02",
+      "authors": [
+        "Jenelle van Heerden"
+      ],
+      "url": "https://polyhaven.com/a/walnut_veneer_02",
+      "physicalSizeMm": [
+        1000,
+        1000
+      ],
+      "coverageM": [
+        1.0,
+        1.0
+      ],
+      "rotatedCcw90": false,
+      "files": {
+        "albedo_1k.jpg": {
+          "width": 1024,
+          "height": 1024,
+          "bytes": 592833,
+          "md5": "5f1198a623856d828387febc07a1811d",
+          "meanLinearRgb": [
+            0.40095,
+            0.25359,
+            0.16848
+          ]
+        },
+        "albedo_2k.jpg": {
+          "width": 2048,
+          "height": 2048,
+          "bytes": 2429894,
+          "md5": "893d9703ec5b152a9a67fe45e11749c7",
+          "meanLinearRgb": [
+            0.40133,
+            0.25383,
+            0.16859
+          ]
+        },
+        "normal_1k.png": {
+          "width": 1024,
+          "height": 1024,
+          "bytes": 819565,
+          "md5": "fed8822569a6afb31ebd7ec0c50079b7"
+        },
+        "normal_512.png": {
+          "width": 512,
+          "height": 512,
+          "bytes": 188813,
+          "md5": "ce4d51d1a5684aeeb7f7322d7bbb9b1a"
+        },
+        "roughness_1k.png": {
+          "width": 1024,
+          "height": 1024,
+          "bytes": 650310,
+          "md5": "df55fdcf6dc837182acc14712ecbe63a",
+          "mean": 0.6458
+        },
+        "roughness_256.png": {
+          "width": 256,
+          "height": 256,
+          "bytes": 37687,
+          "md5": "c05f78ca97337c49586a4058182bc903",
+          "mean": 0.6458
+        }
+      }
+    },
+    "white_plaster_02": {
+      "name": "White Plaster 02",
+      "authors": [
+        "Rob Tuytel"
+      ],
+      "url": "https://polyhaven.com/a/white_plaster_02",
+      "physicalSizeMm": [
+        1000,
+        1000
+      ],
+      "coverageM": [
+        1.0,
+        1.0
+      ],
+      "rotatedCcw90": false,
+      "files": {
+        "normal_1k.png": {
+          "width": 1024,
+          "height": 1024,
+          "bytes": 1923302,
+          "md5": "3021e4ab5050cacdfc94d1096b83cf36"
+        },
+        "normal_512.png": {
+          "width": 512,
+          "height": 512,
+          "bytes": 415463,
+          "md5": "66ae3584ffa84e45e4a1e22050cd0a45"
+        },
+        "roughness_1k.png": {
+          "width": 1024,
+          "height": 1024,
+          "bytes": 609062,
+          "md5": "d7c978354aab0d30c97a21d30ca90208",
+          "mean": 0.9087
+        },
+        "roughness_256.png": {
+          "width": 256,
+          "height": 256,
+          "bytes": 28730,
+          "md5": "2160200ac5297ba5bc8b864e3c0695f4",
+          "mean": 0.9087
+        }
+      }
+    },
+    "wood_floor": {
+      "name": "Wood Floor",
+      "authors": [
+        "Dimitrios Savva"
+      ],
+      "url": "https://polyhaven.com/a/wood_floor",
+      "physicalSizeMm": [
+        1700,
+        1700
+      ],
+      "coverageM": [
+        1.7,
+        1.7
+      ],
+      "rotatedCcw90": true,
+      "files": {
+        "albedo_1k.jpg": {
+          "width": 1024,
+          "height": 1024,
+          "bytes": 329515,
+          "md5": "b695b1a20788b4eeedb54ed8dcd76104",
+          "meanLinearRgb": [
+            0.21763,
+            0.11745,
+            0.05544
+          ]
+        },
+        "albedo_2k.jpg": {
+          "width": 2048,
+          "height": 2048,
+          "bytes": 1416069,
+          "md5": "18e338176cdfae2a6e1243a535ae30f8",
+          "meanLinearRgb": [
+            0.21851,
+            0.11801,
+            0.05564
+          ]
+        },
+        "normal_1k.png": {
+          "width": 1024,
+          "height": 1024,
+          "bytes": 1007861,
+          "md5": "b8a0eafa80682d4bcbfb8da221fdd653"
+        },
+        "normal_512.png": {
+          "width": 512,
+          "height": 512,
+          "bytes": 229002,
+          "md5": "a7372e5c6b542c5b9b27a9757594630d"
+        },
+        "roughness_1k.png": {
+          "width": 1024,
+          "height": 1024,
+          "bytes": 501724,
+          "md5": "b9f221b5b13e67bebb9a3e04c2c1e0a2",
+          "mean": 0.4715
+        },
+        "roughness_256.png": {
+          "width": 256,
+          "height": 256,
+          "bytes": 27650,
+          "md5": "aaa02a308da9efcc0f969564c6f5c8d8",
+          "mean": 0.4715
+        }
+      }
+    },
+    "laminate_floor_03": {
+      "name": "Laminate Floor 03",
+      "authors": [
+        "Dario Barresi",
+        "Charlotte Baglioni"
+      ],
+      "url": "https://polyhaven.com/a/laminate_floor_03",
+      "physicalSizeMm": [
+        2080,
+        2080
+      ],
+      "coverageM": [
+        2.08,
+        2.08
+      ],
+      "rotatedCcw90": true,
+      "files": {
+        "albedo_1k.jpg": {
+          "width": 1024,
+          "height": 1024,
+          "bytes": 309172,
+          "md5": "b2ed1885c135545a89900c6bbcb75f6d",
+          "meanLinearRgb": [
+            0.32716,
+            0.16899,
+            0.06463
+          ]
+        },
+        "albedo_2k.jpg": {
+          "width": 2048,
+          "height": 2048,
+          "bytes": 1399061,
+          "md5": "97376a72106d758f572d32cc9f90eaa6",
+          "meanLinearRgb": [
+            0.32792,
+            0.16967,
+            0.06501
+          ]
+        },
+        "normal_1k.png": {
+          "width": 1024,
+          "height": 1024,
+          "bytes": 1097333,
+          "md5": "d3f9e76897b6528199251ae97e959539"
+        },
+        "normal_512.png": {
+          "width": 512,
+          "height": 512,
+          "bytes": 215798,
+          "md5": "065d39cc1d1476cefcfff4d1a37f01fd"
+        },
+        "roughness_1k.png": {
+          "width": 1024,
+          "height": 1024,
+          "bytes": 345532,
+          "md5": "35439797d57273136e1bafda9ca912e5",
+          "mean": 0.5164
+        },
+        "roughness_256.png": {
+          "width": 256,
+          "height": 256,
+          "bytes": 18548,
+          "md5": "592380ac11c78628e7f6d37027858ba1",
+          "mean": 0.5164
+        }
+      }
+    },
+    "herringbone_parquet": {
+      "name": "Herringbone Parquet",
+      "authors": [
+        "Jenelle van Heerden",
+        "Sergej Majboroda"
+      ],
+      "url": "https://polyhaven.com/a/herringbone_parquet",
+      "physicalSizeMm": [
+        3400,
+        3400
+      ],
+      "coverageM": [
+        3.4,
+        3.4
+      ],
+      "rotatedCcw90": true,
+      "files": {
+        "albedo_1k.jpg": {
+          "width": 1024,
+          "height": 1024,
+          "bytes": 401450,
+          "md5": "e88d465147baad73c00a584fdf95a89f",
+          "meanLinearRgb": [
+            0.29466,
+            0.16361,
+            0.07542
+          ]
+        },
+        "albedo_2k.jpg": {
+          "width": 2048,
+          "height": 2048,
+          "bytes": 1725874,
+          "md5": "3de1c16964fe8019f93f054039a80a0e",
+          "meanLinearRgb": [
+            0.29556,
+            0.16414,
+            0.0757
+          ]
+        },
+        "normal_1k.png": {
+          "width": 1024,
+          "height": 1024,
+          "bytes": 886185,
+          "md5": "045f7b83163e5e05340ced3e62786c00"
+        },
+        "normal_512.png": {
+          "width": 512,
+          "height": 512,
+          "bytes": 195358,
+          "md5": "4b76d08457b5c4996b1fabf476f0a34f"
+        },
+        "roughness_1k.png": {
+          "width": 1024,
+          "height": 1024,
+          "bytes": 502973,
+          "md5": "53f8ef6e5e8458a9aa1ddb373f62117e",
+          "mean": 0.0964
+        },
+        "roughness_256.png": {
+          "width": 256,
+          "height": 256,
+          "bytes": 28631,
+          "md5": "54ce323303288d3a6897c09f741f4987",
+          "mean": 0.0965
+        }
+      }
+    }
+  }
+}

@@ -3,7 +3,17 @@
 import { Edges, Line } from "@react-three/drei";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { FrontSide, Path, Plane, Raycaster, Shape, ShapeGeometry, Vector2, Vector3, type Group } from "three";
+import { BufferAttribute, BufferGeometry, Path, Plane, PlaneGeometry, Raycaster, Shape, ShapeGeometry, Vector2, Vector3, type Group } from "three";
+import {
+  configuredColor,
+  DOOR_LEAF_TEMPLATE,
+  floorMaterialRegistryId,
+  OPENING_FRAME_TEMPLATE,
+  REGISTERED,
+  ROOM_FLOOR_TEMPLATE,
+  ROOM_WALL_TEMPLATE,
+} from "@/domain/materials/bindings";
+import type { MappingSpec, MaterialSelection } from "@/domain/materials/contracts";
 import { openingKeepFreeBox, wallFrame } from "@/domain/room/geometry";
 import { WALL_IDS, type RoomConfiguration, type RoomOpening, type WallId } from "@/domain/room/types";
 import { planBounds } from "@/domain/spatial/geometry";
@@ -11,12 +21,15 @@ import { useArrangementStore } from "@/store/useArrangementStore";
 import { CLICK_TOLERANCE_PX } from "../PanelMesh";
 import { showKeepFreeVolume } from "../debug";
 import { STATUS_COLORS } from "../modules/furnitureStatus";
+import { partMapping, unitBoxWithMetreUvs, writeFloorMetreUvs, writeRoomFloorUvs } from "../materials/physicalUv";
+import { SlotMesh } from "../materials/SlotMesh";
 import { photoTag } from "../photo/tags";
 import { mmToM } from "../units";
 
 import {
   ACTIVE_WALL_COLOR,
   contrastColor,
+  DOOR_FRAME_DEPTH_M,
   FRAME_EDGE_COLOR,
   openingOutline,
   leafRotation,
@@ -30,6 +43,24 @@ import {
 } from "./roomScene";
 
 const HIGHLIGHT = "#2563eb";
+
+/** Wall UV0 is the wall shape itself: metres along the wall from its left end, and up from the floor. */
+const WALL_MAPPING: MappingSpec = { kind: "projected-metres", originM: [0, 0, 0], uAxis: [1, 0, 0], vAxis: [0, 1, 0] };
+/**
+ * Floor UV0 in metres from the room's back-left corner (fixed when the room grows); u runs along the
+ * floor material's plank axis (writeFloorMetreUvs).
+ */
+const FLOOR_MAPPING: Readonly<Record<"x" | "z", MappingSpec>> = {
+  x: { kind: "projected-metres", originM: [0, 0, 0], uAxis: [1, 0, 0], vAxis: [0, 0, 1] },
+  z: { kind: "projected-metres", originM: [0, 0, 0], uAxis: [0, 0, 1], vAxis: [-1, 0, 0] },
+};
+
+/** The floor's selection: the configured colour, or a registered floor material. */
+function floorSelection(room: RoomConfiguration): { selection: MaterialSelection; plankAxis: "x" | "z" } {
+  const floor = room.floor;
+  if (floor?.kind === "material") return { selection: { kind: "registered", id: floorMaterialRegistryId(floor.materialId) }, plankAxis: floor.plankAxis };
+  return { selection: configuredColor(ROOM_FLOOR_TEMPLATE, room.floorColor), plankAxis: "x" };
+}
 
 /**
  * A wall as a single inward-facing surface with holes for its openings. Its back face is culled, so
@@ -65,15 +96,20 @@ function Wall({ room, wall, active, docking }: { room: RoomConfiguration; wall: 
     }
     return new ShapeGeometry(shape);
   }, [frame.length, room.height, openings]);
+  useEffect(() => () => geometry.dispose(), [geometry]);
 
   // Shape X → along the wall, Y → up, Z (normal) → into the room.
   const angle = wallAngle(room, wall);
   return (
     <group position={[mmToM(frame.origin.x), 0, mmToM(frame.origin.z)]} rotation={[0, angle, 0]}>
-      <mesh geometry={geometry} receiveShadow userData={photoTag("wall", wall)}>
-        {/* The configured colour is never changed; selection is shown by the frame and the floor band. */}
-        <meshStandardMaterial color={room.wallColors[wall]} roughness={0.95} side={FrontSide} />
-      </mesh>
+      {/* The configured colour is never changed; selection is shown by the frame and the floor band. */}
+      <SlotMesh
+        geometry={geometry}
+        receiveShadow
+        userData={photoTag("wall", wall)}
+        selection={configuredColor(ROOM_WALL_TEMPLATE, room.wallColors[wall])}
+        mapping={WALL_MAPPING}
+      />
       {/* Reveal outline around every opening, in a colour contrasting with the wall. */}
       {openings.map((o) => (
         <Line
@@ -104,19 +140,39 @@ function ActiveWallBand({ room, wall }: { room: RoomConfiguration; wall: WallId 
   );
 }
 
+/** Surface of each window/door part role: configured colours keep their value, glass and handles are registered. */
+export function openingPartSelection(part: Pick<ScenePart, "role" | "color">): MaterialSelection {
+  switch (part.role) {
+    case "glass":
+      return { kind: "registered", id: REGISTERED.glass };
+    case "handle":
+      return { kind: "registered", id: REGISTERED.doorHandle };
+    case "leaf":
+      return configuredColor(DOOR_LEAF_TEMPLATE, part.color);
+    default:
+      return configuredColor(OPENING_FRAME_TEMPLATE, part.color);
+  }
+}
+
 function PartMesh({ part, wall }: { part: ScenePart; wall: WallId }) {
+  const [sx, sy, sz] = part.size;
+  // Metre UV0 along the part's longest side (unit box scaled to the part, as before).
+  const grain = sx >= sy && sx >= sz ? "x" : sy >= sz ? "y" : "z";
+  const geometry = useMemo(() => unitBoxWithMetreUvs([sx, sy, sz], grain), [sx, sy, sz, grain]);
+  useEffect(() => () => geometry.dispose(), [geometry]);
   return (
-    <mesh
+    <SlotMesh
+      geometry={geometry}
+      mapping={partMapping("box", grain)}
       position={part.center as [number, number, number]}
       scale={part.size as [number, number, number]}
       castShadow={part.castShadow}
       receiveShadow={part.receiveShadow}
       userData={photoTag(part.role, wall)}
+      selection={openingPartSelection(part)}
     >
-      <boxGeometry />
-      <meshStandardMaterial color={part.color} roughness={0.5} transparent={part.opacity < 1} opacity={part.opacity} depthWrite={part.opacity === 1} />
       {part.role !== "glass" && part.role !== "handle" && <Edges color={FRAME_EDGE_COLOR} />}
-    </mesh>
+    </SlotMesh>
   );
 }
 
@@ -309,6 +365,45 @@ function Opening({ room, opening, selected, active }: { room: RoomConfiguration;
   );
 }
 
+/**
+ * The finished floor continuing through a doorway, from the wall line to the frame's outer face: what is
+ * seen under the door leaf's undercut at low viewing angles. Same floor selection and room-space UVs as
+ * the room floor (the pattern continues without a seam), and edge-adjacent to it — no overlap, no
+ * offset. Hidden with its wall in photos taken from behind that wall.
+ */
+function DoorwayFloor({ room, opening, selection, plankAxis }: { room: RoomConfiguration; opening: RoomOpening; selection: MaterialSelection; plankAxis: "x" | "z" }) {
+  const frame = wallFrame(room, opening.wall);
+  const geometry = useMemo(() => {
+    const out = DOOR_FRAME_DEPTH_M / 2;
+    const at = (u: number, t: number): [number, number, number] => [
+      mmToM(frame.origin.x + frame.along.x * u) - frame.inward.x * t,
+      0,
+      mmToM(frame.origin.z + frame.along.z * u) - frame.inward.z * t,
+    ];
+    const corners = [at(opening.offset, 0), at(opening.offset + opening.width, 0), at(opening.offset + opening.width, out), at(opening.offset, out)];
+    const g = new BufferGeometry();
+    g.setAttribute("position", new BufferAttribute(new Float32Array(corners.flat()), 3));
+    // Wound so the face points up (+y) whatever the wall's orientation.
+    const [a, b, c] = corners;
+    const ny = (b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2]);
+    g.setIndex(ny > 0 ? [0, 1, 2, 0, 2, 3] : [0, 2, 1, 0, 3, 2]);
+    g.computeVertexNormals();
+    writeRoomFloorUvs(g, plankAxis);
+    return g;
+  }, [frame.origin.x, frame.origin.z, frame.along.x, frame.along.z, frame.inward.x, frame.inward.z, opening.offset, opening.width, plankAxis]);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  return (
+    <SlotMesh
+      geometry={geometry}
+      receiveShadow
+      userData={photoTag("floor", opening.wall)}
+      selection={selection}
+      mapping={FLOOR_MAPPING[plankAxis]}
+      raycast={() => null}
+    />
+  );
+}
+
 export function RoomModel() {
   const room = useArrangementStore((s) => s.arrangement.room);
   const selectedOpeningId = useArrangementStore((s) => s.selectedOpeningId);
@@ -321,12 +416,29 @@ export function RoomModel() {
     proposal?.kind === "wall" ? { wall: proposal.wall, color: proposal.verdict === "invalid" ? STATUS_COLORS.collision : STATUS_COLORS.valid } : null;
   const W = mmToM(room.width);
   const D = mmToM(room.depth);
+  const { selection: floorMaterial, plankAxis } = floorSelection(room);
+  const floor = useMemo(() => {
+    const geometry = new PlaneGeometry(W, D);
+    writeFloorMetreUvs(geometry, W, D, plankAxis);
+    return geometry;
+  }, [W, D, plankAxis]);
+  useEffect(() => () => floor.dispose(), [floor]);
   return (
     <group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[W / 2, 0, D / 2]} receiveShadow userData={photoTag("floor")}>
-        <planeGeometry args={[W, D]} />
-        <meshStandardMaterial color={room.floorColor} roughness={0.9} />
-      </mesh>
+      <SlotMesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[W / 2, 0, D / 2]}
+        geometry={floor}
+        receiveShadow
+        userData={photoTag("floor")}
+        selection={floorMaterial}
+        mapping={FLOOR_MAPPING[plankAxis]}
+      />
+      {sceneOpenings(room)
+        .filter((o) => o.kind === "door" && o.elevation === 0)
+        .map((o) => (
+          <DoorwayFloor key={o.id} room={room} opening={o} selection={floorMaterial} plankAxis={plankAxis} />
+        ))}
       {WALL_IDS.map((wall) => (
         <Wall key={wall} room={room} wall={wall} active={highlighted[wall]} docking={dockingWall?.wall === wall ? dockingWall.color : null} />
       ))}

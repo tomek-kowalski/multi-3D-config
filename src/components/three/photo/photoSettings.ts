@@ -12,8 +12,18 @@ export type PhotoQuality = "fast" | "standard" | "high";
 export const PHOTO_QUALITIES: readonly PhotoQuality[] = ["fast", "standard", "high"];
 export type PhotoQualityRequest = PhotoQuality | "auto";
 
-/** Part of every cache key: completed renders of an older renderer are never reused. */
-export const RENDERER_VERSION = 3;
+import { materialRegistry } from "@/domain/materials";
+import { PHOTO_PROFILE } from "../materials/materialQuality";
+
+/**
+ * Part of every cache key: completed renders of an older renderer are never reused.
+ * 4: universal material system (shared PBR factory, frozen slot bindings, environment-lit finishes).
+ * 5: window exteriors, room reflections for metals, turned knobs, door undercut (Phase 4AB visual corrections).
+ * Bump it whenever photo rendering *code* changes. Tunable constants (lighting, exterior, reflections,
+ * presets) are covered automatically by RENDERING_FINGERPRINT; materials and textures by the registry
+ * revision (photoService.photoCacheKey).
+ */
+export const RENDERER_VERSION = 5;
 
 export interface QualityPreset {
   /** Path-traced samples per pixel (fast: rasterized frames) to accumulate. */
@@ -79,5 +89,19 @@ export function resolvePhotoSettings(overrides: Partial<PhotoSettings> = {}): Ph
 
 /** Stable key of the settings (part of the reuse key of a rendering). */
 export function settingsKey(s: PhotoSettings): string {
-  return [RENDERER_VERSION, s.width, s.height, s.quality, s.toneMapping, s.exposure, s.denoise ? 1 : 0, s.allowRasterFallback ? 1 : 0, s.frameMargin].join("|");
+  // The material catalog revision and quality policy are part of the identity: an appearance change
+  // invalidates every cached rendering it affects.
+  return [
+    RENDERER_VERSION,
+    materialRegistry.revision,
+    PHOTO_PROFILE.id,
+    s.width,
+    s.height,
+    s.quality,
+    s.toneMapping,
+    s.exposure,
+    s.denoise ? 1 : 0,
+    s.allowRasterFallback ? 1 : 0,
+    s.frameMargin,
+  ].join("|");
 }

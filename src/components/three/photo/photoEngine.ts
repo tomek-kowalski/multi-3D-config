@@ -2,6 +2,7 @@ import type { PerspectiveCamera, Scene } from "three";
 import type { WallId } from "@/domain/room/types";
 import type { GpuChoice, PhotoMode } from "./capabilities";
 import type { PhotoCamera, PhotoViewId, PlannedView } from "./photoCamera";
+import type { AppearanceDiagnostics } from "./photoScene";
 import { QUALITY_PRESETS, type PhotoSettings } from "./photoSettings";
 
 /**
@@ -20,6 +21,10 @@ export interface PhotoBackend {
   readonly exposure?: number;
   /** True while the GPU is still compiling the renderer's shaders (no samples yet). */
   readonly compiling?: boolean;
+  /** Distinct texture-array layers of the current view (path tracer), for instrumentation. */
+  readonly traceLayers?: number;
+  /** Optional maps the backend left out of the current view to meet its budget (reported with the image). */
+  readonly reductions?: readonly string[];
   /**
    * Fraction of pixels of the accumulated image that are invalid (NaN, infinite or exactly black), or
    * undefined when the backend cannot tell. Checked before an image is accepted.
@@ -47,6 +52,13 @@ export interface RenderedPhoto {
   readonly fallbackReason: string | null;
   /** Measured stage durations in ms (see PhotoTimings). */
   readonly timings: PhotoTimings;
+  /** Optional maps left out of this image to meet the path-tracer layer budget (none = full appearance). */
+  readonly reductions?: readonly string[];
+  /**
+   * Manufacturer appearances the image could not show as authorized (set by the photo job). An image
+   * with unavailable decors carries a visible note and is labelled in the preview.
+   */
+  readonly appearance?: AppearanceDiagnostics;
 }
 
 /**
@@ -112,6 +124,17 @@ const RASTER_PREVIEW_INTERVAL_MS = 800;
 /** More invalid pixels than this means the GPU computed garbage (e.g. driver bugs): never delivered. */
 export const MAX_INVALID_FRACTION = 0.01;
 
+/** The scene's distinct textures exceed the path tracer's layer budget even without optional maps. */
+export class TraceBudgetError extends Error {
+  constructor(
+    readonly layers: number,
+    readonly budget: number,
+  ) {
+    super(`texture layers ${layers} exceed the path-tracer budget ${budget}`);
+    this.name = "TraceBudgetError";
+  }
+}
+
 /** The backend itself failed (GPU/driver), as opposed to a cancellation or too few samples. */
 class BackendFailure extends Error {
   constructor(readonly cause: unknown) {
@@ -140,6 +163,9 @@ export async function renderPhotoViews(
   if (deps.choice.mode === "unsupported") throw new PhotoRenderError("unsupported");
   // "fast" is rasterized by choice; standard/high are path traced where the GPU can (else the labelled fallback).
   const wantsPathTracing = settings.quality !== "fast";
+  // The fast renderer is only ever created where its render targets were verified (capabilities.ts).
+  const rasterEligible = deps.choice.rasterEligible;
+  if (!wantsPathTracing && !rasterEligible) throw new PhotoRenderError("unsupported");
   if (wantsPathTracing && deps.choice.mode === "raster" && !settings.allowRasterFallback) throw new PhotoRenderError("unsupported");
 
   let mode: PhotoMode = wantsPathTracing ? deps.choice.mode : "raster";
@@ -167,6 +193,7 @@ export async function renderPhotoViews(
     }
     const setupStarted = deps.now();
     stage = { setScene: Math.round(setupStarted - sceneStarted) };
+    if (b.traceLayers !== undefined) stage.traceLayers = b.traceLayers;
     let samplingStarted: number | null = null;
     let lastPreview = setupStarted;
     let previews = 0;
@@ -211,18 +238,22 @@ export async function renderPhotoViews(
       const view = views[index];
       checkAbort(signal);
       report("preparing", index, 0);
-      const built = deps.buildView(view);
+      let built = deps.buildView(view);
       try {
         const started = deps.now();
         let samples: number;
         try {
           samples = await accumulate(backend, built, index);
         } catch (error) {
-          if (!(error instanceof BackendFailure) || mode !== "pathtraced" || !settings.allowRasterFallback) throw error;
-          // The GPU could not compile, hold or run the path tracer: switch to the labelled raster fallback.
+          if (!(error instanceof BackendFailure) || mode !== "pathtraced" || !settings.allowRasterFallback || !rasterEligible) throw error;
+          // The GPU could not compile, hold or run the path tracer (or the scene exceeds its texture
+          // budget): switch to the labelled raster fallback on a freshly built view, so nothing the path
+          // tracer did to its view (per-view reductions) reaches the fast renderer.
           backend.dispose();
           mode = "raster";
-          fallbackReason = "pathtracer_failed";
+          fallbackReason = error.cause instanceof TraceBudgetError ? "texture_budget" : "pathtracer_failed";
+          built.dispose?.();
+          built = deps.buildView(view);
           backend = deps.createBackend(mode, settings);
           samples = await accumulate(backend, built, index);
         }
@@ -248,6 +279,7 @@ export async function renderPhotoViews(
           hiddenWalls: view.hiddenWalls,
           settings,
           fallbackReason: mode === "raster" && wantsPathTracing ? fallbackReason : null,
+          ...(backend.reductions && backend.reductions.length > 0 ? { reductions: [...backend.reductions] } : {}),
           timings: { ...stage },
         });
       } finally {

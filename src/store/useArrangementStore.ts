@@ -42,7 +42,7 @@ import type { Arrangement, Side } from "@/domain/arrangement/types";
 import type { FurnitureTypeId, ModuleId, OperationalStateId } from "@/domain/modules/types";
 import { DEFAULT_ROOM } from "@/domain/room/defaults";
 import * as roomOps from "@/domain/room/operations";
-import type { HexColor, OpeningKind, RoomConfiguration, RoomDimensionKey, WallId } from "@/domain/room/types";
+import type { HexColor, OpeningKind, RoomConfiguration, RoomDimensionKey, RoomFloor, WallId } from "@/domain/room/types";
 import { exportArrangementJson, importArrangementJson } from "@/domain/serialization/arrangementJson";
 import type { Issue, Result } from "@/domain/shared/issues";
 import type { Placement } from "@/domain/spatial/geometry";
@@ -103,6 +103,7 @@ export interface ArrangementState {
   setRoomDimension: (key: RoomDimensionKey, value: number) => ActionResult;
   setWallColor: (wall: WallId, color: HexColor) => ActionResult;
   setFloorColor: (color: HexColor) => ActionResult;
+  setFloor: (floor: RoomFloor) => ActionResult;
   addOpening: (kind: OpeningKind, wall: WallId) => ActionResult;
   updateOpening: (id: string, patch: roomOps.OpeningPatch) => ActionResult;
   removeOpening: (id: string) => ActionResult;
@@ -207,6 +208,7 @@ export const useArrangementStore = create<ArrangementState>()((set, get) => {
     setRoomDimension: (key, value) => applyRoom(roomOps.setRoomDimension(get().arrangement.room, key, value)),
     setWallColor: (wall, color) => applyRoom(roomOps.setWallColor(get().arrangement.room, wall, color)),
     setFloorColor: (color) => applyRoom(roomOps.setFloorColor(get().arrangement.room, color)),
+    setFloor: (floor) => applyRoom(roomOps.setFloor(get().arrangement.room, floor)),
     addOpening: (kind, wall) => {
       const result = roomOps.addOpening(get().arrangement.room, kind, wall);
       if (!result.ok) return { ok: false, issues: result.issues };

@@ -5,7 +5,17 @@ import { SectionHeading } from "@/components/configurator/SectionHeading";
 import { DOOR_COLOR_PRESETS, FLOOR_COLOR_PRESETS, ROOM_LIMITS, WALL_COLOR_PRESETS } from "@/domain/room/defaults";
 import { openingsOnWall, wallLength } from "@/domain/room/geometry";
 import { cmToMm, mmToCm, roomIssueInCm } from "@/domain/room/units";
-import { WALL_IDS, WALL_LETTERS, type OpeningKind, type RoomOpening, type WallId } from "@/domain/room/types";
+import {
+  FLOOR_MATERIAL_IDS,
+  FLOOR_PLANK_AXES,
+  WALL_IDS,
+  WALL_LETTERS,
+  type FloorMaterialId,
+  type FloorPlankAxis,
+  type OpeningKind,
+  type RoomOpening,
+  type WallId,
+} from "@/domain/room/types";
 import type { Issue } from "@/domain/shared/issues";
 import { useT } from "@/i18n";
 import { useArrangementStore, type ActionResult } from "@/store/useArrangementStore";
@@ -202,14 +212,38 @@ function ActiveWallSettings() {
   );
 }
 
-function FloorColor() {
+type FloorChoice = "color" | FloorMaterialId;
+
+/** Floor: the configured colour (default) or one of the offered floor materials with its plank direction. */
+function FloorSettings() {
   const t = useT();
   const floorColor = useArrangementStore((s) => s.arrangement.room.floorColor);
+  const floor = useArrangementStore((s) => s.arrangement.room.floor);
   const setFloorColor = useArrangementStore((s) => s.setFloorColor);
+  const setFloor = useArrangementStore((s) => s.setFloor);
+  const material = floor?.kind === "material" ? floor : null;
+  const choice: FloorChoice = material ? material.materialId : "color";
+  const choose = (next: FloorChoice) =>
+    setFloor(next === "color" ? { kind: "color" } : { kind: "material", materialId: next, plankAxis: material?.plankAxis ?? "x" });
   return (
     <section aria-labelledby="room-floor" className="space-y-3">
       <SectionHeading id="room-floor">{t("space.floor")}</SectionHeading>
-      <ColorField label={t("space.floor")} value={floorColor} presets={FLOOR_COLOR_PRESETS} onChange={setFloorColor} />
+      <SelectField<FloorChoice>
+        label={t("space.floorMaterial")}
+        value={choice}
+        options={[{ value: "color", label: t("space.floorMaterial.color") }, ...FLOOR_MATERIAL_IDS.map((id) => ({ value: id, label: t(`space.floorMaterial.${id}`) }))]}
+        onChange={choose}
+      />
+      {material ? (
+        <SelectField<FloorPlankAxis>
+          label={t("space.floorPlankAxis")}
+          value={material.plankAxis}
+          options={FLOOR_PLANK_AXES.map((axis) => ({ value: axis, label: t(`space.floorPlankAxis.${axis}`) }))}
+          onChange={(plankAxis) => setFloor({ ...material, plankAxis })}
+        />
+      ) : (
+        <ColorField label={t("space.floor")} value={floorColor} presets={FLOOR_COLOR_PRESETS} onChange={setFloorColor} />
+      )}
     </section>
   );
 }
@@ -223,7 +257,7 @@ export function SpacePanel() {
     <div className="space-y-6">
       <WallPicker />
       <ActiveWallSettings />
-      <FloorColor />
+      <FloorSettings />
     </div>
   );
 }

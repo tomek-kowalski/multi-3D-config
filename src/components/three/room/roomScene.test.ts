@@ -1,23 +1,35 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_ROOM } from "@/domain/room/defaults";
 import { openingKeepFreeBox, wallFrame } from "@/domain/room/geometry";
+import { openingLeaves } from "@/domain/room/openingMotion";
 import { WALL_IDS, WALL_LETTERS, type RoomOpening } from "@/domain/room/types";
 import { translate } from "@/i18n";
 import { Euler, Vector3 } from "three";
-import { contrastColor, leafRotation, openingOutline, openingParts, openingScene, wallAngle, wallHighlights, wallLabels } from "./roomScene";
+import { contrastColor, DOOR_UNDERCUT_MM, leafRotation, openingOutline, openingParts, openingScene, wallAngle, wallHighlights, wallLabels } from "./roomScene";
 
 const room = { ...DEFAULT_ROOM, width: 4000, depth: 3000, height: 2600 };
 const window_: RoomOpening = { id: "window-1", kind: "window", wall: "left", offset: 500, elevation: 900, width: 1200, height: 1400, clearanceDepth: 0 };
 const door: RoomOpening = { id: "door-1", kind: "door", wall: "front", offset: 300, elevation: 0, width: 900, height: 2050, clearanceDepth: 900, color: "#7A5A3F" };
 
 describe("windows and doors", () => {
-  it("never cast or receive shadows", () => {
+  it("never cast or receive shadows in the viewport", () => {
     for (const opening of [window_, door]) {
       for (const part of openingParts(opening)) {
         expect(part.castShadow, `${opening.id}/${part.key}`).toBe(false);
         expect(part.receiveShadow, `${opening.id}/${part.key}`).toBe(false);
       }
     }
+  });
+
+  it("a door leaf hangs 10 mm above the finished floor; its top, width and the opening are unchanged", () => {
+    const leaf = openingParts(door).find((p) => p.role === "leaf")!;
+    const bottom = leaf.center[1] - leaf.size[1] / 2;
+    const top = leaf.center[1] + leaf.size[1] / 2;
+    expect(Math.round(bottom * 1000)).toBe(DOOR_UNDERCUT_MM);
+    const [domainLeaf] = openingLeaves(door);
+    expect(top).toBeCloseTo((domainLeaf.top - domainLeaf.bottom) / 1000, 9);
+    const frame = openingParts(door).filter((p) => p.role === "frame");
+    expect(Math.round(Math.max(...frame.map((p) => p.center[1] + p.size[1] / 2)) * 1000)).toBe(2050);
   });
 
   it("fill exactly the opening's size and keep the door colour", () => {

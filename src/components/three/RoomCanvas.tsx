@@ -3,13 +3,15 @@
 import { OrbitControls } from "@react-three/drei";
 import { Canvas, useThree } from "@react-three/fiber";
 import { useEffect, useLayoutEffect, useMemo, useRef, type ComponentRef } from "react";
-import { Box3, NeutralToneMapping, PerspectiveCamera, Vector3 } from "three";
+import { Box3, NeutralToneMapping, PerspectiveCamera, Vector3, type DirectionalLight } from "three";
 import { detectCollisions } from "@/domain/arrangement/collisions";
 import { placedCollisionBoxes } from "@/domain/arrangement/spatial";
 import { planBounds } from "@/domain/spatial/geometry";
 import { useArrangementStore } from "@/store/useArrangementStore";
 import { useConfiguratorStore } from "@/store/useConfiguratorStore";
 import { frameBox } from "./cameraFraming";
+import { MaterialRuntimeProvider, ROOM_LIGHTING, useViewportLighting } from "./materials/MaterialRuntime";
+import { StartupMarks } from "./materials/StartupMarks";
 import { DOCKING_PREVIEW_ID, DockingPreview, ModuleObject } from "./modules/ModuleObject";
 import { FurnitureOutlines } from "./modules/FurnitureOutlines";
 import { collidingModules, furnitureStatuses, openingStatuses } from "./modules/furnitureStatus";
@@ -109,6 +111,57 @@ function RoomCameraRig() {
   return <OrbitControls ref={controls} makeDefault enableDamping minDistance={0.4} maxDistance={40} maxPolarAngle={Math.PI / 2 - 0.02} />;
 }
 
+/** Startup timing marks for the current arrangement (see StartupMarks); development builds only. */
+function ModuleStartupMarks() {
+  const modules = useArrangementStore((s) => s.arrangement.modules.length);
+  return <StartupMarks expectedModules={modules} />;
+}
+
+/** Direction towards the key light (unchanged since Phase 3; only its shadow camera follows the room). */
+const KEY_LIGHT_DIRECTION = new Vector3(4, 8, 6).normalize();
+
+/**
+ * Room lights; balanced with the reflection environment once it is ready (see ROOM_LIGHTING).
+ *
+ * The key light's shadow camera is fitted to the room (Phase 4B): centred on it, its half-extent the
+ * room's bounding-sphere radius, instead of a fixed ±8 m around the origin. The light direction is the
+ * same, so lighting is unchanged; the shadow map's texels shrink with the room (5.2 × 4.2 m room: 3.5 mm
+ * instead of 7.8 mm), which keeps furniture-to-floor and wall-to-floor contact shadows sharp.
+ */
+function RoomLights() {
+  const light = useViewportLighting(ROOM_LIGHTING);
+  const room = useArrangementStore((s) => s.arrangement.room);
+  const key = useRef<DirectionalLight>(null);
+  const invalidate = useThree((s) => s.invalidate);
+  const W = mmToM(room.width);
+  const D = mmToM(room.depth);
+  const H = mmToM(room.height);
+  const radius = Math.hypot(W, D, H) / 2 + 0.2;
+  const center = useMemo(() => new Vector3(W / 2, H / 2, D / 2), [W, D, H]);
+  const position = useMemo(() => center.clone().addScaledVector(KEY_LIGHT_DIRECTION, radius + 2), [center, radius]);
+  useLayoutEffect(() => {
+    const l = key.current;
+    if (!l) return;
+    l.target.position.copy(center);
+    l.target.updateMatrixWorld();
+    const cam = l.shadow.camera;
+    cam.left = cam.bottom = -radius;
+    cam.right = cam.top = radius;
+    cam.near = 0.5;
+    cam.far = 2 * radius + 3;
+    cam.updateProjectionMatrix();
+    invalidate();
+  }, [center, radius, invalidate]);
+  return (
+    <>
+      <ambientLight intensity={light.ambient} />
+      <hemisphereLight args={["#ffffff", "#d8d2c8", light.hemisphere]} />
+      <directionalLight ref={key} position={position} intensity={light.key} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004} shadow-normalBias={0.02} />
+      <directionalLight position={[-4, 5, -3]} intensity={light.fill} />
+    </>
+  );
+}
+
 /** The room scene: walls, floor, openings and every placed instance. */
 export function RoomCanvas() {
   return (
@@ -123,15 +176,15 @@ export function RoomCanvas() {
       className="touch-none"
     >
       <color attach="background" args={[BACKGROUND_COLOR]} />
-      <ambientLight intensity={1.3} />
-      <hemisphereLight args={["#ffffff", "#d8d2c8", 0.6]} />
-      <directionalLight position={[4, 8, 6]} intensity={2.2} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004} shadow-normalBias={0.02} shadow-camera-left={-8} shadow-camera-right={8} shadow-camera-top={8} shadow-camera-bottom={-8} shadow-camera-far={30} />
-      <directionalLight position={[-4, 5, -3]} intensity={0.6} />
-      <RoomModel />
-      <WallLabelProjector />
-      <PhotoRenderer />
-      <ModulesLayer />
-      <RoomCameraRig />
+      <MaterialRuntimeProvider lighting={ROOM_LIGHTING}>
+        <RoomLights />
+        {process.env.NODE_ENV === "development" && <ModuleStartupMarks />}
+        <RoomModel />
+        <WallLabelProjector />
+        <PhotoRenderer />
+        <ModulesLayer />
+        <RoomCameraRig />
+      </MaterialRuntimeProvider>
     </Canvas>
   );
 }

@@ -1,0 +1,1529 @@
+{
+ "source": "public/textures/decors (+ hd/), measured from the JPEG headers",
+ "files": {
+  "0101-PE.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1651,
+   "enhancedBytes": 3124
+  },
+  "0110-SM.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1651,
+   "enhancedBytes": 3125
+  },
+  "0112-PE.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1651,
+   "enhancedBytes": 3124
+  },
+  "0125-BS.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1653,
+   "enhancedBytes": 3126
+  },
+  "0132-BS.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1653,
+   "enhancedBytes": 3126
+  },
+  "0134-BS.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1653,
+   "enhancedBytes": 3126
+  },
+  "0162-PE.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1651,
+   "enhancedBytes": 3123
+  },
+  "0164-PE.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1651,
+   "enhancedBytes": 3123
+  },
+  "0171-MG.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1650,
+   "enhancedBytes": 3122
+  },
+  "0171-PE.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1650,
+   "enhancedBytes": 3122
+  },
+  "0190-AG.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1651,
+   "enhancedBytes": 3124
+  },
+  "0190-AM.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1651,
+   "enhancedBytes": 3124
+  },
+  "0190-MG.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1651,
+   "enhancedBytes": 3124
+  },
+  "0190-PE.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1651,
+   "enhancedBytes": 3124
+  },
+  "0191-MG.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1651,
+   "enhancedBytes": 3124
+  },
+  "0191-SU.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1651,
+   "enhancedBytes": 3124
+  },
+  "0197-SU.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1651,
+   "enhancedBytes": 3123
+  },
+  "0244-SU.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1652,
+   "enhancedBytes": 3125
+  },
+  "0301-SU.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1652,
+   "enhancedBytes": 3125
+  },
+  "0344-BS.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 5976,
+   "enhancedBytes": 22397
+  },
+  "0375-BS.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 6782,
+   "enhancedBytes": 25794
+  },
+  "0381-BS.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 5563,
+   "enhancedBytes": 21048
+  },
+  "0514-AG.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1653,
+   "enhancedBytes": 3125
+  },
+  "0514-PE.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1653,
+   "enhancedBytes": 3125
+  },
+  "0515-PE.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1653,
+   "enhancedBytes": 3125
+  },
+  "0522-PE.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1652,
+   "enhancedBytes": 3125
+  },
+  "0540-PE.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1651,
+   "enhancedBytes": 3123
+  },
+  "0564-PE.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1652,
+   "enhancedBytes": 3125
+  },
+  "0729-BS.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 9511,
+   "enhancedBytes": 30460
+  },
+  "0854-BS.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 9733,
+   "enhancedBytes": 39453
+  },
+  "1700-PE.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1651,
+   "enhancedBytes": 3124
+  },
+  "1715-BS.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 5372,
+   "enhancedBytes": 18752
+  },
+  "1912-BS.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 6583,
+   "enhancedBytes": 22795
+  },
+  "3025-SN.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 11509,
+   "enhancedBytes": 44024
+  },
+  "4298-SU.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 10693,
+   "enhancedBytes": 44707
+  },
+  "4299-SU.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 12520,
+   "enhancedBytes": 51395
+  },
+  "5194-SN.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 10971,
+   "enhancedBytes": 41527
+  },
+  "5500-SU.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 9600,
+   "enhancedBytes": 33624
+  },
+  "5501-SN.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 10987,
+   "enhancedBytes": 40307
+  },
+  "5527-SN.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 9378,
+   "enhancedBytes": 37115
+  },
+  "5529-SN.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 10224,
+   "enhancedBytes": 38521
+  },
+  "5981-BS.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1652,
+   "enhancedBytes": 3125
+  },
+  "5981-MG.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1652,
+   "enhancedBytes": 3125
+  },
+  "5982-BS.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1652,
+   "enhancedBytes": 3125
+  },
+  "6299-AM.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1651,
+   "enhancedBytes": 3124
+  },
+  "6299-BS.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1651,
+   "enhancedBytes": 3124
+  },
+  "7031-BS.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1652,
+   "enhancedBytes": 3125
+  },
+  "7045-AG.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1661,
+   "enhancedBytes": 3880
+  },
+  "7045-AM.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1661,
+   "enhancedBytes": 3880
+  },
+  "7045-MG.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1661,
+   "enhancedBytes": 3880
+  },
+  "7045-SU.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1661,
+   "enhancedBytes": 3880
+  },
+  "7063-SU.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1675,
+   "enhancedBytes": 3341
+  },
+  "7113-BS.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1653,
+   "enhancedBytes": 3126
+  },
+  "7166-BS.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1652,
+   "enhancedBytes": 3124
+  },
+  "7190-BS.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1653,
+   "enhancedBytes": 3126
+  },
+  "7648-SN.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 14166,
+   "enhancedBytes": 53139
+  },
+  "8100-SM.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1652,
+   "enhancedBytes": 3124
+  },
+  "8431-SN.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 9696,
+   "enhancedBytes": 35205
+  },
+  "8533-BS.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1653,
+   "enhancedBytes": 3156
+  },
+  "8548-SN.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 11207,
+   "enhancedBytes": 39678
+  },
+  "8681-SM.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1679,
+   "enhancedBytes": 4738
+  },
+  "8685-AG.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1651,
+   "enhancedBytes": 3123
+  },
+  "8685-AM.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1651,
+   "enhancedBytes": 3123
+  },
+  "8685-MG.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1651,
+   "enhancedBytes": 3123
+  },
+  "8685-SM.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1651,
+   "enhancedBytes": 3123
+  },
+  "8921-BS.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 7951,
+   "enhancedBytes": 28018
+  },
+  "8953-SU.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 9302,
+   "enhancedBytes": 29506
+  },
+  "8984-BS.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1654,
+   "enhancedBytes": 3156
+  },
+  "8995-SN.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 11377,
+   "enhancedBytes": 35988
+  },
+  "9551-BS.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1653,
+   "enhancedBytes": 3126
+  },
+  "9561-BS.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1653,
+   "enhancedBytes": 3126
+  },
+  "9614-BS.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 11553,
+   "enhancedBytes": 40016
+  },
+  "9763-BS.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 7706,
+   "enhancedBytes": 28456
+  },
+  "K001-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 7815,
+   "enhancedBytes": 26339
+  },
+  "K002-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 9813,
+   "enhancedBytes": 33210
+  },
+  "K003-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 9789,
+   "enhancedBytes": 33299
+  },
+  "K004-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 10629,
+   "enhancedBytes": 36310
+  },
+  "K005-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 9655,
+   "enhancedBytes": 35342
+  },
+  "K006-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 9338,
+   "enhancedBytes": 33524
+  },
+  "K007-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 10232,
+   "enhancedBytes": 37508
+  },
+  "K008-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 9698,
+   "enhancedBytes": 31848
+  },
+  "K009-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 9356,
+   "enhancedBytes": 30924
+  },
+  "K010-SN.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 8100,
+   "enhancedBytes": 32310
+  },
+  "K012-SU.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 7098,
+   "enhancedBytes": 27523
+  },
+  "K013-SU.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 7903,
+   "enhancedBytes": 30342
+  },
+  "K015-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 10603,
+   "enhancedBytes": 36300
+  },
+  "K016-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 7736,
+   "enhancedBytes": 27247
+  },
+  "K017-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 9576,
+   "enhancedBytes": 35555
+  },
+  "K018-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 11300,
+   "enhancedBytes": 42325
+  },
+  "K019-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 8658,
+   "enhancedBytes": 31563
+  },
+  "K020-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 8920,
+   "enhancedBytes": 29385
+  },
+  "K021-SN.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 12957,
+   "enhancedBytes": 45003
+  },
+  "K022-SN.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 9322,
+   "enhancedBytes": 31481
+  },
+  "K076-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 12718,
+   "enhancedBytes": 49551
+  },
+  "K078-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 9288,
+   "enhancedBytes": 31386
+  },
+  "K079-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 9285,
+   "enhancedBytes": 35358
+  },
+  "K080-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 5745,
+   "enhancedBytes": 20732
+  },
+  "K081-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 8827,
+   "enhancedBytes": 31927
+  },
+  "K082-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 11077,
+   "enhancedBytes": 38091
+  },
+  "K083-SN.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 10497,
+   "enhancedBytes": 35178
+  },
+  "K084-SN.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 13778,
+   "enhancedBytes": 45857
+  },
+  "K085-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 8538,
+   "enhancedBytes": 29418
+  },
+  "K086-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 9358,
+   "enhancedBytes": 31939
+  },
+  "K087-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 9877,
+   "enhancedBytes": 33953
+  },
+  "K088-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 6353,
+   "enhancedBytes": 22372
+  },
+  "K089-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 7043,
+   "enhancedBytes": 24693
+  },
+  "K090-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 10011,
+   "enhancedBytes": 38689
+  },
+  "K096-SU.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1652,
+   "enhancedBytes": 3124
+  },
+  "K097-SU.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1651,
+   "enhancedBytes": 3125
+  },
+  "K098-SU.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 1653,
+   "enhancedBytes": 3126
+  },
+  "K105-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 10755,
+   "enhancedBytes": 40524
+  },
+  "K107-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 11176,
+   "enhancedBytes": 40679
+  },
+  "K349-RT.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 6631,
+   "enhancedBytes": 30970
+  },
+  "K350-RT.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 13263,
+   "enhancedBytes": 59519
+  },
+  "K351-RT.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 18726,
+   "enhancedBytes": 73306
+  },
+  "K352-RT.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 13451,
+   "enhancedBytes": 61313
+  },
+  "K353-RT.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 11941,
+   "enhancedBytes": 55549
+  },
+  "K354-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 14848,
+   "enhancedBytes": 54440
+  },
+  "K355-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 13475,
+   "enhancedBytes": 49734
+  },
+  "K356-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    406,
+    370
+   ],
+   "standardBytes": 15030,
+   "enhancedBytes": 55100
+  },
+  "K357-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 9944,
+   "enhancedBytes": 33058
+  },
+  "K358-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 10515,
+   "enhancedBytes": 34928
+  },
+  "K359-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 10778,
+   "enhancedBytes": 36389
+  },
+  "K360-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 11523,
+   "enhancedBytes": 40795
+  },
+  "K361-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 12141,
+   "enhancedBytes": 43462
+  },
+  "K365-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 11119,
+   "enhancedBytes": 41035
+  },
+  "K366-PW.jpg": {
+   "standard": [
+    256,
+    256
+   ],
+   "enhanced": [
+    370,
+    406
+   ],
+   "standardBytes": 12587,
+   "enhancedBytes": 46964
+  }
+ }
+}

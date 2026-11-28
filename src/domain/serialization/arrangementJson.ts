@@ -1,7 +1,7 @@
 import type { Arrangement } from "../arrangement/types";
 import { getFurnitureType, isFurnitureTypeId } from "../modules/registry";
 import type { ModuleInstance } from "../modules/types";
-import { validateRoom, isHexColor } from "../room/validateRoom";
+import { validateRoom, isHexColor, isRoomFloor } from "../room/validateRoom";
 import { WALL_IDS, type RoomConfiguration, type RoomOpening } from "../room/types";
 import { fail, ok, type Issue, type Result } from "../shared/issues";
 import { normalizeRotation } from "../spatial/geometry";
@@ -42,6 +42,8 @@ export function toArrangementDocument(arrangement: Arrangement): ArrangementDocu
       height: room.height,
       wallColors: { ...room.wallColors },
       floorColor: room.floorColor,
+      // Only written for a floor material: colour-floor documents stay byte-identical to earlier ones.
+      ...(room.floor && room.floor.kind === "material" ? { floor: { ...room.floor } } : {}),
       openings: room.openings.map((o) => ({ ...o })),
     },
     modules: arrangement.modules.map((m) => {
@@ -71,7 +73,7 @@ function readRoom(data: unknown, issues: Issue[]): RoomConfiguration | null {
     issues.push({ code: "invalid_document", path: "room" });
     return null;
   }
-  const { width, depth, height, wallColors, floorColor, openings } = data;
+  const { width, depth, height, wallColors, floorColor, floor, openings } = data;
   if (!isNumber(width) || !isNumber(depth) || !isNumber(height)) {
     issues.push({ code: "invalid_document", path: "room" });
     return null;
@@ -82,6 +84,11 @@ function readRoom(data: unknown, issues: Issue[]): RoomConfiguration | null {
   }
   if (!Array.isArray(openings)) {
     issues.push({ code: "invalid_document", path: "room.openings" });
+    return null;
+  }
+  // Optional (absent in documents saved before floor materials): an unknown value is rejected, not guessed.
+  if (floor !== undefined && !isRoomFloor(floor)) {
+    issues.push({ code: "invalid_floor", path: "room.floor" });
     return null;
   }
   const parsedOpenings: RoomOpening[] = [];
@@ -116,6 +123,7 @@ function readRoom(data: unknown, issues: Issue[]): RoomConfiguration | null {
     height,
     wallColors: Object.fromEntries(WALL_IDS.map((w) => [w, wallColors[w]])) as RoomConfiguration["wallColors"],
     floorColor: floorColor as RoomConfiguration["floorColor"],
+    ...(floor !== undefined && floor.kind === "material" ? { floor: { kind: "material" as const, materialId: floor.materialId, plankAxis: floor.plankAxis } } : {}),
     openings: parsedOpenings,
   };
   const roomIssues = validateRoom(room);

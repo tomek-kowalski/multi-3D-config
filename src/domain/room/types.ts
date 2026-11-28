@@ -42,6 +42,22 @@ export interface RoomOpening {
   readonly open?: boolean;
 }
 
+/**
+ * Floor coverings offered as realistic materials (generic surfaces, not a flooring manufacturer's
+ * products). Only these three are selectable; other kinds (vinyl, tiles, stone) are not offered.
+ */
+export const FLOOR_MATERIAL_IDS = ["wood-planks", "laminate", "herringbone-parquet"] as const;
+export type FloorMaterialId = (typeof FLOOR_MATERIAL_IDS)[number];
+
+/** Direction the planks (or the herringbone rows) run in the room: along X (back wall) or Z (side walls). */
+export const FLOOR_PLANK_AXES = ["x", "z"] as const;
+export type FloorPlankAxis = (typeof FLOOR_PLANK_AXES)[number];
+
+/** The floor's appearance: the configured colour (`floorColor`) or a floor material laid along an axis. */
+export type RoomFloor =
+  | { readonly kind: "color" }
+  | { readonly kind: "material"; readonly materialId: FloorMaterialId; readonly plankAxis: FloorPlankAxis };
+
 export interface RoomConfiguration {
   /** Interior width along X (back and front walls). */
   readonly width: Millimeters;
@@ -50,6 +66,11 @@ export interface RoomConfiguration {
   readonly height: Millimeters;
   readonly wallColors: Readonly<Record<WallId, HexColor>>;
   readonly floorColor: HexColor;
+  /**
+   * Floor material. Absent (every room saved before floor materials existed) or `{ kind: "color" }`:
+   * the floor shows `floorColor`, which is kept while a material is selected.
+   */
+  readonly floor?: RoomFloor;
   readonly openings: readonly RoomOpening[];
 }
 

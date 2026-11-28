@@ -180,6 +180,7 @@ export function PhotoPreview({ onClose }: { onClose: () => void }) {
           </div>
 
           {state.kind === "done" && <PhotoBadge photo={state.photo} />}
+          {state.kind === "done" && <AppearanceNotice photo={state.photo} />}
 
           <Segmented
             label={t("photo.quality")}
@@ -231,5 +232,25 @@ export function PhotoBadge({ photo }: { photo: RenderedPhoto }) {
       {t(photo.fallbackReason ? "photo.badgeRasterFallback" : "photo.badgeRaster", { size, frames: photo.samples, seconds: Math.round(photo.durationMs / 1000) })}{" "}
       {photo.fallbackReason && t(`photo.fallback.${photo.fallbackReason}` as Parameters<typeof t>[0])}
     </p>
+  );
+}
+
+/**
+ * Manufacturer appearances the image could not show as authorized — kept apart from renderer fallbacks
+ * (PhotoBadge): decors without a catalog swatch (neutral indicator, also noted in the image itself) and
+ * authorized images that failed to load (the decor's own mean colour; rendering again retries).
+ */
+export function AppearanceNotice({ photo }: { photo: RenderedPhoto }) {
+  const t = useT();
+  const unavailable = photo.appearance?.unavailable ?? [];
+  const failed = photo.appearance?.failed ?? [];
+  const reduced = (photo.reductions?.length ?? 0) > 0;
+  if (unavailable.length === 0 && failed.length === 0 && !reduced) return null;
+  return (
+    <div className="space-y-1 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900" data-photo-appearance>
+      {unavailable.length > 0 && <p data-photo-unavailable>{t("photo.appearance.unavailable", { decors: unavailable.join(", ") })}</p>}
+      {failed.length > 0 && <p data-photo-texture-failed>{t("photo.appearance.failed", { decors: failed.join(", ") })}</p>}
+      {reduced && <p data-photo-reductions>{t("photo.reductions")}</p>}
+    </div>
   );
 }

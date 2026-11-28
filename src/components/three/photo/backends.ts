@@ -4,28 +4,30 @@ import { WebGLPathTracer } from "three-gpu-pathtracer";
 import {
   ACESFilmicToneMapping,
   AgXToneMapping,
-  EquirectangularReflectionMapping,
+  Mesh,
   NeutralToneMapping,
   ShaderMaterial,
   SRGBColorSpace,
   WebGLRenderer,
   type DataTexture,
+  type Material,
   type PerspectiveCamera,
   type Scene,
   type Texture,
   type ToneMapping,
 } from "three";
-import { HDRLoader } from "three/examples/jsm/loaders/HDRLoader.js";
 import { FullScreenQuad } from "three/examples/jsm/postprocessing/Pass.js";
+import { loadHdriSource } from "../materials/hdriSource";
+import { traceLayerBudget, traceQualityProfile } from "../materials/materialQuality";
 import type { PhotoMode } from "./capabilities";
+import { sceneTextures } from "./photoScene";
 import { GuidedDenoiser } from "./denoiser";
 import { AutoExposure } from "./exposure";
 import { createFastRasterBackend } from "./rasterBackend";
-import type { PhotoBackend } from "./photoEngine";
+import { TraceBudgetError, type PhotoBackend } from "./photoEngine";
 import { QUALITY_PRESETS, type PhotoSettings, type PhotoToneMapping } from "./photoSettings";
 
-/** CC0 HDRI from Poly Haven (public/hdri/LICENSE.txt): a bright interior with large windows. */
-export const HDRI_URL = "/hdri/photo_studio_loft_hall_1k.hdr";
+export { HDRI_URL } from "../materials/hdriSource";
 
 const TONE_MAPPING: Record<PhotoToneMapping, ToneMapping> = {
   neutral: NeutralToneMapping,
@@ -33,10 +35,53 @@ const TONE_MAPPING: Record<PhotoToneMapping, ToneMapping> = {
   aces: ACESFilmicToneMapping,
 };
 
-export async function loadEnvironment(url = HDRI_URL): Promise<DataTexture> {
-  const texture = await new HDRLoader().loadAsync(url);
-  texture.mapping = EquirectangularReflectionMapping;
-  return texture;
+/** The studio HDRI, decoded once and shared with the viewport's reflection environment. */
+export function loadEnvironment(): Promise<DataTexture> {
+  return loadHdriSource();
+}
+
+/**
+ * Path-tracer texture budget: every distinct texture becomes one 1K RGBA8 layer (4 MiB). Over budget,
+ * optional maps are left out of THIS VIEW in a fixed order, on per-view material copies (one copy per
+ * material, returned for disposal): the snapshot's materials — and therefore a later fast-raster
+ * fallback — are never degraded. If base colours alone exceed it, setScene throws TraceBudgetError and
+ * the engine falls back to the fast renderer on a freshly built view (only where it is eligible). The
+ * selected decor's colour image is never dropped.
+ */
+const OPTIONAL_MAP_ORDER = ["sheenRoughnessMap", "sheenColorMap", "clearcoatNormalMap", "metalnessMap", "roughnessMap", "normalMap"] as const;
+
+export function fitTraceLayers(scene: Scene, maxLayers: number): { layers: number; dropped: string[]; copies: Material[] } {
+  const dropped: string[] = [];
+  const copies = new Map<Material, Material>();
+  let layers = sceneTextures(scene).size;
+  for (const key of OPTIONAL_MAP_ORDER) {
+    if (layers <= maxLayers) break;
+    let removed = false;
+    scene.traverse((o) => {
+      if (!(o instanceof Mesh)) return;
+      const swap = (m: Material) => {
+        if (!(m as unknown as Record<string, unknown>)[key]) return m;
+        // Copy each material once (a copy already made for this view is reduced further in place).
+        let copy = copies.get(m) ?? ([...copies.values()].includes(m) ? m : undefined);
+        if (!copy) {
+          copy = m.clone();
+          copies.set(m, copy);
+        }
+        (copy as unknown as Record<string, unknown>)[key] = null;
+        // A scalar calibrated against its map (finish / map mean) is wrong without it: restore the finish's.
+        const scalars = copy.userData.scalarsWithoutMaps as { roughness: number; metalness: number } | undefined;
+        if (scalars && key === "roughnessMap") (copy as unknown as { roughness: number }).roughness = scalars.roughness;
+        if (scalars && key === "metalnessMap") (copy as unknown as { metalness: number }).metalness = scalars.metalness;
+        copy.needsUpdate = true;
+        removed = true;
+        return copy;
+      };
+      o.material = Array.isArray(o.material) ? o.material.map(swap) : swap(o.material);
+    });
+    if (removed) dropped.push(key);
+    layers = sceneTextures(scene).size;
+  }
+  return { layers, dropped, copies: [...copies.values()] };
 }
 
 function createRenderer(width: number, height: number, antialias: boolean): WebGLRenderer {
@@ -113,6 +158,16 @@ export function createPathTracedBackend(initial: PhotoSettings, environment: Tex
   let exposure = 1;
   const copy = copyMaterial(tracer.target.texture);
   const quad = new FullScreenQuad(copy);
+  let traceLayers = 0;
+  let reductions: string[] = [];
+  /** Per-view material copies of the current view (optional maps left out); freed with the view. */
+  let viewCopies: Material[] = [];
+  const releaseView = () => {
+    viewCopies.forEach((m) => m.dispose());
+    viewCopies = [];
+  };
+  const gl = renderer.getContext() as WebGL2RenderingContext;
+  const deviceLayers = Number(gl.getParameter(gl.MAX_ARRAY_TEXTURE_LAYERS)) || 0;
 
   return {
     mode: "pathtraced" as PhotoMode,
@@ -122,9 +177,27 @@ export function createPathTracedBackend(initial: PhotoSettings, environment: Tex
     get compiling() {
       return compiling();
     },
+    /** Distinct texture layers of the current view (instrumentation). */
+    get traceLayers() {
+      return traceLayers;
+    },
+    /** Optional maps left out of the current view to meet the layer budget. */
+    get reductions() {
+      return reductions;
+    },
     configure,
     async setScene(scene: Scene, camera: PerspectiveCamera) {
       scene.environment = environment;
+      releaseView();
+      const budget = traceLayerBudget(traceQualityProfile(settings.quality), deviceLayers);
+      const fit = fitTraceLayers(scene, budget);
+      viewCopies = fit.copies;
+      traceLayers = fit.layers;
+      reductions = fit.dropped;
+      if (fit.layers > budget) {
+        releaseView();
+        throw new TraceBudgetError(fit.layers, budget);
+      }
       tracer.setScene(scene, camera);
       tracer.reset();
       // Guide buffers (albedo, normals, positions) of exactly this view, for the denoiser.
@@ -166,6 +239,7 @@ export function createPathTracedBackend(initial: PhotoSettings, environment: Tex
       return canvasToBlob(renderer.domElement, format);
     },
     dispose() {
+      releaseView();
       denoiser.dispose();
       metering.dispose();
       copy.dispose();
